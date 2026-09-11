@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { UserRole } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 
 const Layout: React.FC = () => {
+  const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>('Placement Officer');
+  const [userRole, setUserRole] = useState<UserRole>(currentUser?.role || 'Placement Officer');
+
+  useEffect(() => {
+    if (currentUser?.role) {
+      setUserRole(currentUser.role);
+    }
+  }, [currentUser?.role]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 

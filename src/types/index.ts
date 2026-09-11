@@ -1,4 +1,16 @@
-export type UserRole = 'Placement Officer' | 'Faculty Coordinator' | 'Corporate Recruiter' | 'Super Admin';
+export type UserRole = 'Placement Officer' | 'Faculty Coordinator' | 'Corporate Recruiter' | 'Super Admin' | 'Student Coordinator';
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  department?: string;
+  picture?: string;
+  regNumber?: string;
+  isInstitutionalVerified: boolean;
+  lastLoginAt: string;
+}
 
 export type CandidateStatus = 
   | 'Applied'

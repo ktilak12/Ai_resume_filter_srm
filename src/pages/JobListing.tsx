@@ -5,7 +5,8 @@ import { useOutletContext } from 'react-router-dom';
 import { UserRole } from '../types';
 
 export const JobListing: React.FC = () => {
-  const { userRole } = useOutletContext<{ userRole: UserRole }>();
+  const context = useOutletContext<{ userRole?: UserRole }>() || {};
+  const userRole = context.userRole || 'Placement Officer';
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredJobs = INITIAL_JOBS.filter(job => 

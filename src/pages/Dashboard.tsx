@@ -4,7 +4,8 @@ import { useOutletContext } from 'react-router-dom';
 import { UserRole } from '../types';
 
 const Dashboard: React.FC = () => {
-  const { userRole } = useOutletContext<{ userRole: UserRole }>();
+  const context = useOutletContext<{ userRole?: UserRole }>() || {};
+  const userRole = context.userRole || 'Placement Officer';
 
   // Mock data for the dashboard
   const stats = [
