@@ -2,10 +2,13 @@ import React from 'react';
 import { Users, Briefcase, FileText, CheckCircle, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import { UserRole } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard: React.FC = () => {
+  const { currentUser } = useAuth();
   const context = useOutletContext<{ userRole?: UserRole }>() || {};
-  const userRole = context.userRole || 'Placement Officer';
+  const activeRole = currentUser?.role || context.userRole || 'Placement Officer';
+  const displayName = currentUser?.name || activeRole;
 
   // Mock data for the dashboard
   const stats = [
@@ -32,8 +35,8 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Welcome back, Placement Officer</h1>
-          <p className="text-slate-400 mt-1">Here's an overview of the current placement season.</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Welcome back, {displayName}</h1>
+          <p className="text-slate-400 mt-1">Here's an overview of the current placement season ({activeRole}).</p>
         </div>
         <div className="flex items-center space-x-2 bg-slate-800/50 p-1.5 rounded-lg border border-slate-700/50">
           <span className="px-3 py-1 rounded-md bg-srm-600 text-white text-sm font-medium shadow-sm">Fall 2026</span>

@@ -53,6 +53,18 @@ function normalize(text: string): string {
   return text.toLowerCase().trim().replace(/[-_]/g, ' ');
 }
 
+// Comprehensive Department Synonym Dictionary
+const DEPT_SYNONYMS: Record<string, string[]> = {
+  'cse': ['computer science', 'computer science & engineering', 'computer science and engineering', 'cse', 'software engineering'],
+  'it': ['information technology', 'infotech', 'it'],
+  'ece': ['electronics & communication', 'electronics and communication', 'electronics & communication engineering', 'ece'],
+  'ai & ds': ['artificial intelligence', 'data science', 'ai and ds', 'ai & ds', 'aids', 'ai', 'artificial intelligence & data science'],
+  'eee': ['electrical & electronics', 'electrical and electronics', 'eee'],
+  'mech': ['mechanical', 'mechanical engineering', 'mech'],
+  'civil': ['civil engineering', 'civil'],
+  'data science': ['data science', 'data analytics', 'ai & ds', 'artificial intelligence & data science']
+};
+
 /**
  * Determines if a candidate skill matches a required skill using token exactness or synonym graph
  */
@@ -77,7 +89,12 @@ function checkSkillMatch(requiredSkill: string, candidateSkills: string[], resum
   // 2. Semantic lookup in full resume text (projects, experience, text)
   const normText = normalize(resumeText);
   for (const term of searchTerms) {
-    const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const hasSymbol = /[^a-z0-9\s]/i.test(term);
+    const pattern = hasSymbol 
+      ? `(?:^|\\s|[.,/()\\-])${escaped}(?:$|\\s|[.,/()\\-])`
+      : `\\b${escaped}\\b`;
+    const regex = new RegExp(pattern, 'i');
     if (regex.test(normText)) {
       return { matches: true, evidence: `Mentioned in projects / work experience: "${term}"` };
     }
@@ -95,16 +112,17 @@ export function evaluateEligibility(candidate: CandidateProfile, job: JobRequire
 
   const cgpa_met = education.cgpa >= academic_eligibility.min_cgpa;
   
-  // Normalize departments for matching (e.g. "CSE" matches "Computer Science & Engineering", "IT" matches "Information Technology")
+  // Normalize departments and match using department synonym graph
   const normAllowedDepts = academic_eligibility.allowed_departments.map(d => normalize(d));
   const candDeptNorm = normalize(education.department);
-  const department_met = normAllowedDepts.some(dept => 
-    candDeptNorm.includes(dept) || 
-    dept.includes(candDeptNorm) ||
-    (dept === 'cse' && candDeptNorm.includes('computer')) ||
-    (dept === 'it' && candDeptNorm.includes('information')) ||
-    (dept === 'ai & ds' && (candDeptNorm.includes('ai') || candDeptNorm.includes('artificial') || candDeptNorm.includes('data science')))
-  );
+
+  const department_met = normAllowedDepts.some(allowedDept => {
+    if (candDeptNorm.includes(allowedDept) || allowedDept.includes(candDeptNorm)) {
+      return true;
+    }
+    const synonyms = DEPT_SYNONYMS[allowedDept] || [];
+    return synonyms.some(syn => candDeptNorm.includes(syn) || syn.includes(candDeptNorm));
+  });
 
   const normAllowedDegrees = academic_eligibility.allowed_degrees.map(d => normalize(d));
   const candDegreeNorm = normalize(education.degree);

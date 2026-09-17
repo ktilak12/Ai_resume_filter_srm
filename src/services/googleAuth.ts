@@ -61,8 +61,11 @@ export function parseJwt(token: string): GoogleJwtPayload | null {
   try {
     const parts = token.split('.');
     if (parts.length < 2) return null;
-    const base64Url = parts[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64.length % 4;
+    if (pad) {
+      base64 += '='.repeat(4 - pad);
+    }
     const jsonPayload = decodeURIComponent(
       atob(base64)
         .split('')
@@ -77,12 +80,24 @@ export function parseJwt(token: string): GoogleJwtPayload | null {
 }
 
 /**
- * Strict verification that an email address belongs to SRMIST (@srmist.edu.in)
+ * Check if a parsed Google JWT token has expired
+ */
+export function isJwtExpired(payload: GoogleJwtPayload): boolean {
+  if (!payload || !payload.exp) return false;
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  return payload.exp < nowInSeconds;
+}
+
+/**
+ * Strict verification that an email address belongs to SRMIST (@srmist.edu.in or subdomains)
  */
 export function isSRMISTEmail(email: string): boolean {
-  if (!email) return false;
+  if (!email || typeof email !== 'string') return false;
   const normalized = email.trim().toLowerCase();
-  return normalized.endsWith(`@${SRMIST_DOMAIN}`) || normalized.endsWith(`.${SRMIST_DOMAIN}`);
+  const parts = normalized.split('@');
+  if (parts.length !== 2) return false;
+  const domain = parts[1];
+  return domain === SRMIST_DOMAIN || domain.endsWith(`.${SRMIST_DOMAIN}`);
 }
 
 /**
@@ -93,9 +108,14 @@ export function parseSRMEmailDetails(email: string): {
   isStudent: boolean;
   department?: string;
 } {
-  const localPart = email.split('@')[0].toLowerCase();
+  if (!email || typeof email !== 'string') {
+    return { isStudent: false };
+  }
+
+  const parts = email.split('@');
+  const localPart = parts[0]?.toLowerCase() || '';
   
-  // Student registration numbers commonly follow RAxxxxxxxxxxxxx (e.g. RA2111003010123)
+  // Student registration numbers commonly follow RAxxxxxxxxxxxxx or TPxxxxxxxx (e.g. RA2111003010123)
   const isStudentReg = /^ra\d{10,15}$/i.test(localPart) || /^tp\d{8,15}$/i.test(localPart);
   
   let dept: string | undefined = undefined;

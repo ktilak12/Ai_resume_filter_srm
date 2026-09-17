@@ -55,7 +55,7 @@ export const LoginPage: React.FC = () => {
           if (response.credential) {
             loginWithGoogleCredential(response.credential).then((success) => {
               if (success) {
-                navigate('/');
+                navigate('/dashboard');
               }
             });
           }
@@ -80,7 +80,7 @@ export const LoginPage: React.FC = () => {
       console.error('[LoginPage] Failed to render Google button:', err);
       setIsRenderingGoogle(false);
     }
-  }, [googleScriptReady, clientId, navigate]);
+  }, [googleScriptReady, clientId, navigate, loginWithGoogleCredential]);
 
   const handleManualGoogleClick = () => {
     if (clientId && window.google?.accounts?.id) {
@@ -134,6 +134,19 @@ export const LoginPage: React.FC = () => {
             <span className="text-amber-400 font-mono font-semibold">@srmist.edu.in</span> ID
           </p>
         </div>
+
+        {/* Auth Error Banner */}
+        {authError && (
+          <div className="mb-6 p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/40 text-left space-y-1 text-xs text-rose-200 animate-in fade-in">
+            <div className="flex items-center gap-1.5 text-rose-400 font-semibold">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>Authentication Notice</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-rose-300">
+              {authError.message}
+            </p>
+          </div>
+        )}
 
         {/* Google Sign-In Container */}
         <div className="flex flex-col items-center justify-center py-3 space-y-3">
