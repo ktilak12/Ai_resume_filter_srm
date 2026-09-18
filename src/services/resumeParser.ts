@@ -122,9 +122,15 @@ export function extractCandidateEntities(rawText: string, fileName?: string): Ca
   }
 
   let gradYear = 2027;
-  const yearMatch = rawText.match(/202[4-9]/);
+  // Prefer a year that appears next to graduation-related keywords to avoid
+  // picking up an internship year (e.g. 2026) as the graduation year
+  const contextualYearMatch = rawText.match(
+    /(?:batch|graduating|graduation|pass(?:ing)?|class of|passout)[:\s]+?(202[4-9])/i
+  );
+  const fallbackYearMatch = rawText.match(/(?:20[2-9][4-9])/);  // broader fallback
+  const yearMatch = contextualYearMatch || fallbackYearMatch;
   if (yearMatch) {
-    gradYear = parseInt(yearMatch[0], 10);
+    gradYear = parseInt(yearMatch[1] ?? yearMatch[0], 10);
   }
 
   let backlogs = 0;
@@ -153,7 +159,8 @@ export function extractCandidateEntities(rawText: string, fileName?: string): Ca
   const skills: string[] = [];
   const lowerRaw = rawText.toLowerCase();
   KNOWN_SKILLS.forEach(skill => {
-    const regex = new RegExp(`\\b${skill.toLowerCase().replace('+', '\\+')}\\b`, 'i');
+    // Use /\+/g (not replace('+', ...)) so C++ has both plus signs properly escaped
+    const regex = new RegExp(`\\b${skill.toLowerCase().replace(/\+/g, '\\+')}\\b`, 'i');
     if (regex.test(lowerRaw)) {
       skills.push(skill);
     }

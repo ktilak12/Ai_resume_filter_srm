@@ -235,8 +235,16 @@ export function calculateMatchScore(
   const reqWeight = 0.8;
   const prefWeight = 0.2;
   const reqScore = job.required_skills.length > 0 ? (requiredMatchedCount / job.required_skills.length) * 100 : 100;
-  const prefScore = job.preferred_skills.length > 0 ? (preferredMatchedCount / job.preferred_skills.length) * 100 : 100;
-  const skillsScore = Math.round(reqScore * reqWeight + prefScore * prefWeight);
+
+  // When no preferred skills exist, exclude the preferred component entirely rather than
+  // defaulting to 100 (which would silently inflate scores by up to 20 points).
+  let skillsScore: number;
+  if (job.preferred_skills.length > 0) {
+    const prefScore = (preferredMatchedCount / job.preferred_skills.length) * 100;
+    skillsScore = Math.round(reqScore * reqWeight + prefScore * prefWeight);
+  } else {
+    skillsScore = Math.round(reqScore);
+  }
 
   if (requiredMatchedCount === job.required_skills.length) {
     positive_factors.push(`Demonstrates 100% of required core skills (${job.required_skills.join(', ')})`);
