@@ -1,6 +1,6 @@
 /**
  * SRM ResumeAI - Secure Production Node.js Server
- * Keeps RESEND_API_KEY secure on the backend and serves the frontend build.
+ * Hardened with Rate Limiting, Input Validation, and Backend API Key Isolation.
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env manually if available in Node
+// Load .env manually in Node
 const envPath = path.join(__dirname, '.env');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf-8');
@@ -32,6 +32,37 @@ if (fs.existsSync(envPath)) {
 const PORT = process.env.PORT || 3000;
 const DIST_DIR = path.join(__dirname, 'dist');
 
+// --- Security: In-Memory IP Rate Limiter (Max 20 requests per minute) ---
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MAX_REQUESTS_PER_WINDOW = 20;
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const clientData = rateLimitMap.get(ip) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW_MS };
+
+  if (now > clientData.resetTime) {
+    clientData.count = 1;
+    clientData.resetTime = now + RATE_LIMIT_WINDOW_MS;
+    rateLimitMap.set(ip, clientData);
+    return false;
+  }
+
+  clientData.count += 1;
+  rateLimitMap.set(ip, clientData);
+
+  // Clean up stale map entries periodically
+  if (rateLimitMap.size > 2000) {
+    for (const [key, val] of rateLimitMap.entries()) {
+      if (now > val.resetTime) rateLimitMap.delete(key);
+    }
+  }
+
+  return clientData.count > MAX_REQUESTS_PER_WINDOW;
+}
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 const MIME_TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -46,8 +77,13 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer(async (req, res) => {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+
+  // Security Headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -59,8 +95,24 @@ const server = http.createServer(async (req, res) => {
 
   // 1. Secure Server-Side Email API
   if (req.url === '/api/send-email' && req.method === 'POST') {
+    if (isRateLimited(clientIp)) {
+      res.writeHead(429, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: false,
+        error: 'Too many requests. Rate limit exceeded (Max 20 emails/minute). Please try again shortly.'
+      }));
+      return;
+    }
+
     let bodyStr = '';
-    req.on('data', chunk => { bodyStr += chunk; });
+    req.on('data', chunk => {
+      bodyStr += chunk;
+      // Protect against oversized JSON body attack
+      if (bodyStr.length > 200 * 1024) {
+        req.destroy();
+      }
+    });
+
     req.on('end', async () => {
       try {
         const body = JSON.parse(bodyStr || '{}');
@@ -75,8 +127,30 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
+        // Input Validation
+        if (!body.to || !body.subject || !body.html) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: false,
+            error: 'Invalid payload: "to", "subject", and "html" are required fields.'
+          }));
+          return;
+        }
+
+        const recipients = (Array.isArray(body.to) ? body.to : [body.to]).map(e => String(e).trim());
+        
+        // Validate recipient emails
+        const invalidEmails = recipients.filter(e => !EMAIL_REGEX.test(e));
+        if (invalidEmails.length > 0 || recipients.length === 0 || recipients.length > 50) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: false,
+            error: `Invalid recipient email address(es): ${invalidEmails.join(', ')}`
+          }));
+          return;
+        }
+
         const fromEmail = body.from || process.env.RESEND_FROM_EMAIL || 'SRM Placement Directorate <onboarding@resend.dev>';
-        const recipients = Array.isArray(body.to) ? body.to : [body.to];
 
         const resendRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -87,7 +161,7 @@ const server = http.createServer(async (req, res) => {
           body: JSON.stringify({
             from: fromEmail,
             to: recipients,
-            subject: body.subject,
+            subject: String(body.subject).slice(0, 200),
             html: body.html,
             text: body.text || body.subject,
           }),
@@ -113,6 +187,12 @@ const server = http.createServer(async (req, res) => {
 
   // 2. Test Email API
   if (req.url === '/api/test-email' && req.method === 'POST') {
+    if (isRateLimited(clientIp)) {
+      res.writeHead(429, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: 'Rate limit exceeded. Please wait a minute.' }));
+      return;
+    }
+
     const key = process.env.RESEND_API_KEY || '';
     if (!key) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -131,11 +211,11 @@ const server = http.createServer(async (req, res) => {
         body: JSON.stringify({
           from: fromEmail,
           to: ['delivered@resend.dev'],
-          subject: 'SRM ResumeAI - Production Server Gateway Test',
+          subject: 'SRM ResumeAI - Production Gateway Verification',
           html: `
             <div style="font-family: sans-serif; padding: 24px; background: #0f172a; color: #f8fafc; border-radius: 10px;">
               <h2 style="color: #38bdf8; margin-top: 0;">SRM Placement Directorate - Production Server Gateway Active</h2>
-              <p>Your Resend API key is stored securely on the Node.js backend and is <strong>never exposed</strong> in the frontend.</p>
+              <p>Your Resend API key is secured on the Node.js backend with Rate Limiting and Input Validation active.</p>
             </div>
           `,
         }),
@@ -174,5 +254,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`[SRM ResumeAI Server] Running securely on http://localhost:${PORT}`);
-  console.log(`[Resend Gateway] Active - API Key secured on backend.`);
+  console.log(`[Resend Gateway] Active - API Key secured with Rate Limiting.`);
 });
