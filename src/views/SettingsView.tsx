@@ -8,10 +8,20 @@ import {
   Check, 
   Building2, 
   Scale, 
-  Lock
+  Lock,
+  Mail,
+  Send,
+  Loader2,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { AISettings } from '../types';
 import { DEFAULT_AI_SETTINGS } from '../services/aiScreeningEngine';
+import { 
+  getResendFromEmail, 
+  setResendFromEmail, 
+  testResendConnection 
+} from '../services/emailService';
 
 interface SettingsViewProps {
   settings: AISettings;
@@ -32,6 +42,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [reviewThreshold, setReviewThreshold] = useState(settings.thresholds.needs_review);
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Resend Email Gateway State (Key secured strictly on backend server)
+  const [resendFromEmailInput, setResendFromEmailInput] = useState(() => getResendFromEmail());
+  const [isTestingResend, setIsTestingResend] = useState(false);
+  const [resendTestResult, setResendTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const totalWeight = skillsWeight + expWeight + eduWeight + projWeight + certWeight;
 
@@ -260,6 +275,113 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 Candidates scoring {reviewThreshold}% – {strongThreshold - 1}% require manual recruiter inspection.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Resend Email Gateway Integration Panel (Server-Side Proxy) */}
+        <div className="glass-panel rounded-2xl p-6 space-y-5">
+          <div className="pb-3 border-b border-slate-800 flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold font-display text-white flex items-center gap-2">
+                <Mail className="w-4 h-4 text-sky-400" />
+                Resend Email Gateway (Server-Side Secured)
+              </h2>
+              <p className="text-xs text-slate-400">
+                Email dispatch runs through a secure backend proxy. Your Resend API key is never exposed to client browsers.
+              </p>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3" />
+              Backend Encrypted
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                <Lock className="w-4 h-4 text-emerald-400" />
+                <span>API Key Security Protocol</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Your secret key is loaded securely via server environment (<code className="text-amber-400 font-mono">RESEND_API_KEY</code> in <code className="text-slate-300">.env</code>) and handled strictly by the Node.js backend.
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="text-[11px] text-emerald-400 font-medium">No API key leakage in browser JS bundle</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">
+                Default Sender Address (From)
+              </label>
+              <input
+                type="text"
+                value={resendFromEmailInput}
+                onChange={(e) => {
+                  setResendFromEmailInput(e.target.value);
+                  setResendFromEmail(e.target.value);
+                }}
+                placeholder="SRM Placement <onboarding@resend.dev>"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 placeholder-slate-500 text-xs font-mono focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+              />
+              <p className="text-[11px] text-slate-500">
+                Default: <code className="text-amber-400 font-mono">onboarding@resend.dev</code> (or verified domain).
+              </p>
+            </div>
+          </div>
+
+          {/* Test Resend Action */}
+          <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-slate-800/80">
+            <div className="text-xs">
+              {resendTestResult && (
+                <div className={`flex items-center gap-1.5 font-medium ${
+                  resendTestResult.success ? 'text-emerald-400' : 'text-rose-400'
+                }`}>
+                  {resendTestResult.success ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <XCircle className="w-4 h-4 shrink-0" />
+                  )}
+                  <span>{resendTestResult.message}</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              disabled={isTestingResend}
+              onClick={async () => {
+                setIsTestingResend(true);
+                setResendTestResult(null);
+                const res = await testResendConnection();
+                setIsTestingResend(false);
+                if (res.success) {
+                  setResendTestResult({
+                    success: true,
+                    message: `Backend Resend gateway verified! Dispatch ID: ${res.messageId}`
+                  });
+                } else {
+                  setResendTestResult({
+                    success: false,
+                    message: res.error || 'Connection failed. Check RESEND_API_KEY in .env.'
+                  });
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-bold transition-all disabled:opacity-50"
+            >
+              {isTestingResend ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Testing Backend Gateway...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Verify Server Gateway</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 

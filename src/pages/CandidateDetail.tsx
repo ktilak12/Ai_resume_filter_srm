@@ -1,7 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { INITIAL_CANDIDATES, INITIAL_JOBS } from '../data/srmDataset';
 import { screenCandidate } from '../services/aiScreeningEngine';
+import { 
+  sendShortlistNotification, 
+  sendRejectionNotification 
+} from '../services/emailService';
 import { 
   ArrowLeft, 
   BrainCircuit, 
@@ -11,13 +15,20 @@ import {
   CheckCircle, 
   AlertCircle, 
   ChevronRight, 
-  BarChart 
+  BarChart,
+  Mail,
+  Loader2,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 
 export const CandidateDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const candidate = INITIAL_CANDIDATES.find(c => c.id === id) || INITIAL_CANDIDATES[0];
   const job = INITIAL_JOBS[0];
+
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailNotice, setEmailNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Dynamically screen the candidate against job requirements
   const screeningResult = useMemo(() => {
@@ -46,15 +57,74 @@ export const CandidateDetail: React.FC = () => {
             <p className="text-slate-400 mt-1">{candidate.reg_number} • {candidate.education.department}</p>
           </div>
         </div>
-        <div className="flex space-x-3">
-          <button className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium border border-slate-700 transition-colors text-sm">
-            Reject
+        <div className="flex items-center space-x-3">
+          <button 
+            disabled={isSendingEmail}
+            onClick={async () => {
+              setIsSendingEmail(true);
+              setEmailNotice(null);
+              const res = await sendRejectionNotification(candidate, job);
+              setIsSendingEmail(false);
+              if (res.success) {
+                setEmailNotice({ type: 'success', message: `Rejection email sent to ${candidate.email} via Resend!` });
+              } else {
+                setEmailNotice({ type: 'error', message: res.error || 'Failed to send rejection email' });
+              }
+            }}
+            className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium border border-slate-700 transition-colors text-sm disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {isSendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            <span>Reject</span>
           </button>
-          <button className="bg-srm-600 hover:bg-srm-500 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm text-sm">
-            Shortlist for Interview
+
+          <button 
+            disabled={isSendingEmail}
+            onClick={async () => {
+              setIsSendingEmail(true);
+              setEmailNotice(null);
+              const res = await sendShortlistNotification(candidate, job);
+              setIsSendingEmail(false);
+              if (res.success) {
+                setEmailNotice({ type: 'success', message: `Shortlist interview notification sent to ${candidate.email} via Resend!` });
+              } else {
+                setEmailNotice({ type: 'error', message: res.error || 'Failed to send shortlist email. Configure Resend API key in Settings.' });
+              }
+            }}
+            className="bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-glow-srm text-sm disabled:opacity-50 flex items-center gap-2"
+          >
+            {isSendingEmail ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Mail className="w-4 h-4" />
+            )}
+            <span>Shortlist & Email Candidate</span>
           </button>
         </div>
       </div>
+
+      {/* Resend Email Dispatch Banner Notification */}
+      {emailNotice && (
+        <div className={`p-4 rounded-xl border flex items-center justify-between text-xs font-semibold ${
+          emailNotice.type === 'success'
+            ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-200'
+            : 'bg-rose-950/80 border-rose-500/40 text-rose-200'
+        }`}>
+          <div className="flex items-center gap-2">
+            {emailNotice.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            )}
+            <span>{emailNotice.message}</span>
+          </div>
+          <button 
+            onClick={() => setEmailNotice(null)}
+            className="text-slate-400 hover:text-white text-xs underline font-normal"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: AI Explainability */}

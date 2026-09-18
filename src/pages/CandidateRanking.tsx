@@ -1,12 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, Download, CheckCircle, ArrowUpDown, ExternalLink } from 'lucide-react';
+import { Search, Filter, Download, CheckCircle, ArrowUpDown, ExternalLink, Mail, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { INITIAL_CANDIDATES, INITIAL_JOBS } from '../data/srmDataset';
 import { screenCandidate, rankScreeningResults } from '../services/aiScreeningEngine';
+import { sendShortlistNotification } from '../services/emailService';
 import { Link } from 'react-router-dom';
 
 export const CandidateRanking: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isSendingBatch, setIsSendingBatch] = useState(false);
+  const [batchNotice, setBatchNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const defaultJob = INITIAL_JOBS[0];
 
@@ -80,12 +83,75 @@ export const CandidateRanking: React.FC = () => {
             <Download className="h-4 w-4" />
             <span>Export CSV</span>
           </button>
-          <button className="flex items-center space-x-2 bg-srm-600 hover:bg-srm-500 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm text-sm">
-            <CheckCircle className="h-4 w-4" />
-            <span>Shortlist Selected</span>
+          <button 
+            disabled={isSendingBatch}
+            onClick={async () => {
+              setIsSendingBatch(true);
+              setBatchNotice(null);
+              const strongMatches = filteredResults.filter(r => r.explainable.verdict === 'Strong Match');
+              if (strongMatches.length === 0) {
+                setIsSendingBatch(false);
+                setBatchNotice({ type: 'error', message: 'No Strong Match candidates found in current filter.' });
+                return;
+              }
+              let successCount = 0;
+              let lastError = '';
+              for (const item of strongMatches) {
+                const res = await sendShortlistNotification(item.candidate, defaultJob);
+                if (res.success) {
+                  successCount++;
+                } else {
+                  lastError = res.error || 'Failed to send';
+                }
+              }
+              setIsSendingBatch(false);
+              if (successCount > 0) {
+                setBatchNotice({
+                  type: 'success',
+                  message: `Successfully emailed ${successCount} shortlisted candidates via Resend!`
+                });
+              } else {
+                setBatchNotice({
+                  type: 'error',
+                  message: `Email dispatch failed: ${lastError}`
+                });
+              }
+            }}
+            className="flex items-center space-x-2 bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-glow-srm text-sm disabled:opacity-50"
+          >
+            {isSendingBatch ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Mail className="h-4 w-4" />
+            )}
+            <span>Email Shortlisted ({filteredResults.filter(r => r.explainable.verdict === 'Strong Match').length})</span>
           </button>
         </div>
       </div>
+
+      {/* Batch Resend Notification Banner */}
+      {batchNotice && (
+        <div className={`p-4 rounded-xl border flex items-center justify-between text-xs font-semibold ${
+          batchNotice.type === 'success'
+            ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-200'
+            : 'bg-rose-950/80 border-rose-500/40 text-rose-200'
+        }`}>
+          <div className="flex items-center gap-2">
+            {batchNotice.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            )}
+            <span>{batchNotice.message}</span>
+          </div>
+          <button 
+            onClick={() => setBatchNotice(null)}
+            className="text-slate-400 hover:text-white text-xs underline font-normal"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-sm overflow-hidden flex flex-col">
         {/* Filters */}
