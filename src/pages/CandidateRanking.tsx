@@ -44,17 +44,28 @@ export const CandidateRanking: React.FC = () => {
   }, [screenedResults, searchTerm, statusFilter]);
 
   const handleExportCsv = () => {
+    // Sanitizes CSV fields to prevent Excel / spreadsheet formula injection attacks
+    const sanitizeCsvCell = (val: any): string => {
+      if (val === null || val === undefined) return '""';
+      let str = String(val);
+      // Prepend a single quote if the field begins with formula trigger characters
+      if (/^[=+\-@\t\r]/.test(str.trim())) {
+        str = "'" + str;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
     const headers = ['Rank', 'Name', 'Reg Number', 'Department', 'CGPA', 'Backlogs', 'AI Score (%)', 'Tier', 'Status'];
     const rows = filteredResults.map(r => [
       r.rank,
-      `"${r.candidate.name}"`,
-      r.candidate.reg_number,
-      `"${r.candidate.education.department}"`,
+      sanitizeCsvCell(r.candidate.name),
+      sanitizeCsvCell(r.candidate.reg_number),
+      sanitizeCsvCell(r.candidate.education.department),
       r.candidate.education.cgpa,
       r.candidate.education.active_backlogs,
       r.score.overall_match,
-      `"${r.explainable.verdict}"`,
-      r.status
+      sanitizeCsvCell(r.explainable.verdict),
+      sanitizeCsvCell(r.status)
     ]);
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
