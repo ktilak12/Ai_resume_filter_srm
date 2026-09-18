@@ -104,12 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           detectedRole = 'Placement Officer';
         }
       } else {
-        // Non-SRM domain personal account
-        if (email.includes('recruiter') || email.includes('partner') || email.includes('hr')) {
-          detectedRole = 'Corporate Recruiter';
-        } else {
-          detectedRole = 'Corporate Recruiter';
-        }
+        // Non-SRM domain — default to Corporate Recruiter
+        detectedRole = 'Corporate Recruiter';
       }
 
       const newUser: AuthUser = {

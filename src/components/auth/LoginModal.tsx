@@ -74,7 +74,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       console.error('[LoginModal] Failed to render Google button:', err);
       setIsRenderingGoogle(false);
     }
-  }, [isOpen, googleScriptReady, clientId]);
+  }, [isOpen, googleScriptReady, clientId, loginWithGoogleCredential]);
 
   if (!isOpen) return null;
 

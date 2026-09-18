@@ -83,7 +83,8 @@ export function parseJwt(token: string): GoogleJwtPayload | null {
  * Check if a parsed Google JWT token has expired
  */
 export function isJwtExpired(payload: GoogleJwtPayload): boolean {
-  if (!payload || !payload.exp) return false;
+  // Treat missing exp as expired/invalid — do not trust tokens without a TTL
+  if (!payload || !payload.exp) return true;
   const nowInSeconds = Math.floor(Date.now() / 1000);
   return payload.exp < nowInSeconds;
 }
@@ -162,6 +163,8 @@ export function loadGoogleScript(): Promise<boolean> {
       resolve(true);
     };
     script.onerror = () => {
+      // Reset so callers can retry — a stale failed promise would block all future attempts
+      googleScriptLoadingPromise = null;
       console.warn('[GoogleAuth] Failed to load Google Identity script. Check network connection.');
       resolve(false);
     };
