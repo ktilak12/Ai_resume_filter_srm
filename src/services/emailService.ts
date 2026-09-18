@@ -117,6 +117,24 @@ export async function testResendConnection(): Promise<SendEmailResponse> {
 }
 
 /**
+ * Sanitizes input strings to prevent HTML / script injection in email templates
+ */
+function escapeHtml(text: string | number | undefined | null): string {
+  if (text === null || text === undefined) return '';
+  const str = String(text);
+  return str.replace(/[&<>"']/g, char => {
+    switch (char) {
+      case '&': return '&amp;';
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '"': return '&quot;';
+      case "'": return '&#39;';
+      default: return char;
+    }
+  });
+}
+
+/**
  * Send shortlisting notification to candidate via Server Gateway
  */
 export async function sendShortlistNotification(
@@ -124,6 +142,12 @@ export async function sendShortlistNotification(
   job: JobRequirement,
   interviewDate = 'October 15, 2026'
 ): Promise<SendEmailResponse> {
+  const safeName = escapeHtml(candidate.name);
+  const safeReg = escapeHtml(candidate.reg_number);
+  const safeCompany = escapeHtml(job.company);
+  const safeTitle = escapeHtml(job.title);
+  const safeDate = escapeHtml(interviewDate);
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0f172a; color: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #1e293b;">
       <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 24px; text-align: center;">
@@ -136,16 +160,16 @@ export async function sendShortlistNotification(
           <h3 style="margin: 0; color: #34d399; font-size: 16px;">🎉 Congratulations! You have been Shortlisted</h3>
         </div>
 
-        <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">Dear <strong>${candidate.name}</strong> (${candidate.reg_number}),</p>
+        <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">Dear <strong>${safeName}</strong> (${safeReg}),</p>
         
         <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
           We are pleased to inform you that your profile has successfully cleared the initial AI screening for the placement drive below:
         </p>
 
         <div style="background-color: #1e293b; padding: 16px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 4px 0; font-size: 14px; color: #94a3b8;">Company: <strong style="color: #ffffff;">${job.company}</strong></p>
-          <p style="margin: 4px 0; font-size: 14px; color: #94a3b8;">Role: <strong style="color: #ffffff;">${job.title}</strong></p>
-          <p style="margin: 4px 0; font-size: 14px; color: #94a3b8;">Tentative Interview Date: <strong style="color: #fbbf24;">${interviewDate}</strong></p>
+          <p style="margin: 4px 0; font-size: 14px; color: #94a3b8;">Company: <strong style="color: #ffffff;">${safeCompany}</strong></p>
+          <p style="margin: 4px 0; font-size: 14px; color: #94a3b8;">Role: <strong style="color: #ffffff;">${safeTitle}</strong></p>
+          <p style="margin: 4px 0; font-size: 14px; color: #94a3b8;">Tentative Interview Date: <strong style="color: #fbbf24;">${safeDate}</strong></p>
         </div>
 
         <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
@@ -162,7 +186,7 @@ export async function sendShortlistNotification(
 
   return sendEmail({
     to: candidate.email,
-    subject: `[SRM Placement] You've Been Shortlisted! ${job.company} - ${job.title}`,
+    subject: `[SRM Placement] You've Been Shortlisted! ${safeCompany} - ${safeTitle}`,
     html,
   });
 }
@@ -174,6 +198,11 @@ export async function sendRejectionNotification(
   candidate: CandidateProfile,
   job: JobRequirement
 ): Promise<SendEmailResponse> {
+  const safeName = escapeHtml(candidate.name);
+  const safeReg = escapeHtml(candidate.reg_number);
+  const safeCompany = escapeHtml(job.company);
+  const safeTitle = escapeHtml(job.title);
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0f172a; color: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #1e293b;">
       <div style="background: #1e293b; padding: 24px; text-align: center; border-bottom: 1px solid #334155;">
@@ -182,10 +211,10 @@ export async function sendRejectionNotification(
       </div>
       
       <div style="padding: 24px;">
-        <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">Dear <strong>${candidate.name}</strong> (${candidate.reg_number}),</p>
+        <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">Dear <strong>${safeName}</strong> (${safeReg}),</p>
         
         <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
-          Thank you for applying for the <strong>${job.company} - ${job.title}</strong> drive.
+          Thank you for applying for the <strong>${safeCompany} - ${safeTitle}</strong> drive.
         </p>
 
         <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
@@ -205,7 +234,8 @@ export async function sendRejectionNotification(
 
   return sendEmail({
     to: candidate.email,
-    subject: `[SRM Placement Update] ${job.company} - ${job.title} Status`,
+    subject: `[SRM Placement Update] ${safeCompany} - ${safeTitle} Status`,
     html,
   });
 }
+
