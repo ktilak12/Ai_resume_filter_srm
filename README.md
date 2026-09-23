@@ -87,4 +87,4 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ---
 
 ## 📜 License
-Developed for SRM Institute of Science and Technology Directorate of Career Centre.
+Developed for SRM Institute of Science and Technology Directorate of Career Centre. 
