@@ -8,6 +8,8 @@ import {
   Settings, 
   UploadCloud,
   FileText,
+  UserCheck,
+  Calendar,
   Home
 } from 'lucide-react';
 import { UserRole } from '../../types';
@@ -30,37 +32,43 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
       roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
     },
     { 
-      name: 'Job Requirements', 
+      name: 'Resume Upload & ATS', 
+      icon: UploadCloud, 
+      path: '/upload', 
+      roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
+    },
+    { 
+      name: 'AI Screening Roster', 
+      icon: FileText, 
+      path: '/screening', 
+      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter', 'Student Coordinator'] 
+    },
+    { 
+      name: 'Shortlisted Candidates', 
+      icon: UserCheck, 
+      path: '/shortlisted', 
+      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter'] 
+    },
+    { 
+      name: 'Interview Operations', 
+      icon: Calendar, 
+      path: '/interviews', 
+      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter'] 
+    },
+    { 
+      name: 'Placement Drives', 
       icon: Briefcase, 
       path: '/jobs', 
       roles: ['Placement Officer', 'Corporate Recruiter', 'Super Admin', 'Faculty Coordinator', 'Student Coordinator'] 
     },
     { 
-      name: 'Resume Upload', 
-      icon: UploadCloud, 
-      path: '/upload', 
-      roles: ['Placement Officer', 'Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
-    },
-    { 
-      name: 'AI Screening', 
-      icon: FileText, 
-      path: '/screening', 
-      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator'] 
-    },
-    { 
-      name: 'Candidates', 
-      icon: Users, 
-      path: '/candidates', 
-      roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
-    },
-    { 
-      name: 'Analytics', 
+      name: 'Analytics & Reports', 
       icon: BarChart3, 
       path: '/analytics', 
-      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator'] 
+      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter'] 
     },
     { 
-      name: 'Settings', 
+      name: 'Platform Settings', 
       icon: Settings, 
       path: '/settings', 
       roles: ['Super Admin', 'Placement Officer'] 

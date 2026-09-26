@@ -15,6 +15,8 @@ import {
   Award
 } from 'lucide-react';
 import { Interview, InterviewRound, ScreeningResult, JobRequirement } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { checkPermission } from '../services/rbac';
 
 interface InterviewManagementViewProps {
   interviews: Interview[];
@@ -29,6 +31,12 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
   onUpdateInterviewStatus,
   onAddInterview
 }) => {
+  const { currentUser } = useAuth();
+  const activeRole = currentUser?.role || 'Placement Officer';
+
+  const canSchedule = checkPermission(activeRole, 'SCHEDULE_INTERVIEW');
+  const canUpdateStatus = checkPermission(activeRole, 'UPDATE_INTERVIEW_STATUS');
+
   const [filterRound, setFilterRound] = useState<string>('all');
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
@@ -62,9 +70,9 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
       candidate_reg_no: candRegNo.trim(),
       candidate_email: candEmail || `${candName.toLowerCase().replace(/\s+/g, '.')}@srmist.edu.in`,
       candidate_dept: candDept,
-      job_id: job.id,
-      job_title: job.title,
-      company: job.company,
+      job_id: job?.id || 'job-general',
+      job_title: job?.title || 'Campus Placement Drive',
+      company: job?.company || 'Recruiting Partner',
       round,
       date,
       time,
@@ -102,13 +110,20 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
           </p>
         </div>
 
-        <button
-          onClick={() => setIsScheduleModalOpen(true)}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white text-xs font-bold shadow-md transition-all self-start md:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Schedule New Interview</span>
-        </button>
+        {canSchedule ? (
+          <button
+            onClick={() => setIsScheduleModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white text-xs font-bold shadow-md transition-all self-start md:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Schedule New Interview</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-[11px] text-slate-400">
+            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span>Scheduling restricted for {activeRole} (Read-only access)</span>
+          </div>
+        )}
       </div>
 
       {/* Stats row */}
@@ -229,21 +244,25 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
                 </td>
 
                 <td className="py-3.5 px-3 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      onClick={() => onUpdateInterviewStatus(item.id, 'Cleared')}
-                      className="px-2 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white text-[11px] font-semibold"
-                      title="Clear & Advance"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      onClick={() => onUpdateInterviewStatus(item.id, 'Completed')}
-                      className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px]"
-                    >
-                      Done
-                    </button>
-                  </div>
+                  {canUpdateStatus ? (
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => onUpdateInterviewStatus(item.id, 'Cleared')}
+                        className="px-2 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white text-[11px] font-semibold transition-colors"
+                        title="Clear & Advance"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={() => onUpdateInterviewStatus(item.id, 'Completed')}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition-colors"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-slate-500 italic">Read-only</span>
+                  )}
                 </td>
               </tr>
             ))}

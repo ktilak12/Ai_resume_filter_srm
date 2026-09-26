@@ -442,3 +442,67 @@ export function rankScreeningResults(results: ScreeningResult[]): ScreeningResul
     rank: index + 1
   }));
 }
+
+export interface AtsFormattingCheck {
+  overall_formatting_score: number;
+  checks: {
+    has_contact_email: boolean;
+    has_contact_phone: boolean;
+    has_reg_number: boolean;
+    has_education_section: boolean;
+    has_skills_section: boolean;
+    has_experience_section: boolean;
+    has_projects_section: boolean;
+    is_text_readable: boolean;
+  };
+  formatting_feedback: string[];
+}
+
+/**
+ * Evaluates ATS formatting quality and structural layout health of raw resume text
+ */
+export function evaluateAtsFormatting(rawText: string, candidate: CandidateProfile): AtsFormattingCheck {
+  const normText = (rawText || '').toLowerCase();
+  
+  const has_contact_email = Boolean(candidate.email && candidate.email.includes('@'));
+  const has_contact_phone = Boolean(candidate.phone && candidate.phone.length >= 8);
+  const has_reg_number = Boolean(candidate.reg_number);
+  
+  const has_education_section = /education|academic|qualification|b\.tech|m\.tech|degree|cgpa/i.test(normText);
+  const has_skills_section = /skills|technologies|technical proficiency|competencies|languages/i.test(normText);
+  const has_experience_section = /experience|internship|employment|work history|career|cognizant|tcs|zoho/i.test(normText);
+  const has_projects_section = /project|key projects|academic projects|portfolio/i.test(normText);
+  const is_text_readable = (rawText || '').trim().length > 80;
+
+  let points = 0;
+  const feedback: string[] = [];
+
+  if (has_contact_email) points += 15; else feedback.push('Missing valid email address in contact header.');
+  if (has_contact_phone) points += 10; else feedback.push('Phone number not detected.');
+  if (has_reg_number) points += 10; else feedback.push('Institutional Register Number not specified.');
+  if (has_education_section) points += 15; else feedback.push('Education section heading missing or hard to parse.');
+  if (has_skills_section) points += 20; else feedback.push('Technical skills section not clearly structured.');
+  if (has_experience_section) points += 15; else feedback.push('No formal work experience or internship section found.');
+  if (has_projects_section) points += 10; else feedback.push('Projects section missing.');
+  if (is_text_readable) points += 5; else feedback.push('Resume text density is low.');
+
+  if (feedback.length === 0) {
+    feedback.push('Standard ATS-friendly layout detected with clean section headers and readable typography.');
+  }
+
+  return {
+    overall_formatting_score: Math.min(100, points),
+    checks: {
+      has_contact_email,
+      has_contact_phone,
+      has_reg_number,
+      has_education_section,
+      has_skills_section,
+      has_experience_section,
+      has_projects_section,
+      is_text_readable
+    },
+    formatting_feedback: feedback
+  };
+}
+

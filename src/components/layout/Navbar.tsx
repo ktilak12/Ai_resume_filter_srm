@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Bell, Menu, User, Settings, LogOut, ChevronDown, ShieldCheck, LogIn } from 'lucide-react';
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { NotificationCenter } from '../NotificationCenter';
+import { UserProfileModal } from '../UserProfileModal';
 
 interface NavbarProps {
   userRole: UserRole;
@@ -12,6 +14,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar }) => {
   const { currentUser, isAuthenticated, logout, switchRole } = useAuth();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   
   const roles: UserRole[] = [
     'Placement Officer', 
@@ -67,40 +70,64 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar })
           {isAuthenticated && (
             /* Role Selector */
             <div className="relative group hidden sm:block">
-              <button className="flex items-center space-x-2 text-xs font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800/80 transition-colors">
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                <span>{currentUser?.role || userRole}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+              <button className="flex items-center space-x-2 text-xs font-medium text-slate-200 hover:text-white px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800/90 hover:bg-slate-700/80 transition-all shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="font-semibold">{currentUser?.role || userRole}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
               </button>
               
-              <div className="absolute right-0 mt-2 w-52 bg-slate-800 rounded-xl shadow-xl border border-slate-700 py-1.5 hidden group-hover:block transition-all z-50">
-                <div className="px-3 py-1.5 border-b border-slate-700/80 mb-1">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                    Switch Role Perspective
-                  </span>
+              <div className="absolute right-0 mt-2 w-72 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/80 py-2 hidden group-hover:block transition-all z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3.5 py-2 border-b border-slate-800 mb-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-srm-400" />
+                      Role-Based Access
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono">RBAC v1.0</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Select a persona to test actions &amp; access restrictions in real-time
+                  </p>
                 </div>
-                {roles.map(role => (
-                  <button
-                    key={role}
-                    onClick={() => handleRoleSelect(role)}
-                    className={`block w-full text-left px-3.5 py-1.5 text-xs transition-colors ${
-                      (currentUser?.role || userRole) === role 
-                        ? 'bg-srm-900 text-srm-200 font-semibold' 
-                        : 'text-slate-300 hover:bg-slate-700/80 hover:text-white'
-                    }`}
-                  >
-                    {role}
-                  </button>
-                ))}
+
+                <div className="space-y-1 px-1.5">
+                  {roles.map(role => {
+                    const isSelected = (currentUser?.role || userRole) === role;
+                    return (
+                      <button
+                        key={role}
+                        onClick={() => handleRoleSelect(role)}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-all flex flex-col gap-0.5 ${
+                          isSelected 
+                            ? 'bg-srm-950/80 border border-srm-500/40 text-srm-200 font-semibold' 
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white border border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold">{role}</span>
+                          {isSelected && (
+                            <span className="text-[10px] bg-srm-500/20 text-srm-300 px-1.5 py-0.2 rounded-full border border-srm-500/30">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400 line-clamp-1 font-normal">
+                          {role === 'Super Admin' && 'Full system & AI settings control'}
+                          {role === 'Placement Officer' && 'Drives, screening, shortlisting & emails'}
+                          {role === 'Corporate Recruiter' && 'Screening & interviews (read-only AI weights)'}
+                          {role === 'Faculty Coordinator' && 'Department batch upload & analytics'}
+                          {role === 'Student Coordinator' && 'ATS resume scoring & drive exploration'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Notifications */}
-          <button className="p-2 text-slate-400 hover:text-slate-100 relative rounded-full hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-srm-500">
-            <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-amber-500 ring-2 ring-slate-900"></span>
-            <Bell className="h-5 w-5" />
-          </button>
+          {/* Notifications Center */}
+          <NotificationCenter />
 
           {isAuthenticated ? (
             /* Profile Dropdown */
@@ -146,9 +173,21 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar })
                     <span>Active Role:</span>
                     <span className="font-semibold text-srm-400">{currentUser?.role || userRole}</span>
                   </div>
+                  {currentUser?.campus && (
+                    <div className="px-4 py-1 text-[10px] text-slate-500">
+                      {currentUser.campus}
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t border-slate-800 my-1"></div>
+
+                <button 
+                  onClick={() => setIsProfileModalOpen(true)}
+                  className="flex w-full items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800/80 hover:text-white transition-colors"
+                >
+                  <User className="mr-3 h-4 w-4 text-srm-400" /> Edit Profile &amp; Role Details
+                </button>
 
                 <button 
                   onClick={logout}
@@ -171,6 +210,13 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar })
           
         </div>
       </nav>
+
+      {/* Manual Profile Editor Modal */}
+      <UserProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)}
+        isMandatoryOnboarding={false}
+      />
     </>
   );
 };

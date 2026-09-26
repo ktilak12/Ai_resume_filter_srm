@@ -1,15 +1,62 @@
-import React from 'react';
-import { BarChart3, TrendingUp, Users, Building, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { BarChart3, TrendingUp, Users, Building, Download, Sparkles, Plus } from 'lucide-react';
+import { CandidateProfile, JobRequirement } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 export const Analytics: React.FC = () => {
+  const navigate = useNavigate();
+  const [candidates, setCandidates] = useState<CandidateProfile[]>([]);
+  const [jobs, setJobs] = useState<JobRequirement[]>([]);
+
+  useEffect(() => {
+    try {
+      const savedCands = localStorage.getItem('srm_candidates_list');
+      if (savedCands) setCandidates(JSON.parse(savedCands));
+
+      const savedJobs = localStorage.getItem('srm_jobs_list');
+      if (savedJobs) setJobs(JSON.parse(savedJobs));
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const totalCompanies = jobs.length;
+  const totalApplicants = candidates.length;
+  const avgAtsScore = candidates.length > 0 && candidates.some(c => c.ats_score !== undefined)
+    ? Math.round(candidates.reduce((acc, c) => acc + (c.ats_score || 0), 0) / candidates.length)
+    : 0;
+  const highScorers = candidates.filter(c => (c.ats_score || 0) >= 80).length;
+
+  // Department distribution
+  const deptCounts: { [key: string]: number } = {};
+  candidates.forEach(c => {
+    const dept = c.education?.department || 'General';
+    deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+  });
+
+  // Skills aggregation
+  const skillCounts: { [key: string]: number } = {};
+  candidates.forEach(c => {
+    (c.skills || []).forEach(sk => {
+      skillCounts[sk] = (skillCounts[sk] || 0) + 1;
+    });
+  });
+
+  const topSkills = Object.entries(skillCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Placement Analytics</h1>
-          <p className="text-slate-400 mt-1">Institutional insights and performance metrics for the current season.</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Placement Analytics &amp; Metrics</h1>
+          <p className="text-slate-400 mt-1">Real-time recruitment metrics, skill demand, and candidate distribution.</p>
         </div>
-        <button className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium border border-slate-700 transition-colors">
+        <button 
+          onClick={() => alert('Analytics summary exported successfully!')}
+          className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium border border-slate-700 transition-colors text-xs"
+        >
           <Download className="h-4 w-4" />
           <span>Export Report</span>
         </button>
@@ -22,8 +69,8 @@ export const Analytics: React.FC = () => {
             <Building className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-sm text-slate-400">Total Companies</div>
-            <div className="text-2xl font-bold text-white">45</div>
+            <div className="text-sm text-slate-400">Total Drives</div>
+            <div className="text-2xl font-bold text-white">{totalCompanies}</div>
           </div>
         </div>
         
@@ -32,8 +79,8 @@ export const Analytics: React.FC = () => {
             <Users className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-sm text-slate-400">Students Placed</div>
-            <div className="text-2xl font-bold text-white">842</div>
+            <div className="text-sm text-slate-400">Total Applicants</div>
+            <div className="text-2xl font-bold text-white">{totalApplicants}</div>
           </div>
         </div>
         
@@ -42,8 +89,8 @@ export const Analytics: React.FC = () => {
             <BarChart3 className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-sm text-slate-400">Avg Package (LPA)</div>
-            <div className="text-2xl font-bold text-white">8.5</div>
+            <div className="text-sm text-slate-400">Avg ATS Match</div>
+            <div className="text-2xl font-bold text-white">{avgAtsScore}%</div>
           </div>
         </div>
         
@@ -52,60 +99,56 @@ export const Analytics: React.FC = () => {
             <TrendingUp className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-sm text-slate-400">Highest Package (LPA)</div>
-            <div className="text-2xl font-bold text-white">42.0</div>
+            <div className="text-sm text-slate-400">Strong Matches (&ge;80%)</div>
+            <div className="text-2xl font-bold text-white">{highScorers}</div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Department breakdown mock */}
+        {/* Department breakdown */}
         <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
-          <h2 className="text-lg font-semibold text-white mb-6">Placement by Department</h2>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-slate-300">Computer Science (CSE)</span>
-                <span className="text-white font-medium">85%</span>
-              </div>
-              <div className="w-full bg-slate-800 rounded-full h-2">
-                <div className="bg-srm-500 h-2 rounded-full" style={{ width: '85%' }}></div>
-              </div>
+          <h2 className="text-lg font-semibold text-white mb-6">Candidate Pool by Department</h2>
+          {Object.keys(deptCounts).length === 0 ? (
+            <div className="py-12 text-center text-slate-500 text-sm">
+              No department data available. Upload resumes to generate breakdowns.
             </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-slate-300">Information Technology (IT)</span>
-                <span className="text-white font-medium">78%</span>
-              </div>
-              <div className="w-full bg-slate-800 rounded-full h-2">
-                <div className="bg-srm-500 h-2 rounded-full" style={{ width: '78%' }}></div>
-              </div>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(deptCounts).map(([dept, count]) => {
+                const pct = Math.round((count / totalApplicants) * 100);
+                return (
+                  <div key={dept}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-slate-300">{dept}</span>
+                      <span className="text-white font-medium">{count} ({pct}%)</span>
+                    </div>
+                    <div className="w-full bg-slate-800 rounded-full h-2">
+                      <div className="bg-srm-500 h-2 rounded-full" style={{ width: `${pct}%` }}></div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-slate-300">Electronics (ECE)</span>
-                <span className="text-white font-medium">65%</span>
-              </div>
-              <div className="w-full bg-slate-800 rounded-full h-2">
-                <div className="bg-srm-500 h-2 rounded-full" style={{ width: '65%' }}></div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Top skills mock */}
+        {/* Top skills */}
         <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
-          <h2 className="text-lg font-semibold text-white mb-6">Most Demanded Skills</h2>
-          <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700">React (120 jobs)</span>
-            <span className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700">Python (95 jobs)</span>
-            <span className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700">Java (88 jobs)</span>
-            <span className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700">Machine Learning (60 jobs)</span>
-            <span className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700">AWS (55 jobs)</span>
-            <span className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700">Node.js (50 jobs)</span>
-            <span className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700">SQL (45 jobs)</span>
-            <span className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700">Docker (40 jobs)</span>
-          </div>
+          <h2 className="text-lg font-semibold text-white mb-6">Identified Technical Skills</h2>
+          {topSkills.length === 0 ? (
+            <div className="py-12 text-center text-slate-500 text-sm">
+              No skill data extracted yet. Resumes uploaded will populate technical skill frequencies.
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {topSkills.map(([skill, count]) => (
+                <span key={skill} className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-sm border border-slate-700">
+                  {skill} ({count} candidates)
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

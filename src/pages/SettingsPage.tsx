@@ -39,6 +39,7 @@ export const SettingsPage: React.FC = () => {
       <SettingsView
         settings={settings}
         onSaveSettings={handleSaveSettings}
+        userRole={currentUser?.role}
       />
     </div>
   );

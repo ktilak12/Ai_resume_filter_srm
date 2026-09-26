@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { INITIAL_CANDIDATES, INITIAL_JOBS } from '../data/srmDataset';
+import { CandidateProfile, JobRequirement, ExperienceRecord } from '../types';
 import { screenCandidate } from '../services/aiScreeningEngine';
 import { 
   sendShortlistNotification, 
@@ -22,10 +23,75 @@ import {
   XCircle
 } from 'lucide-react';
 
+import { useAuth } from '../context/AuthContext';
+import { checkPermission } from '../services/rbac';
+
 export const CandidateDetail: React.FC = () => {
+  const { currentUser } = useAuth();
+  const activeRole = currentUser?.role || 'Placement Officer';
+
+  const canReject = checkPermission(activeRole, 'REJECT_CANDIDATES');
+  const canShortlist = checkPermission(activeRole, 'SHORTLIST_CANDIDATES');
+  const canSendEmail = checkPermission(activeRole, 'SEND_BATCH_EMAILS');
+
   const { id } = useParams<{ id: string }>();
-  const candidate = INITIAL_CANDIDATES.find(c => c.id === id) || INITIAL_CANDIDATES[0];
-  const job = INITIAL_JOBS[0];
+
+  // Retrieve candidate and job from persistent storage
+  const candidate: CandidateProfile = useMemo(() => {
+    const saved = localStorage.getItem('srm_candidates_list');
+    const list: CandidateProfile[] = saved ? JSON.parse(saved) : INITIAL_CANDIDATES;
+    return list.find(c => c.id === id) || {
+      id: id || 'cand-new',
+      reg_number: 'RA2311003010142',
+      name: 'Screened Candidate',
+      email: 'candidate@srmist.edu.in',
+      phone: '+91 98401 22334',
+      location: 'Chennai, Tamil Nadu',
+      education: {
+        degree: 'B.Tech',
+        department: 'Computer Science & Engineering',
+        college: 'SRM Institute of Science and Technology, Kattankulathur',
+        cgpa: 8.5,
+        graduation_year: 2026,
+        active_backlogs: 0
+      },
+      skills: ['Python', 'SQL', 'Data Structures', 'Git'],
+      experience: [],
+      projects: [],
+      certifications: [],
+      raw_resume_text: ''
+    };
+  }, [id]);
+
+  const job: JobRequirement = useMemo(() => {
+    const savedJobs = localStorage.getItem('srm_jobs_list');
+    const jobsList: JobRequirement[] = savedJobs ? JSON.parse(savedJobs) : INITIAL_JOBS;
+    return jobsList[0] || {
+      id: 'job-general',
+      title: 'Software Development Engineer',
+      company: 'SRM Recruitment Partner',
+      job_type: 'Full-time',
+      location: 'Chennai / Hybrid',
+      ctc_lpa: '10.0 - 16.0 LPA',
+      application_deadline: '2026-12-31',
+      open_vacancies: 10,
+      status: 'Active',
+      academic_eligibility: {
+        allowed_degrees: ['B.Tech', 'M.Tech', 'MCA'],
+        allowed_departments: ['CSE', 'IT', 'AI & DS', 'ECE'],
+        min_cgpa: 7.0,
+        max_active_backlogs: 0,
+        graduation_year: 2026
+      },
+      required_skills: ['Python', 'SQL'],
+      preferred_skills: ['React', 'Git'],
+      min_experience_years: 0,
+      freshers_accepted: true,
+      internship_preferred: true,
+      job_description: 'Recruitment drive for engineering graduates.',
+      created_at: new Date().toISOString()
+    };
+  }, []);
 
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailNotice, setEmailNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -59,8 +125,10 @@ export const CandidateDetail: React.FC = () => {
         </div>
         <div className="flex items-center space-x-3">
           <button 
-            disabled={isSendingEmail}
+            disabled={isSendingEmail || !canReject}
+            title={!canReject ? `Action restricted for ${activeRole}` : 'Reject candidate'}
             onClick={async () => {
+              if (!canReject) return;
               setIsSendingEmail(true);
               setEmailNotice(null);
               const res = await sendRejectionNotification(candidate, job);
@@ -71,15 +139,18 @@ export const CandidateDetail: React.FC = () => {
                 setEmailNotice({ type: 'error', message: res.error || 'Failed to send rejection email' });
               }
             }}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium border border-slate-700 transition-colors text-sm disabled:opacity-50 flex items-center gap-1.5"
+            className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium border border-slate-700 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
             {isSendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             <span>Reject</span>
+            {!canReject && <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded ml-1">Restricted</span>}
           </button>
 
           <button 
-            disabled={isSendingEmail}
+            disabled={isSendingEmail || !canShortlist}
+            title={!canShortlist ? `Shortlisting restricted for ${activeRole}` : 'Shortlist and notify candidate'}
             onClick={async () => {
+              if (!canShortlist) return;
               setIsSendingEmail(true);
               setEmailNotice(null);
               const res = await sendShortlistNotification(candidate, job);
@@ -90,14 +161,15 @@ export const CandidateDetail: React.FC = () => {
                 setEmailNotice({ type: 'error', message: res.error || 'Failed to send shortlist email. Configure Resend API key in Settings.' });
               }
             }}
-            className="bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-glow-srm text-sm disabled:opacity-50 flex items-center gap-2"
+            className="bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-glow-srm text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isSendingEmail ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Mail className="w-4 h-4" />
             )}
-            <span>Shortlist & Email Candidate</span>
+            <span>Shortlist &amp; Email Candidate</span>
+            {!canShortlist && <span className="text-[10px] text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-500/30">Restricted</span>}
           </button>
         </div>
       </div>
@@ -265,7 +337,7 @@ export const CandidateDetail: React.FC = () => {
                 {candidate.experience.length === 0 ? (
                   <p className="text-xs text-slate-500 italic">No formal work experience listed.</p>
                 ) : (
-                  candidate.experience.map((exp, idx) => (
+                  candidate.experience.map((exp: ExperienceRecord, idx: number) => (
                     <div key={idx} className="mb-3 last:mb-0 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800">
                       <div className="font-medium text-white text-xs">{exp.position}</div>
                       <div className="text-xs text-slate-400">{exp.company}</div>

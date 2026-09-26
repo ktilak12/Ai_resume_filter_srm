@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { UserProfileModal } from '../UserProfileModal';
 
 const Layout: React.FC = () => {
   const { currentUser } = useAuth();
@@ -20,6 +21,14 @@ const Layout: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-slate-950 overflow-hidden font-sans text-slate-100">
+      {/* First-Time Login Onboarding Profile Modal */}
+      {currentUser && !currentUser.isProfileComplete && (
+        <UserProfileModal 
+          isOpen={true} 
+          isMandatoryOnboarding={true} 
+        />
+      )}
+
       {/* Overlay for mobile sidebar */}
       {sidebarOpen && (
         <div 

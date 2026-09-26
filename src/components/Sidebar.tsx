@@ -48,9 +48,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'RECRUITMENT',
       items: [
-        { id: 'upload' as NavTab, label: 'Upload Resumes', icon: UploadCloud, badge: 'New' },
+        { id: 'upload' as NavTab, label: 'Upload & ATS Checker', icon: UploadCloud, badge: 'ATS AI' },
+        { id: 'screening' as NavTab, label: 'AI Screening Roster', icon: Sparkles, highlight: true },
         { id: 'candidates' as NavTab, label: 'All Candidates', icon: Users },
-        { id: 'screening' as NavTab, label: 'AI Screening Hub', icon: Sparkles, highlight: true },
         { id: 'shortlisted' as NavTab, label: 'Shortlisted', icon: UserCheck, count: shortlistedCount },
         { id: 'interviews' as NavTab, label: 'Interviews', icon: Calendar, count: interviewsCount }
       ]
@@ -58,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'JOBS',
       items: [
-        { id: 'jobs' as NavTab, label: 'Job Requirements', icon: Briefcase }
+        { id: 'jobs' as NavTab, label: 'Placement Drives', icon: Briefcase }
       ]
     },
     {
@@ -116,9 +116,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           {item.badge}
                         </span>
                       )}
-                      {item.count !== undefined && item.count > 0 && (
+                      {'count' in item && (item as any).count !== undefined && (item as any).count > 0 && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                          {item.count}
+                          {(item as any).count}
                         </span>
                       )}
                       {isActive && <ChevronRight className="w-3.5 h-3.5 text-srm-400" />}

@@ -10,6 +10,8 @@ import { JobListing } from './pages/JobListing';
 import { ResumeUpload } from './pages/ResumeUpload';
 import { CandidateRanking } from './pages/CandidateRanking';
 import { CandidateDetail } from './pages/CandidateDetail';
+import { ShortlistedPage } from './pages/ShortlistedPage';
+import { InterviewsPage } from './pages/InterviewsPage';
 import { Analytics } from './pages/Analytics';
 import { SettingsPage } from './pages/SettingsPage';
 
@@ -35,6 +37,8 @@ function App() {
             <Route path="/upload" element={<ResumeUpload />} />
             <Route path="/screening" element={<CandidateRanking />} />
             <Route path="/candidates" element={<CandidateRanking />} />
+            <Route path="/shortlisted" element={<ShortlistedPage />} />
+            <Route path="/interviews" element={<InterviewsPage />} />
             <Route path="/candidates/:id" element={<CandidateDetail />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<SettingsPage />} />

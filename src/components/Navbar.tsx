@@ -10,6 +10,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { UserRole } from '../types';
+import { NotificationCenter } from './NotificationCenter';
 
 interface NavbarProps {
   currentRole: UserRole;
@@ -98,12 +99,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {/* Notifications */}
-          <div className="relative">
-            <button className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-slate-300 hover:text-white transition-all">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full"></span>
-            </button>
-          </div>
+          <NotificationCenter />
 
           {/* Role Switcher */}
           <div className="relative group">

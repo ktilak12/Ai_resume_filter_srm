@@ -8,7 +8,12 @@ export interface AuthUser {
   department?: string;
   picture?: string;
   regNumber?: string;
+  phone?: string;
+  campus?: string;
+  batchYear?: string;
+  designation?: string;
   isInstitutionalVerified: boolean;
+  isProfileComplete?: boolean;
   lastLoginAt: string;
 }
 
@@ -99,6 +104,8 @@ export interface CandidateProfile {
   linkedin?: string;
   github?: string;
   avatar?: string;
+  ats_score?: number;
+  status?: CandidateStatus;
   education: EducationRecord;
   skills: string[];
   experience: ExperienceRecord[];

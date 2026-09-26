@@ -1,23 +1,64 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, Download, CheckCircle, ArrowUpDown, ExternalLink, Mail, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { INITIAL_CANDIDATES, INITIAL_JOBS } from '../data/srmDataset';
+import { CandidateProfile, JobRequirement } from '../types';
 import { screenCandidate, rankScreeningResults } from '../services/aiScreeningEngine';
 import { sendShortlistNotification } from '../services/emailService';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { checkPermission } from '../services/rbac';
 
 export const CandidateRanking: React.FC = () => {
+  const { currentUser } = useAuth();
+  const canSendEmails = checkPermission(currentUser?.role, 'SEND_BATCH_EMAILS');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isSendingBatch, setIsSendingBatch] = useState(false);
   const [batchNotice, setBatchNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const defaultJob = INITIAL_JOBS[0];
+  // Load active jobs and candidates from persistent storage or clean state
+  const jobs: JobRequirement[] = useMemo(() => {
+    const saved = localStorage.getItem('srm_jobs_list');
+    return saved ? JSON.parse(saved) : INITIAL_JOBS;
+  }, []);
+
+  const candidates: CandidateProfile[] = useMemo(() => {
+    const saved = localStorage.getItem('srm_candidates_list');
+    return saved ? JSON.parse(saved) : INITIAL_CANDIDATES;
+  }, []);
+
+  const defaultJob = jobs[0] || {
+    id: 'job-general',
+    title: 'General Placement Recruitment',
+    company: 'SRM Placement Directorate',
+    job_type: 'Full-time',
+    location: 'Chennai / Hybrid',
+    ctc_lpa: '8.0 - 15.0 LPA',
+    application_deadline: '2026-12-31',
+    open_vacancies: 10,
+    status: 'Active',
+    academic_eligibility: {
+      allowed_degrees: ['B.Tech', 'M.Tech', 'MCA'],
+      allowed_departments: ['CSE', 'IT', 'AI & DS', 'ECE'],
+      min_cgpa: 7.0,
+      max_active_backlogs: 0,
+      graduation_year: 2026
+    },
+    required_skills: ['Python', 'SQL', 'Data Structures'],
+    preferred_skills: ['React', 'Git'],
+    min_experience_years: 0,
+    freshers_accepted: true,
+    internship_preferred: true,
+    job_description: 'Campus placement drive for engineering and computer application graduates.',
+    created_at: new Date().toISOString()
+  };
 
   // Dynamically screen and rank candidates
   const screenedResults = useMemo(() => {
-    const rawScreened = INITIAL_CANDIDATES.map(cand => screenCandidate(cand, defaultJob));
+    if (candidates.length === 0) return [];
+    const rawScreened = candidates.map(cand => screenCandidate(cand, defaultJob));
     return rankScreeningResults(rawScreened);
-  }, [defaultJob]);
+  }, [candidates, defaultJob]);
 
   // Apply Search & Tier Filters
   const filteredResults = useMemo(() => {
@@ -95,8 +136,10 @@ export const CandidateRanking: React.FC = () => {
             <span>Export CSV</span>
           </button>
           <button 
-            disabled={isSendingBatch}
+            disabled={isSendingBatch || !canSendEmails}
+            title={!canSendEmails ? 'Email dispatch restricted for your role' : undefined}
             onClick={async () => {
+              if (!canSendEmails) return;
               setIsSendingBatch(true);
               setBatchNotice(null);
               const strongMatches = filteredResults.filter(r => r.explainable.verdict === 'Strong Match');
@@ -128,14 +171,22 @@ export const CandidateRanking: React.FC = () => {
                 });
               }
             }}
-            className="flex items-center space-x-2 bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-glow-srm text-sm disabled:opacity-50"
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors text-sm shadow-glow-srm ${
+              canSendEmails
+                ? 'bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white disabled:opacity-50'
+                : 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed opacity-60'
+            }`}
           >
             {isSendingBatch ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Mail className="h-4 w-4" />
             )}
-            <span>Email Shortlisted ({filteredResults.filter(r => r.explainable.verdict === 'Strong Match').length})</span>
+            <span>
+              {canSendEmails 
+                ? `Email Shortlisted (${filteredResults.filter(r => r.explainable.verdict === 'Strong Match').length})` 
+                : 'Email Dispatch Restricted'}
+            </span>
           </button>
         </div>
       </div>
@@ -225,8 +276,20 @@ export const CandidateRanking: React.FC = () => {
             <tbody className="divide-y divide-slate-800 bg-slate-900">
               {filteredResults.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">
-                    No candidate profiles match the current filter or search criteria.
+                  <td colSpan={6} className="px-6 py-16 text-center space-y-3">
+                    <div className="w-12 h-12 mx-auto rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-500 border border-slate-700">
+                      <Search className="w-6 h-6" />
+                    </div>
+                    <div className="font-semibold text-slate-300 text-sm">No Candidate Profiles Found</div>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      Upload student resumes or paste resume text to calculate real-time ATS scores and populate the candidate database.
+                    </p>
+                    <Link
+                      to="/upload"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-srm-600 hover:bg-srm-500 text-white text-xs font-bold transition-all shadow-glow-srm mt-2"
+                    >
+                      <span>Upload &amp; Screen Resumes →</span>
+                    </Link>
                   </td>
                 </tr>
               ) : (

@@ -16,6 +16,8 @@ interface AuthContextType {
   authError: AuthError | null;
   clientId: string;
   loginWithGoogleCredential: (credentialJwt: string) => Promise<boolean>;
+  loginDirect: (user: Partial<AuthUser>) => void;
+  updateProfile: (profile: Partial<AuthUser>) => void;
   logout: () => void;
   switchRole: (role: UserRole) => void;
   clearError: () => void;
@@ -104,8 +106,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           detectedRole = 'Placement Officer';
         }
       } else {
-        // Non-SRM domain — default to Corporate Recruiter
         detectedRole = 'Corporate Recruiter';
+      }
+
+      // Check if user already had a completed profile saved previously
+      const existingStored = localStorage.getItem(STORAGE_USER_KEY);
+      let existingProfileComplete = false;
+      if (existingStored) {
+        try {
+          const parsedExisting = JSON.parse(existingStored);
+          if (parsedExisting.email === email && parsedExisting.isProfileComplete) {
+            existingProfileComplete = true;
+          }
+        } catch (_) {}
       }
 
       const newUser: AuthUser = {
@@ -113,10 +126,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: payload.name || email.split('@')[0],
         email: email,
         role: detectedRole,
-        department: isSRM ? srmDetails.department : 'Corporate Relations',
+        department: isSRM ? srmDetails.department : 'Computer Science & Engineering',
+        campus: isSRM ? 'Kattankulathur (Main Campus)' : 'Corporate Partner Office',
         regNumber: isSRM ? srmDetails.regNumber : undefined,
         picture: payload.picture,
         isInstitutionalVerified: isSRM,
+        isProfileComplete: existingProfileComplete,
         lastLoginAt: new Date().toISOString()
       };
 
@@ -133,6 +148,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return false;
     }
+  };
+
+  const loginDirect = (userData: Partial<AuthUser>) => {
+    const email = userData.email || 'placement.director@srmist.edu.in';
+    const isSRM = isSRMISTEmail(email);
+    
+    const newUser: AuthUser = {
+      id: `usr-${Date.now()}`,
+      name: userData.name || 'SRM Placement Officer',
+      email: email,
+      role: userData.role || 'Placement Officer',
+      department: userData.department || 'Directorate of Career Centre',
+      campus: userData.campus || 'Kattankulathur (Main Campus)',
+      regNumber: userData.regNumber || 'SRM-EMP-8941',
+      phone: userData.phone || '+91 98401 22334',
+      isInstitutionalVerified: isSRM,
+      isProfileComplete: userData.isProfileComplete ?? false,
+      lastLoginAt: new Date().toISOString()
+    };
+
+    setCurrentUser(newUser);
+    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(newUser));
+  };
+
+  const updateProfile = (profile: Partial<AuthUser>) => {
+    if (!currentUser) return;
+    const updated: AuthUser = {
+      ...currentUser,
+      ...profile,
+      isProfileComplete: true
+    };
+    setCurrentUser(updated);
+    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(updated));
   };
 
   const logout = () => {
@@ -164,6 +212,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authError,
         clientId,
         loginWithGoogleCredential,
+        loginDirect,
+        updateProfile,
         logout,
         switchRole,
         clearError

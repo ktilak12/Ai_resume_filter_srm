@@ -15,8 +15,9 @@ import {
   CheckCircle2,
   XCircle
 } from 'lucide-react';
-import { AISettings } from '../types';
+import { AISettings, UserRole } from '../types';
 import { DEFAULT_AI_SETTINGS } from '../services/aiScreeningEngine';
+import { checkPermission, ROLE_DETAILS } from '../services/rbac';
 import { 
   getResendFromEmail, 
   setResendFromEmail, 
@@ -26,12 +27,16 @@ import {
 interface SettingsViewProps {
   settings: AISettings;
   onSaveSettings: (settings: AISettings) => void;
+  userRole?: UserRole;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
-  onSaveSettings
+  onSaveSettings,
+  userRole = 'Placement Officer'
 }) => {
+  const canModify = checkPermission(userRole, 'MODIFY_AI_SETTINGS');
+  const roleInfo = ROLE_DETAILS[userRole];
   const [skillsWeight, setSkillsWeight] = useState(Math.round(settings.weights.skills * 100));
   const [expWeight, setExpWeight] = useState(Math.round(settings.weights.experience * 100));
   const [eduWeight, setEduWeight] = useState(Math.round(settings.weights.education * 100));
@@ -89,6 +94,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   return (
     <div className="space-y-6 pb-12 max-w-4xl">
       
+      {/* RBAC Notice Banner */}
+      {!canModify ? (
+        <div className="p-4 rounded-2xl bg-amber-950/60 border border-amber-500/30 flex items-start gap-3 text-xs text-amber-200">
+          <Lock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold block text-sm text-amber-300">
+              Governance View-Only Mode ({userRole})
+            </span>
+            <p className="text-slate-300 text-xs mt-0.5 leading-relaxed">
+              Institutional AI scoring formula weights and tier classifications can only be recalibrated by <strong>Placement Officers</strong> or <strong>Super Administrators</strong>.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       {/* Header */}
       <div className="glass-panel rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -111,7 +131,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <button
           onClick={handleReset}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold transition-all self-start sm:self-auto"
+          disabled={!canModify}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold transition-all self-start sm:self-auto disabled:opacity-40"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Reset Defaults</span>
@@ -413,12 +434,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <Check className="w-4 h-4" /> Settings updated successfully!
             </span>
           )}
+          {!canModify && (
+            <span className="text-xs text-amber-400/80 font-medium">
+              🔒 Changes disabled for {userRole}
+            </span>
+          )}
           <button
             type="submit"
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white text-xs font-bold shadow-glow-srm transition-all"
+            disabled={!canModify}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white text-xs font-bold shadow-glow-srm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4" />
-            <span>Apply & Save AI Weights</span>
+            <span>{canModify ? 'Apply & Save AI Weights' : 'Save Restricted'}</span>
           </button>
         </div>
 
