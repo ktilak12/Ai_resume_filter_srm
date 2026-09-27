@@ -15,6 +15,7 @@ import {
   HelpCircle,
   LogIn
 } from 'lucide-react';
+import { loadGoogleScript } from '../services/googleAuth';
 import { useAuth } from '../context/AuthContext';
 import { GOOGLE_CLIENT_ID } from '../config/authConfig';
 import { UserRole } from '../types';
@@ -48,27 +49,35 @@ export const LoginPage: React.FC = () => {
     }
   }, [currentUser, navigate]);
 
-  // Check if Google Identity Services script is loaded
+  // Load and verify Google Identity Services script
   useEffect(() => {
-    const checkGoogleScript = () => {
-      if ((window as any).google?.accounts?.id) {
+    let isMounted = true;
+    loadGoogleScript().then(loaded => {
+      if (isMounted && loaded) {
+        setGoogleScriptReady(true);
+      }
+    });
+
+    const checkExisting = () => {
+      if ((window as any).google?.accounts?.id && isMounted) {
         setGoogleScriptReady(true);
         return true;
       }
       return false;
     };
 
-    if (checkGoogleScript()) return;
+    if (checkExisting()) return;
 
     const interval = setInterval(() => {
-      if (checkGoogleScript()) {
+      if (checkExisting()) {
         clearInterval(interval);
       }
     }, 200);
 
-    const timeout = setTimeout(() => clearInterval(interval), 6000);
+    const timeout = setTimeout(() => clearInterval(interval), 5000);
 
     return () => {
+      isMounted = false;
       clearInterval(interval);
       clearTimeout(timeout);
     };
