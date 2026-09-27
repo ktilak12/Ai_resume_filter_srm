@@ -209,7 +209,7 @@ const Dashboard: React.FC = () => {
                             <span>Manage</span>
                           </button>
                           <button 
-                            onClick={() => navigate('/screening')}
+                            onClick={() => navigate('/screening', { state: { selectedJobId: drive.id } })}
                             className="text-srm-400 hover:text-srm-300 transition-colors bg-srm-400/10 hover:bg-srm-400/20 px-3 py-1.5 rounded-md font-semibold"
                           >
                             Screen

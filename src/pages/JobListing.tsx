@@ -413,7 +413,7 @@ export const JobListing: React.FC = () => {
 
                   {/* Screen Candidates Button */}
                   <button 
-                    onClick={() => navigate('/screening')}
+                    onClick={() => navigate('/screening', { state: { selectedJobId: job.id } })}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-srm-600 hover:bg-srm-500 text-white text-xs font-bold transition-all shadow-glow-srm"
                   >
                     <span>Screen Candidates</span>
