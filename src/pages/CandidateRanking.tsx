@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
@@ -14,21 +14,38 @@ import {
   RotateCcw,
   X,
   Sparkles,
-  Briefcase
+  Briefcase,
+  Users
 } from 'lucide-react';
 import { INITIAL_CANDIDATES, INITIAL_JOBS } from '../data/srmDataset';
 import { CandidateProfile, JobRequirement } from '../types';
 import { screenCandidate, rankScreeningResults } from '../services/aiScreeningEngine';
 import { sendShortlistNotification } from '../services/emailService';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
+import { AllCandidatesView } from '../views/AllCandidatesView';
 
 export const CandidateRanking: React.FC = () => {
   const { currentUser } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const navState = (location.state as { selectedJobId?: string; searchTerm?: string } | null) || null;
   const canSendEmails = checkPermission(currentUser?.role, 'SEND_BATCH_EMAILS');
+
+  const [viewMode, setViewMode] = useState<'screening' | 'directory'>(() => {
+    return location.pathname === '/candidates' ? 'directory' : 'screening';
+  });
+
+  useEffect(() => {
+    if (location.pathname === '/candidates') {
+      setViewMode('directory');
+    } else if (location.pathname === '/screening') {
+      setViewMode('screening');
+    }
+  }, [location.pathname]);
   
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => navState?.searchTerm || '');
   const [statusFilter, setStatusFilter] = useState('all');
   const [deptFilter, setDeptFilter] = useState('all');
   const [minCgpaFilter, setMinCgpaFilter] = useState('all');
@@ -51,7 +68,16 @@ export const CandidateRanking: React.FC = () => {
     return INITIAL_JOBS;
   }, []);
 
-  const [selectedJobId, setSelectedJobId] = useState<string>(() => jobs[0]?.id || 'job-google-sde');
+  const [selectedJobId, setSelectedJobId] = useState<string>(() => navState?.selectedJobId || jobs[0]?.id || 'job-google-sde');
+
+  useEffect(() => {
+    if (navState?.selectedJobId) {
+      setSelectedJobId(navState.selectedJobId);
+    }
+    if (navState?.searchTerm) {
+      setSearchTerm(navState.searchTerm);
+    }
+  }, [location.state]);
 
   const candidates: CandidateProfile[] = useMemo(() => {
     const saved = localStorage.getItem('srm_candidates_list');
@@ -181,18 +207,71 @@ export const CandidateRanking: React.FC = () => {
       sanitizeCsvCell(r.explainable.verdict),
       sanitizeCsvCell(r.status)
     ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `SRM_Candidate_Rankings_${activeJob.company.replace(/\s+/g, '_')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
+
+  if (viewMode === 'directory') {
+    return (
+      <div className="space-y-6 pb-12">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-1 rounded-xl">
+            <button
+              onClick={() => { setViewMode('screening'); navigate('/screening'); }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-srm-400" />
+              <span>Drive AI Screening</span>
+            </button>
+            <button
+              onClick={() => { setViewMode('directory'); navigate('/candidates'); }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-srm-600 text-white shadow-sm transition-all"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Student Directory ({candidates.length})</span>
+            </button>
+          </div>
+
+          <div className="text-xs text-slate-400">
+            Active Placement Drive: <strong className="text-white">{activeJob.company} ({activeJob.title})</strong>
+          </div>
+        </div>
+
+        <AllCandidatesView
+          candidates={candidates}
+          onSelectCandidate={(cand) => navigate(`/candidates/${cand.id}`, { state: { jobId: activeJob.id } })}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12">
+      <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => { setViewMode('screening'); navigate('/screening'); }}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-srm-600 text-white shadow-sm transition-all"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Drive AI Screening</span>
+        </button>
+        <button
+          onClick={() => { setViewMode('directory'); navigate('/candidates'); }}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all"
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span>Student Directory ({candidates.length})</span>
+        </button>
+      </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
@@ -569,7 +648,11 @@ export const CandidateRanking: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link to={`/candidates/${candidate.id}`} className="text-srm-400 hover:text-srm-300 transition-colors bg-srm-400/10 hover:bg-srm-400/20 px-3 py-1.5 rounded-lg inline-flex items-center text-xs font-semibold">
+                        <Link 
+                          to={`/candidates/${candidate.id}`} 
+                          state={{ jobId: activeJob.id }}
+                          className="text-srm-400 hover:text-srm-300 transition-colors bg-srm-400/10 hover:bg-srm-400/20 px-3 py-1.5 rounded-lg inline-flex items-center text-xs font-semibold"
+                        >
                           View AI Details <ExternalLink className="ml-1.5 h-3 w-3" />
                         </Link>
                       </td>
