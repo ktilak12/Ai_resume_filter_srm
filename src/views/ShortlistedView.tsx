@@ -46,31 +46,40 @@ export const ShortlistedView: React.FC<ShortlistedViewProps> = ({
   });
 
   const handleExport = () => {
-    const rows = [
-      ['Rank', 'Name', 'Reg Number', 'Department', 'CGPA', 'Job Title', 'Match Score', 'Status'],
-      ...filtered.map(r => {
-        const job = jobs.find(j => j.id === r.job_id);
-        return [
-          r.rank,
-          r.candidate.name,
-          r.candidate.reg_number,
-          r.candidate.education.department,
-          r.candidate.education.cgpa,
-          job?.title || 'Drive',
-          `${r.score.overall_match}%`,
-          r.status
-        ];
-      })
-    ];
+    const sanitizeCsvCell = (val: any): string => {
+      if (val === null || val === undefined) return '""';
+      let str = String(val);
+      if (/^[=+\-@\t\r]/.test(str.trim())) {
+        str = "'" + str;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const headers = ['Rank', 'Name', 'Reg Number', 'Department', 'CGPA', 'Job Title', 'Match Score', 'Status'];
+    const rows = filtered.map(r => {
+      const job = jobs.find(j => j.id === r.job_id);
+      return [
+        r.rank,
+        sanitizeCsvCell(r.candidate.name),
+        sanitizeCsvCell(r.candidate.reg_number),
+        sanitizeCsvCell(r.candidate.education.department),
+        r.candidate.education.cgpa,
+        sanitizeCsvCell(job?.title || 'Drive'),
+        `${r.score.overall_match}%`,
+        sanitizeCsvCell(r.status)
+      ];
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `SRM_Shortlisted_Candidates_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (

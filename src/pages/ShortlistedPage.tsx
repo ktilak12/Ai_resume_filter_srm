@@ -4,7 +4,9 @@ import { screenCandidate, rankScreeningResults } from '../services/aiScreeningEn
 import { ScreeningResult, JobRequirement, CandidateProfile } from '../types';
 import { useNavigate } from 'react-router-dom';
 
-const DEFAULT_FALLBACK_JOB: JobRequirement = {
+import { INITIAL_JOBS, INITIAL_CANDIDATES } from '../data/srmDataset';
+
+const DEFAULT_FALLBACK_JOB: JobRequirement = INITIAL_JOBS[0] || {
   id: 'job-general',
   title: 'Campus Placement Candidate Pool',
   company: 'SRM Placements',
@@ -38,11 +40,11 @@ export const ShortlistedPage: React.FC = () => {
   useEffect(() => {
     try {
       const savedJobs = localStorage.getItem('srm_jobs_list');
-      const loadedJobs: JobRequirement[] = savedJobs ? JSON.parse(savedJobs) : [];
+      const loadedJobs: JobRequirement[] = savedJobs ? JSON.parse(savedJobs) : INITIAL_JOBS;
       setJobs(loadedJobs);
 
       const savedCands = localStorage.getItem('srm_candidates_list');
-      const loadedCands: CandidateProfile[] = savedCands ? JSON.parse(savedCands) : [];
+      const loadedCands: CandidateProfile[] = savedCands ? JSON.parse(savedCands) : INITIAL_CANDIDATES;
 
       if (loadedCands.length > 0) {
         const referenceJob = loadedJobs[0] || DEFAULT_FALLBACK_JOB;
@@ -60,7 +62,7 @@ export const ShortlistedPage: React.FC = () => {
   }, []);
 
   const handleOpenCandidateDetail = (result: ScreeningResult) => {
-    navigate(`/candidates/${result.candidate.id}`);
+    navigate(`/candidates/${result.candidate.id}`, { state: { jobId: result.job_id } });
   };
 
   const handleScheduleInterview = (result: ScreeningResult) => {
