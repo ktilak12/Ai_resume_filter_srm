@@ -105,15 +105,24 @@ const server = http.createServer(async (req, res) => {
     }
 
     let bodyStr = '';
+    let isPayloadTooLarge = false;
     req.on('data', chunk => {
+      if (isPayloadTooLarge) return;
       bodyStr += chunk;
       // Protect against oversized JSON body attack
       if (bodyStr.length > 200 * 1024) {
+        isPayloadTooLarge = true;
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: false,
+          error: 'Payload Too Large: Maximum allowed payload is 200KB.'
+        }));
         req.destroy();
       }
     });
 
     req.on('end', async () => {
+      if (isPayloadTooLarge) return;
       try {
         const body = JSON.parse(bodyStr || '{}');
         const key = process.env.RESEND_API_KEY || '';
@@ -235,17 +244,42 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 3. Static File Serving (for production dist build)
-  let filePath = path.join(DIST_DIR, req.url === '/' ? 'index.html' : req.url);
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(DIST_DIR, 'index.html');
+  // Handle unknown /api routes
+  const parsedUrl = new URL(req.url || '/', 'http://localhost');
+  const pathname = decodeURIComponent(parsedUrl.pathname);
+
+  if (pathname.startsWith('/api/')) {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: false, error: 'API endpoint not found' }));
+    return;
   }
 
-  if (fs.existsSync(filePath)) {
-    const ext = path.extname(filePath);
+  // 3. Static File Serving (for production dist build)
+  const safePath = path.normalize(path.join(DIST_DIR, pathname === '/' ? 'index.html' : pathname));
+
+  // Path traversal check
+  if (!safePath.startsWith(DIST_DIR)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Access Denied');
+    return;
+  }
+
+  let finalFilePath = safePath;
+  if (!fs.existsSync(finalFilePath) || fs.statSync(finalFilePath).isDirectory()) {
+    // If it's a static asset that doesn't exist, return 404 instead of serving index.html
+    if (pathname.startsWith('/assets/') || path.extname(pathname)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Asset Not Found');
+      return;
+    }
+    finalFilePath = path.join(DIST_DIR, 'index.html');
+  }
+
+  if (fs.existsSync(finalFilePath)) {
+    const ext = path.extname(finalFilePath);
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
     res.writeHead(200, { 'Content-Type': contentType });
-    fs.createReadStream(filePath).pipe(res);
+    fs.createReadStream(finalFilePath).pipe(res);
   } else {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not Found. Build the frontend first via npm run build.');
