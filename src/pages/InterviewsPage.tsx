@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { InterviewManagementView } from '../views/InterviewManagementView';
-import { Interview, JobRequirement } from '../types';
+import { Interview, JobRequirement, CandidateProfile } from '../types';
+import { INITIAL_INTERVIEWS, INITIAL_JOBS } from '../data/srmDataset';
 
 export const InterviewsPage: React.FC = () => {
+  const location = useLocation();
+  const navState = (location.state as { candidate?: CandidateProfile; jobId?: string } | null) || null;
+
   const [interviews, setInterviews] = useState<Interview[]>(() => {
     const saved = localStorage.getItem('srm_interviews_list');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : INITIAL_INTERVIEWS;
   });
 
   const [jobs, setJobs] = useState<JobRequirement[]>(() => {
     const saved = localStorage.getItem('srm_jobs_list');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : INITIAL_JOBS;
   });
 
   useEffect(() => {
@@ -44,6 +49,8 @@ export const InterviewsPage: React.FC = () => {
       jobs={jobs}
       onUpdateInterviewStatus={handleUpdateStatus}
       onAddInterview={handleAddInterview}
+      initialCandidate={navState?.candidate}
+      initialJobId={navState?.jobId}
     />
   );
 };

@@ -14,7 +14,7 @@ import {
   ChevronRight,
   Award
 } from 'lucide-react';
-import { Interview, InterviewRound, ScreeningResult, JobRequirement } from '../types';
+import { Interview, InterviewRound, ScreeningResult, JobRequirement, CandidateProfile } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
 
@@ -23,13 +23,17 @@ interface InterviewManagementViewProps {
   jobs: JobRequirement[];
   onUpdateInterviewStatus: (id: string, status: Interview['status']) => void;
   onAddInterview: (interview: Interview) => void;
+  initialCandidate?: CandidateProfile | null;
+  initialJobId?: string | null;
 }
 
 export const InterviewManagementView: React.FC<InterviewManagementViewProps> = ({
   interviews,
   jobs,
   onUpdateInterviewStatus,
-  onAddInterview
+  onAddInterview,
+  initialCandidate,
+  initialJobId
 }) => {
   const { currentUser } = useAuth();
   const activeRole = currentUser?.role || 'Placement Officer';
@@ -38,19 +42,34 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
   const canUpdateStatus = checkPermission(activeRole, 'UPDATE_INTERVIEW_STATUS');
 
   const [filterRound, setFilterRound] = useState<string>('all');
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(Boolean(initialCandidate));
 
   // New Interview form state
-  const [candName, setCandName] = useState('');
-  const [candRegNo, setCandRegNo] = useState('RA2311003010142');
-  const [candEmail, setCandEmail] = useState('');
-  const [candDept, setCandDept] = useState('CSE');
-  const [jobId, setJobId] = useState(jobs[0]?.id || '');
+  const [candName, setCandName] = useState(initialCandidate?.name || '');
+  const [candRegNo, setCandRegNo] = useState(initialCandidate?.reg_number || 'RA2311003010142');
+  const [candEmail, setCandEmail] = useState(initialCandidate?.email || '');
+  const [candDept, setCandDept] = useState(initialCandidate?.education?.department || 'CSE');
+  const [jobId, setJobId] = useState(initialJobId || jobs[0]?.id || '');
   const [round, setRound] = useState<InterviewRound>('Technical Round 1');
-  const [date, setDate] = useState('2026-09-15');
+  const [date, setDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return d.toISOString().split('T')[0];
+  });
   const [time, setTime] = useState('11:00 AM');
   const [interviewer, setInterviewer] = useState('Dr. R. Venkat (Lead AI Architect)');
   const [venue, setVenue] = useState('SRM Placement Cell - Interview Suite 302');
+
+  React.useEffect(() => {
+    if (initialCandidate) {
+      setCandName(initialCandidate.name);
+      setCandRegNo(initialCandidate.reg_number);
+      setCandEmail(initialCandidate.email);
+      setCandDept(initialCandidate.education?.department || 'CSE');
+      if (initialJobId) setJobId(initialJobId);
+      setIsScheduleModalOpen(true);
+    }
+  }, [initialCandidate, initialJobId]);
 
   const filtered = interviews.filter(int => {
     if (filterRound !== 'all' && int.round !== filterRound) return false;
