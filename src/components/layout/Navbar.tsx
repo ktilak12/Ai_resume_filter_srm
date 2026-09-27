@@ -1,6 +1,17 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Bell, Menu, User, Settings, LogOut, ChevronDown, ShieldCheck, LogIn } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { 
+  Search, 
+  Bell, 
+  Menu, 
+  User, 
+  Settings, 
+  LogOut, 
+  ChevronDown, 
+  ShieldCheck, 
+  LogIn,
+  Check
+} from 'lucide-react';
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationCenter } from '../NotificationCenter';
@@ -14,8 +25,15 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar }) => {
   const { currentUser, isAuthenticated, logout, switchRole } = useAuth();
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const navigate = useNavigate();
   
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+  const roleMenuRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
   const roles: UserRole[] = [
     'Placement Officer', 
     'Faculty Coordinator', 
@@ -24,9 +42,30 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar })
     'Student Coordinator'
   ];
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (roleMenuRef.current && !roleMenuRef.current.contains(event.target as Node)) {
+        setIsRoleDropdownOpen(false);
+      }
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleRoleSelect = (role: UserRole) => {
     setUserRole(role);
     switchRole(role);
+    setIsRoleDropdownOpen(false);
+  };
+
+  const handleLogout = () => {
+    setIsProfileDropdownOpen(false);
+    logout();
+    navigate('/login', { replace: true });
   };
 
   // User initials
@@ -38,6 +77,8 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar })
         .join('')
         .toUpperCase()
     : 'SRM';
+
+  const activeRoleDisplay = currentUser?.role || userRole;
 
   return (
     <>
@@ -68,61 +109,71 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar })
         <div className="flex items-center space-x-3 sm:space-x-4">
           
           {isAuthenticated && (
-            /* Role Selector */
-            <div className="relative group hidden sm:block">
-              <button className="flex items-center space-x-2 text-xs font-medium text-slate-200 hover:text-white px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800/90 hover:bg-slate-700/80 transition-all shadow-sm">
+            /* Controlled Role Selector Dropdown */
+            <div className="relative" ref={roleMenuRef}>
+              <button 
+                type="button"
+                onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+                className="flex items-center space-x-2 text-xs font-medium text-slate-200 hover:text-white px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800/90 hover:bg-slate-700/80 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-srm-500"
+              >
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="font-semibold">{currentUser?.role || userRole}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
+                <span className="font-semibold">{activeRoleDisplay}</span>
+                <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180 text-srm-400' : ''}`} />
               </button>
               
-              <div className="absolute right-0 mt-2 w-72 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/80 py-2 hidden group-hover:block transition-all z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-3.5 py-2 border-b border-slate-800 mb-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-srm-400" />
-                      Role-Based Access
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-mono">RBAC v1.0</span>
+              {isRoleDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-3.5 py-2 border-b border-slate-800 mb-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-srm-400" />
+                        Role-Based Access
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono">RBAC Active</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Select a role to test actions &amp; access permissions in real-time
+                    </p>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Select a persona to test actions &amp; access restrictions in real-time
-                  </p>
-                </div>
 
-                <div className="space-y-1 px-1.5">
-                  {roles.map(role => {
-                    const isSelected = (currentUser?.role || userRole) === role;
-                    return (
-                      <button
-                        key={role}
-                        onClick={() => handleRoleSelect(role)}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-all flex flex-col gap-0.5 ${
-                          isSelected 
-                            ? 'bg-srm-950/80 border border-srm-500/40 text-srm-200 font-semibold' 
-                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white border border-transparent'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold">{role}</span>
-                          {isSelected && (
-                            <span className="text-[10px] bg-srm-500/20 text-srm-300 px-1.5 py-0.2 rounded-full border border-srm-500/30">
-                              Active
+                  <div className="space-y-1 px-1.5">
+                    {roles.map(role => {
+                      const isSelected = activeRoleDisplay === role;
+                      return (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => handleRoleSelect(role)}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs transition-all flex flex-col gap-0.5 ${
+                            isSelected 
+                              ? 'bg-srm-950/90 border border-srm-500/50 text-srm-200 font-semibold shadow-sm' 
+                              : 'text-slate-300 hover:bg-slate-800 hover:text-white border border-transparent'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold flex items-center gap-1.5">
+                              {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                              <span>{role}</span>
                             </span>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-slate-400 line-clamp-1 font-normal">
-                          {role === 'Super Admin' && 'Full system & AI settings control'}
-                          {role === 'Placement Officer' && 'Drives, screening, shortlisting & emails'}
-                          {role === 'Corporate Recruiter' && 'Screening & interviews (read-only AI weights)'}
-                          {role === 'Faculty Coordinator' && 'Department batch upload & analytics'}
-                          {role === 'Student Coordinator' && 'ATS resume scoring & drive exploration'}
-                        </span>
-                      </button>
-                    );
-                  })}
+                            {isSelected && (
+                              <span className="text-[10px] bg-srm-500/20 text-srm-300 px-1.5 py-0.5 rounded-full border border-srm-500/30 font-semibold">
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 line-clamp-1 font-normal pl-5">
+                            {role === 'Super Admin' && 'Full system & AI settings control'}
+                            {role === 'Placement Officer' && 'Drives, screening, shortlisting & emails'}
+                            {role === 'Corporate Recruiter' && 'Screening & interviews (read-only AI weights)'}
+                            {role === 'Faculty Coordinator' && 'Department batch upload & analytics'}
+                            {role === 'Student Coordinator' && 'ATS resume scoring & drive exploration'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -130,9 +181,13 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar })
           <NotificationCenter />
 
           {isAuthenticated ? (
-            /* Profile Dropdown */
-            <div className="relative group flex items-center">
-              <button className="flex items-center gap-2 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-srm-500 transition-all">
+            /* Controlled Profile Dropdown */
+            <div className="relative flex items-center" ref={profileMenuRef}>
+              <button 
+                type="button"
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="flex items-center gap-2 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-srm-500 transition-all"
+              >
                 {currentUser?.picture ? (
                   <img 
                     src={currentUser.picture} 
@@ -146,56 +201,63 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar })
                 )}
               </button>
               
-              <div className="absolute right-0 top-10 mt-2 w-64 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-2 hidden group-hover:block transition-all z-50">
-                <div className="px-4 py-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-white truncate">
-                      {currentUser?.name || 'SRMIST User'}
+              {isProfileDropdownOpen && (
+                <div className="absolute right-0 top-11 mt-1 w-64 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-4 py-3 border-b border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-white truncate">
+                        {currentUser?.name || 'SRMIST User'}
+                      </p>
+                      {currentUser?.isInstitutionalVerified && (
+                        <span title="Institutional SRM Account Verified">
+                          <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-amber-400 font-mono truncate mt-0.5">
+                      {currentUser?.email || 'user@srmist.edu.in'}
                     </p>
-                    {currentUser?.isInstitutionalVerified && (
-                      <span title="Institutional SRM Account Verified">
-                        <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                      </span>
+                    {currentUser?.department && (
+                      <p className="text-[11px] text-slate-400 truncate mt-1">
+                        {currentUser.department}
+                      </p>
                     )}
                   </div>
-                  <p className="text-xs text-amber-400 font-mono truncate mt-0.5">
-                    {currentUser?.email || 'user@srmist.edu.in'}
-                  </p>
-                  {currentUser?.department && (
-                    <p className="text-[11px] text-slate-400 truncate mt-1">
-                      {currentUser.department}
-                    </p>
-                  )}
-                </div>
 
-                <div className="py-1">
-                  <div className="px-4 py-1.5 text-[11px] text-slate-400 flex items-center justify-between">
-                    <span>Active Role:</span>
-                    <span className="font-semibold text-srm-400">{currentUser?.role || userRole}</span>
-                  </div>
-                  {currentUser?.campus && (
-                    <div className="px-4 py-1 text-[10px] text-slate-500">
-                      {currentUser.campus}
+                  <div className="py-1">
+                    <div className="px-4 py-1.5 text-[11px] text-slate-400 flex items-center justify-between">
+                      <span>Active Role:</span>
+                      <span className="font-semibold text-srm-400">{activeRoleDisplay}</span>
                     </div>
-                  )}
+                    {currentUser?.campus && (
+                      <div className="px-4 py-1 text-[10px] text-slate-500">
+                        {currentUser.campus}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-slate-800 my-1"></div>
+
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsProfileDropdownOpen(false);
+                      setIsProfileModalOpen(true);
+                    }}
+                    className="flex w-full items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+                  >
+                    <User className="mr-3 h-4 w-4 text-srm-400" /> Edit Profile &amp; Role Details
+                  </button>
+
+                  <button 
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center px-4 py-2.5 text-xs text-red-400 hover:bg-slate-800 hover:text-red-300 transition-colors font-semibold"
+                  >
+                    <LogOut className="mr-3 h-4 w-4" /> Sign out of SRMIST Portal
+                  </button>
                 </div>
-
-                <div className="border-t border-slate-800 my-1"></div>
-
-                <button 
-                  onClick={() => setIsProfileModalOpen(true)}
-                  className="flex w-full items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800/80 hover:text-white transition-colors"
-                >
-                  <User className="mr-3 h-4 w-4 text-srm-400" /> Edit Profile &amp; Role Details
-                </button>
-
-                <button 
-                  onClick={logout}
-                  className="flex w-full items-center px-4 py-2.5 text-xs text-red-400 hover:bg-slate-800/80 hover:text-red-300 transition-colors font-medium"
-                >
-                  <LogOut className="mr-3 h-4 w-4" /> Sign out of SRMIST Portal
-                </button>
-              </div>
+              )}
             </div>
           ) : (
             /* Sign In Button for unauthenticated visitor */

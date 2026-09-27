@@ -109,18 +109,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         detectedRole = 'Corporate Recruiter';
       }
 
-      // Check if user already had a completed profile saved previously
-      const existingStored = localStorage.getItem(STORAGE_USER_KEY);
-      let existingProfileComplete = false;
-      if (existingStored) {
-        try {
-          const parsedExisting = JSON.parse(existingStored);
-          if (parsedExisting.email === email && parsedExisting.isProfileComplete) {
-            existingProfileComplete = true;
-          }
-        } catch (_) {}
-      }
-
       const newUser: AuthUser = {
         id: payload.sub,
         name: payload.name || email.split('@')[0],
@@ -131,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         regNumber: isSRM ? srmDetails.regNumber : undefined,
         picture: payload.picture,
         isInstitutionalVerified: isSRM,
-        isProfileComplete: existingProfileComplete,
+        isProfileComplete: true,
         lastLoginAt: new Date().toISOString()
       };
 
@@ -164,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       regNumber: userData.regNumber || 'SRM-EMP-8941',
       phone: userData.phone || '+91 98401 22334',
       isInstitutionalVerified: isSRM,
-      isProfileComplete: userData.isProfileComplete ?? false,
+      isProfileComplete: true,
       lastLoginAt: new Date().toISOString()
     };
 
@@ -187,14 +175,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
     setAuthError(null);
     localStorage.removeItem(STORAGE_USER_KEY);
-    if (window.google?.accounts?.id?.disableAutoSelect) {
-      window.google.accounts.id.disableAutoSelect();
+    try {
+      sessionStorage.clear();
+      if ((window as any).google?.accounts?.id?.disableAutoSelect) {
+        (window as any).google.accounts.id.disableAutoSelect();
+      }
+    } catch (e) {
+      console.error('[AuthProvider] Logout cleanup error:', e);
     }
   };
 
   const switchRole = (role: UserRole) => {
-    if (!currentUser || !VALID_ROLES.includes(role)) return;
-    const updated = { ...currentUser, role };
+    if (!VALID_ROLES.includes(role)) return;
+    const updated: AuthUser = currentUser ? {
+      ...currentUser,
+      role
+    } : {
+      id: `usr-${Date.now()}`,
+      name: 'SRM User',
+      email: 'placement@srmist.edu.in',
+      role,
+      department: 'Directorate of Career Centre',
+      campus: 'Kattankulathur (Main Campus)',
+      regNumber: 'SRM-EMP-8941',
+      isInstitutionalVerified: true,
+      isProfileComplete: true,
+      lastLoginAt: new Date().toISOString()
+    };
     setCurrentUser(updated);
     localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(updated));
   };

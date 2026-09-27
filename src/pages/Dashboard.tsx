@@ -1,8 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Briefcase, FileText, CheckCircle, TrendingUp, Clock, Plus, ArrowRight, Sparkles } from 'lucide-react';
+import { 
+  Users, 
+  Briefcase, 
+  FileText, 
+  CheckCircle, 
+  TrendingUp, 
+  Clock, 
+  Plus, 
+  ArrowRight, 
+  Sparkles,
+  Settings,
+  ChevronRight
+} from 'lucide-react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { UserRole, CandidateProfile, JobRequirement, Interview } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { INITIAL_JOBS, INITIAL_CANDIDATES, INITIAL_INTERVIEWS } from '../data/srmDataset';
+import { JobCreationModal } from '../views/JobCreationModal';
 
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
@@ -11,24 +25,67 @@ const Dashboard: React.FC = () => {
   const activeRole = currentUser?.role || context.userRole || 'Placement Officer';
   const displayName = currentUser?.name || activeRole;
 
-  const [candidates, setCandidates] = useState<CandidateProfile[]>([]);
-  const [jobs, setJobs] = useState<JobRequirement[]>([]);
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-
-  useEffect(() => {
+  const [candidates, setCandidates] = useState<CandidateProfile[]>(() => {
     try {
-      const savedCands = localStorage.getItem('srm_candidates_list');
-      if (savedCands) setCandidates(JSON.parse(savedCands));
+      const saved = localStorage.getItem('srm_candidates_list');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return INITIAL_CANDIDATES;
+  });
 
-      const savedJobs = localStorage.getItem('srm_jobs_list');
-      if (savedJobs) setJobs(JSON.parse(savedJobs));
+  const [jobs, setJobs] = useState<JobRequirement[]>(() => {
+    try {
+      const saved = localStorage.getItem('srm_jobs_list');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return INITIAL_JOBS;
+  });
 
-      const savedInterviews = localStorage.getItem('srm_interviews_list');
-      if (savedInterviews) setInterviews(JSON.parse(savedInterviews));
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
+  const [interviews, setInterviews] = useState<Interview[]>(() => {
+    try {
+      const saved = localStorage.getItem('srm_interviews_list');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return INITIAL_INTERVIEWS;
+  });
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [jobToManage, setJobToManage] = useState<JobRequirement | null>(null);
+
+  const handleSaveJob = (newOrUpdatedJob: JobRequirement) => {
+    setJobs(prev => {
+      const existsIndex = prev.findIndex(j => j.id === newOrUpdatedJob.id);
+      let updated: JobRequirement[];
+      if (existsIndex >= 0) {
+        updated = [...prev];
+        updated[existsIndex] = newOrUpdatedJob;
+      } else {
+        updated = [newOrUpdatedJob, ...prev];
+      }
+      localStorage.setItem('srm_jobs_list', JSON.stringify(updated));
+      return updated;
+    });
+    setJobToManage(null);
+  };
+
+  const handleDeleteJob = (jobId: string) => {
+    setJobs(prev => {
+      const updated = prev.filter(j => j.id !== jobId);
+      localStorage.setItem('srm_jobs_list', JSON.stringify(updated));
+      return updated;
+    });
+    setJobToManage(null);
+  };
+
+  const handleOpenManage = (job: JobRequirement) => {
+    setJobToManage(job);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenCreate = () => {
+    setJobToManage(null);
+    setIsModalOpen(true);
+  };
 
   const totalApplicants = candidates.length;
   const processedResumes = candidates.filter(c => c.ats_score !== undefined || c.raw_resume_text).length;
@@ -54,11 +111,11 @@ const Dashboard: React.FC = () => {
             onClick={() => navigate('/upload')}
             className="flex items-center space-x-2 bg-srm-600 hover:bg-srm-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors shadow-sm"
           >
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-4 w-4 text-amber-300" />
             <span>Upload Resume</span>
           </button>
           <button 
-            onClick={() => navigate('/jobs')}
+            onClick={handleOpenCreate}
             className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 transition-colors"
           >
             <Plus className="h-4 w-4" />
@@ -102,7 +159,7 @@ const Dashboard: React.FC = () => {
                 <h3 className="text-sm font-medium text-white">No placement drives created yet</h3>
                 <p className="text-xs text-slate-400 mt-1 mb-4">Create your first campus hiring drive to start AI screening.</p>
                 <button
-                  onClick={() => navigate('/jobs')}
+                  onClick={handleOpenCreate}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-srm-600 hover:bg-srm-500 text-white text-xs font-semibold rounded-lg transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -116,7 +173,7 @@ const Dashboard: React.FC = () => {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Company &amp; Role</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Department</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Min CGPA</th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">Action</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800 bg-slate-900">
@@ -129,25 +186,35 @@ const Dashboard: React.FC = () => {
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-white">{drive.company}</div>
-                            <div className="text-sm text-slate-400">{drive.title}</div>
+                            <div className="text-xs text-slate-400">{drive.title}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-300">{drive.academic_eligibility?.allowed_departments?.join(', ') || 'All Depts'}</div>
+                        <div className="text-xs text-slate-300">{drive.academic_eligibility?.allowed_departments?.join(', ') || 'All Depts'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-slate-300">
-                          {drive.academic_eligibility?.min_cgpa || 6.0} CGPA
+                        <span className="px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-slate-300 font-semibold text-emerald-400">
+                          ≥ {drive.academic_eligibility?.min_cgpa ?? 6.0} CGPA
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button 
-                          onClick={() => navigate('/screening')}
-                          className="text-srm-400 hover:text-srm-300 transition-colors bg-srm-400/10 hover:bg-srm-400/20 px-3 py-1.5 rounded-md"
-                        >
-                          Screen
-                        </button>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-medium">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenManage(drive)}
+                            className="text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1.5 rounded-md flex items-center gap-1 transition-all"
+                            title={`Manage ${drive.company} Drive`}
+                          >
+                            <Settings className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Manage</span>
+                          </button>
+                          <button 
+                            onClick={() => navigate('/screening')}
+                            className="text-srm-400 hover:text-srm-300 transition-colors bg-srm-400/10 hover:bg-srm-400/20 px-3 py-1.5 rounded-md font-semibold"
+                          >
+                            Screen
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -176,7 +243,7 @@ const Dashboard: React.FC = () => {
                   onClick={() => navigate('/upload')}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-srm-600 hover:bg-srm-500 text-white text-xs font-semibold rounded-lg transition-colors"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                   <span>Upload &amp; Screen Resume</span>
                 </button>
               </div>
@@ -217,6 +284,18 @@ const Dashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Modal for Creating & Managing Placement Drives */}
+      <JobCreationModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setJobToManage(null);
+        }}
+        onSaveJob={handleSaveJob}
+        jobToEdit={jobToManage}
+        onDeleteJob={handleDeleteJob}
+      />
     </div>
   );
 };
