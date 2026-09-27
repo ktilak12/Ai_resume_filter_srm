@@ -44,6 +44,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
       roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter', 'Student Coordinator'] 
     },
     { 
+      name: 'Student Directory', 
+      icon: Users, 
+      path: '/candidates', 
+      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter', 'Student Coordinator'] 
+    },
+    { 
       name: 'Shortlisted Candidates', 
       icon: UserCheck, 
       path: '/shortlisted', 

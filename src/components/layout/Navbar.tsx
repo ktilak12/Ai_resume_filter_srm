@@ -34,6 +34,14 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar })
   const roleMenuRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
+  const [navSearchQuery, setNavSearchQuery] = useState('');
+
+  const handleNavSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && navSearchQuery.trim()) {
+      navigate('/screening', { state: { searchTerm: navSearchQuery.trim() } });
+    }
+  };
+
   const roles: UserRole[] = [
     'Placement Officer', 
     'Faculty Coordinator', 
@@ -99,8 +107,11 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, setUserRole, toggleSidebar })
             </div>
             <input
               className="block w-full pl-10 pr-3 py-2 border border-slate-700 rounded-lg leading-5 bg-slate-800 text-slate-200 placeholder-slate-500 focus:outline-none focus:bg-slate-900 focus:ring-1 focus:ring-srm-500 focus:border-srm-500 sm:text-sm transition-colors duration-200"
-              placeholder="Search candidates, jobs, or departments..."
+              placeholder="Search candidates, jobs, or departments... (Press Enter)"
               type="search"
+              value={navSearchQuery}
+              onChange={(e) => setNavSearchQuery(e.target.value)}
+              onKeyDown={handleNavSearch}
             />
           </div>
         </div>
