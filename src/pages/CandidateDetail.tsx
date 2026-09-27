@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { INITIAL_CANDIDATES, INITIAL_JOBS } from '../data/srmDataset';
 import { CandidateProfile, JobRequirement, ExperienceRecord } from '../types';
 import { screenCandidate } from '../services/aiScreeningEngine';
@@ -20,7 +20,9 @@ import {
   Mail,
   Loader2,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Calendar,
+  Sparkles
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -29,14 +31,17 @@ import { checkPermission } from '../services/rbac';
 export const CandidateDetail: React.FC = () => {
   const { currentUser } = useAuth();
   const activeRole = currentUser?.role || 'Placement Officer';
+  const location = useLocation();
+  const navigate = useNavigate();
+  const navJobId = (location.state as { jobId?: string } | null)?.jobId;
 
   const canReject = checkPermission(activeRole, 'REJECT_CANDIDATES');
   const canShortlist = checkPermission(activeRole, 'SHORTLIST_CANDIDATES');
-  const canSendEmail = checkPermission(activeRole, 'SEND_BATCH_EMAILS');
+  const canSchedule = checkPermission(activeRole, 'SCHEDULE_INTERVIEW');
 
   const { id } = useParams<{ id: string }>();
 
-  // Retrieve candidate and job from persistent storage
+  // Retrieve candidate and jobs from persistent storage
   const candidate: CandidateProfile = useMemo(() => {
     const saved = localStorage.getItem('srm_candidates_list');
     const list: CandidateProfile[] = saved ? JSON.parse(saved) : INITIAL_CANDIDATES;
@@ -63,35 +68,19 @@ export const CandidateDetail: React.FC = () => {
     };
   }, [id]);
 
-  const job: JobRequirement = useMemo(() => {
+  const jobsList: JobRequirement[] = useMemo(() => {
     const savedJobs = localStorage.getItem('srm_jobs_list');
-    const jobsList: JobRequirement[] = savedJobs ? JSON.parse(savedJobs) : INITIAL_JOBS;
-    return jobsList[0] || {
-      id: 'job-general',
-      title: 'Software Development Engineer',
-      company: 'SRM Recruitment Partner',
-      job_type: 'Full-time',
-      location: 'Chennai / Hybrid',
-      ctc_lpa: '10.0 - 16.0 LPA',
-      application_deadline: '2026-12-31',
-      open_vacancies: 10,
-      status: 'Active',
-      academic_eligibility: {
-        allowed_degrees: ['B.Tech', 'M.Tech', 'MCA'],
-        allowed_departments: ['CSE', 'IT', 'AI & DS', 'ECE'],
-        min_cgpa: 7.0,
-        max_active_backlogs: 0,
-        graduation_year: 2026
-      },
-      required_skills: ['Python', 'SQL'],
-      preferred_skills: ['React', 'Git'],
-      min_experience_years: 0,
-      freshers_accepted: true,
-      internship_preferred: true,
-      job_description: 'Recruitment drive for engineering graduates.',
-      created_at: new Date().toISOString()
-    };
+    return savedJobs ? JSON.parse(savedJobs) : INITIAL_JOBS;
   }, []);
+
+  const [selectedJobId, setSelectedJobId] = useState<string>(() => {
+    if (navJobId && jobsList.some(j => j.id === navJobId)) return navJobId;
+    return jobsList[0]?.id || 'job-google-sde';
+  });
+
+  const job: JobRequirement = useMemo(() => {
+    return jobsList.find(j => j.id === selectedJobId) || jobsList[0];
+  }, [jobsList, selectedJobId]);
 
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailNotice, setEmailNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -110,20 +99,66 @@ export const CandidateDetail: React.FC = () => {
       ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
       : 'bg-rose-500/10 text-rose-400 border-rose-500/20';
 
+  const updateCandidateStatus = (status: CandidateProfile['status']) => {
+    try {
+      const saved = localStorage.getItem('srm_candidates_list');
+      const list: CandidateProfile[] = saved ? JSON.parse(saved) : INITIAL_CANDIDATES;
+      const updated = list.map(c => c.id === candidate.id ? { ...c, status } : c);
+      localStorage.setItem('srm_candidates_list', JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="flex items-center space-x-4">
           <Link to="/candidates" className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors border border-slate-700">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">{candidate.name}</h1>
-            <p className="text-slate-400 mt-1">{candidate.reg_number} • {candidate.education.department}</p>
+            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+              <span>{candidate.name}</span>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${verdictBadgeClass}`}>
+                {explainable.verdict}
+              </span>
+            </h1>
+            <p className="text-slate-400 mt-0.5 text-xs sm:text-sm">
+              {candidate.reg_number} • {candidate.education.department} • CGPA {candidate.education.cgpa.toFixed(2)}
+            </p>
           </div>
         </div>
-        <div className="flex items-center space-x-3">
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Drive Evaluator Selector */}
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs">
+            <Briefcase className="w-3.5 h-3.5 text-srm-400" />
+            <span className="text-slate-400 font-medium hidden sm:inline">Role:</span>
+            <select
+              value={selectedJobId}
+              onChange={(e) => setSelectedJobId(e.target.value)}
+              className="bg-transparent text-white font-semibold focus:outline-none cursor-pointer"
+            >
+              {jobsList.map(j => (
+                <option key={j.id} value={j.id} className="bg-slate-900 text-white">
+                  {j.company} — {j.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {canSchedule && (
+            <button
+              onClick={() => navigate('/interviews', { state: { candidate, jobId: job.id } })}
+              className="bg-purple-600/30 hover:bg-purple-600 text-purple-300 hover:text-white px-3.5 py-2 rounded-xl font-semibold border border-purple-500/40 transition-all text-xs flex items-center gap-1.5"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Schedule Interview</span>
+            </button>
+          )}
+
           <button 
             disabled={isSendingEmail || !canReject}
             title={!canReject ? `Action restricted for ${activeRole}` : 'Reject candidate'}
@@ -134,14 +169,15 @@ export const CandidateDetail: React.FC = () => {
               const res = await sendRejectionNotification(candidate, job);
               setIsSendingEmail(false);
               if (res.success) {
+                updateCandidateStatus('Rejected');
                 setEmailNotice({ type: 'success', message: `Rejection email sent to ${candidate.email} via Resend!` });
               } else {
                 setEmailNotice({ type: 'error', message: res.error || 'Failed to send rejection email' });
               }
             }}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg font-medium border border-slate-700 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+            className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-xl font-semibold border border-slate-700 transition-colors text-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
-            {isSendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {isSendingEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
             <span>Reject</span>
             {!canReject && <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded ml-1">Restricted</span>}
           </button>
@@ -156,19 +192,20 @@ export const CandidateDetail: React.FC = () => {
               const res = await sendShortlistNotification(candidate, job);
               setIsSendingEmail(false);
               if (res.success) {
+                updateCandidateStatus('Shortlisted');
                 setEmailNotice({ type: 'success', message: `Shortlist interview notification sent to ${candidate.email} via Resend!` });
               } else {
                 setEmailNotice({ type: 'error', message: res.error || 'Failed to send shortlist email. Configure Resend API key in Settings.' });
               }
             }}
-            className="bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-glow-srm text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            className="bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white px-4 py-2 rounded-xl font-bold transition-colors shadow-glow-srm text-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isSendingEmail ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Mail className="w-4 h-4" />
+              <Mail className="w-3.5 h-3.5 text-amber-300" />
             )}
-            <span>Shortlist &amp; Email Candidate</span>
+            <span>Shortlist &amp; Email</span>
             {!canShortlist && <span className="text-[10px] text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-500/30">Restricted</span>}
           </button>
         </div>
