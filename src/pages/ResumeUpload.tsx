@@ -65,10 +65,10 @@ export const ResumeUpload: React.FC = () => {
         console.error(e);
       }
     }
-    return [DEFAULT_BENCHMARK_JOB];
+    return INITIAL_JOBS;
   });
 
-  const [selectedJobId, setSelectedJobId] = useState<string>(() => jobs[0]?.id || DEFAULT_BENCHMARK_JOB.id);
+  const [selectedJobId, setSelectedJobId] = useState<string>(() => jobs[0]?.id || 'job-google-sde');
   const [files, setFiles] = useState<File[]>([]);
   const [pastedText, setPastedText] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -146,8 +146,10 @@ export const ResumeUpload: React.FC = () => {
         try {
           candidatesList = JSON.parse(currentSaved);
         } catch (e) {
-          candidatesList = [];
+          candidatesList = [...INITIAL_CANDIDATES];
         }
+      } else {
+        candidatesList = [...INITIAL_CANDIDATES];
       }
       
       const existingIdx = candidatesList.findIndex(c => c.id === candidateProfile.id || (c.email && c.email === candidateProfile.email));
@@ -196,14 +198,14 @@ export const ResumeUpload: React.FC = () => {
             onChange={(e) => {
               setSelectedJobId(e.target.value);
               if (atsResult) {
-                const updatedJob = INITIAL_JOBS.find(j => j.id === e.target.value) || INITIAL_JOBS[0];
+                const updatedJob = jobs.find(j => j.id === e.target.value) || jobs[0];
                 const screening = screenCandidate(atsResult.candidate, updatedJob);
                 setAtsResult(prev => prev ? { ...prev, screening } : null);
               }
             }}
             className="bg-slate-800 border border-slate-700 text-white font-medium text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-srm-500"
           >
-            {INITIAL_JOBS.map(j => (
+            {jobs.map(j => (
               <option key={j.id} value={j.id}>{j.company} — {j.title}</option>
             ))}
           </select>
