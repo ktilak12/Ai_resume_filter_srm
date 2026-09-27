@@ -25,6 +25,22 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   }
 };
 
+/**
+ * Loads configured AI weights and thresholds from local persistence or falls back to defaults
+ */
+export function getStoredAiSettings(): AISettings {
+  try {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('srm_ai_settings') : null;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.weights && parsed.thresholds) return parsed;
+    }
+  } catch (e) {
+    console.error('Failed to read srm_ai_settings:', e);
+  }
+  return DEFAULT_AI_SETTINGS;
+}
+
 // Skill Synonyms and Semantic Knowledge Graph
 const SKILL_SYNONYMS: Record<string, string[]> = {
   'python': ['python3', 'py', 'django', 'flask', 'fastapi', 'pandas', 'numpy', 'scipy'],
@@ -397,7 +413,7 @@ export function calculateMatchScore(
 export function screenCandidate(
   candidate: CandidateProfile,
   job: JobRequirement,
-  settings: AISettings = DEFAULT_AI_SETTINGS
+  settings: AISettings = getStoredAiSettings()
 ): ScreeningResult {
   const eligibility = evaluateEligibility(candidate, job);
   const { score, explainable } = calculateMatchScore(candidate, job, settings);
