@@ -152,15 +152,18 @@ export function extractCandidateEntities(rawText: string, fileName?: string): Ca
   const KNOWN_SKILLS = [
     'Python', 'Machine Learning', 'TensorFlow', 'PyTorch', 'SQL', 'PostgreSQL', 'MySQL',
     'Power BI', 'Tableau', 'Excel', 'React', 'Node.js', 'AWS', 'Docker', 'Git', 'Java',
-    'C++', 'Statistics', 'Scikit-Learn', 'FastAPI', 'Pandas', 'NumPy', 'MongoDB',
-    'HTML/CSS', 'TypeScript', 'Kubernetes', 'Linux', 'GCP', 'Azure', 'Spark', 'Hadoop'
+    'C++', 'C#', 'Statistics', 'Scikit-Learn', 'FastAPI', 'Pandas', 'NumPy', 'MongoDB',
+    'HTML/CSS', 'TypeScript', 'Kubernetes', 'Linux', 'GCP', 'Azure', 'Spark', 'Hadoop',
+    'Data Structures', 'Algorithms', 'Distributed Systems', 'System Design', 'REST APIs'
   ];
 
   const skills: string[] = [];
   const lowerRaw = rawText.toLowerCase();
   KNOWN_SKILLS.forEach(skill => {
-    // Use /\+/g (not replace('+', ...)) so C++ has both plus signs properly escaped
-    const regex = new RegExp(`\\b${skill.toLowerCase().replace(/\+/g, '\\+')}\\b`, 'i');
+    const escaped = skill.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // For skills like C++, C#, HTML/CSS, word boundary \b fails because symbols are non-word characters.
+    const pattern = `(?:^|[\\s,;./()\\-])${escaped}(?:$|[\\s,;./()\\-])`;
+    const regex = new RegExp(pattern, 'i');
     if (regex.test(lowerRaw)) {
       skills.push(skill);
     }
