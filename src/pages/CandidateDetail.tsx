@@ -21,8 +21,7 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
-  Calendar,
-  Sparkles
+  Calendar
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -94,10 +93,10 @@ export const CandidateDetail: React.FC = () => {
 
   const verdictBadgeClass = 
     explainable.verdict === 'Strong Match'
-      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+      ? 'bg-zinc-900 text-white border-zinc-700 font-mono'
       : explainable.verdict === 'Needs Review'
-      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-      : 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+      ? 'bg-zinc-950 text-zinc-300 border-zinc-800 font-mono'
+      : 'bg-black text-zinc-500 border-zinc-850 font-mono';
 
   const updateCandidateStatus = (status: CandidateProfile['status']) => {
     try {
@@ -115,34 +114,34 @@ export const CandidateDetail: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="flex items-center space-x-4">
-          <Link to="/candidates" className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors border border-slate-700">
-            <ArrowLeft className="h-5 w-5" />
+          <Link to="/candidates" className="p-2 rounded-lg bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-850 transition-colors border border-zinc-800">
+            <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
               <span>{candidate.name}</span>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${verdictBadgeClass}`}>
+              <span className={`text-xs px-2 py-0.5 rounded border ${verdictBadgeClass}`}>
                 {explainable.verdict}
               </span>
             </h1>
-            <p className="text-slate-400 mt-0.5 text-xs sm:text-sm">
+            <p className="text-zinc-400 mt-0.5 text-xs font-mono">
               {candidate.reg_number} • {candidate.education.department} • CGPA {candidate.education.cgpa.toFixed(2)}
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Drive Evaluator Selector */}
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs">
-            <Briefcase className="w-3.5 h-3.5 text-srm-400" />
-            <span className="text-slate-400 font-medium hidden sm:inline">Role:</span>
+          <div className="flex items-center gap-2 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 text-xs font-mono">
+            <Briefcase className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="text-zinc-500 hidden sm:inline">Role:</span>
             <select
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
-              className="bg-transparent text-white font-semibold focus:outline-none cursor-pointer"
+              className="bg-transparent text-white font-mono font-semibold focus:outline-none cursor-pointer"
             >
               {jobsList.map(j => (
-                <option key={j.id} value={j.id} className="bg-slate-900 text-white">
+                <option key={j.id} value={j.id} className="bg-black text-white">
                   {j.company} — {j.title}
                 </option>
               ))}
@@ -152,7 +151,7 @@ export const CandidateDetail: React.FC = () => {
           {canSchedule && (
             <button
               onClick={() => navigate('/interviews', { state: { candidate, jobId: job.id } })}
-              className="bg-purple-600/30 hover:bg-purple-600 text-purple-300 hover:text-white px-3.5 py-2 rounded-xl font-semibold border border-purple-500/40 transition-all text-xs flex items-center gap-1.5"
+              className="bg-zinc-900 hover:bg-zinc-850 text-white px-3.5 py-2 rounded-lg font-semibold border border-zinc-800 transition-all text-xs flex items-center gap-1.5"
             >
               <Calendar className="w-3.5 h-3.5" />
               <span>Schedule Interview</span>
@@ -175,11 +174,10 @@ export const CandidateDetail: React.FC = () => {
                 setEmailNotice({ type: 'error', message: res.error || 'Failed to send rejection email' });
               }
             }}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-xl font-semibold border border-slate-700 transition-colors text-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+            className="bg-zinc-900 hover:bg-zinc-850 text-zinc-300 px-3.5 py-2 rounded-lg font-semibold border border-zinc-800 transition-colors text-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
             {isSendingEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
             <span>Reject</span>
-            {!canReject && <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded ml-1">Restricted</span>}
           </button>
 
           <button 
@@ -195,40 +193,35 @@ export const CandidateDetail: React.FC = () => {
                 updateCandidateStatus('Shortlisted');
                 setEmailNotice({ type: 'success', message: `Shortlist interview notification sent to ${candidate.email} via Resend!` });
               } else {
-                setEmailNotice({ type: 'error', message: res.error || 'Failed to send shortlist email. Configure Resend API key in Settings.' });
+                setEmailNotice({ type: 'error', message: res.error || 'Failed to send shortlist email.' });
               }
             }}
-            className="bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white px-4 py-2 rounded-xl font-bold transition-colors shadow-glow-srm text-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            className="bg-white text-black hover:bg-zinc-200 px-4 py-2 rounded-lg font-bold transition-colors text-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isSendingEmail ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
             ) : (
-              <Mail className="w-3.5 h-3.5 text-amber-300" />
+              <Mail className="w-3.5 h-3.5 text-black" />
             )}
             <span>Shortlist &amp; Email</span>
-            {!canShortlist && <span className="text-[10px] text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-500/30">Restricted</span>}
           </button>
         </div>
       </div>
 
       {/* Resend Email Dispatch Banner Notification */}
       {emailNotice && (
-        <div className={`p-4 rounded-xl border flex items-center justify-between text-xs font-semibold ${
-          emailNotice.type === 'success'
-            ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-200'
-            : 'bg-rose-950/80 border-rose-500/40 text-rose-200'
-        }`}>
+        <div className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-950 flex items-center justify-between text-xs font-semibold text-zinc-200">
           <div className="flex items-center gap-2">
             {emailNotice.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
             ) : (
-              <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <XCircle className="w-4 h-4 text-zinc-400 shrink-0" />
             )}
             <span>{emailNotice.message}</span>
           </div>
           <button 
             onClick={() => setEmailNotice(null)}
-            className="text-slate-400 hover:text-white text-xs underline font-normal"
+            className="text-zinc-500 hover:text-white text-xs underline font-normal"
           >
             Dismiss
           </button>
@@ -238,47 +231,51 @@ export const CandidateDetail: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: AI Explainability */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-800 bg-gradient-to-r from-srm-900/20 to-transparent">
+          <div className="bg-zinc-950 border border-zinc-850 rounded-xl overflow-hidden">
+            <div className="p-6 border-b border-zinc-850">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-semibold text-white flex items-center">
-                  <BrainCircuit className="mr-2 h-5 w-5 text-srm-400" />
-                  AI Screening Analysis
+                <h2 className="text-sm font-bold text-white flex items-center">
+                  <BrainCircuit className="mr-2 h-4 w-4 text-white" />
+                  Screening Analysis
                 </h2>
                 <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold text-white">{score.overall_match}%</span>
-                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${verdictBadgeClass}`}>
+                  <span className="text-2xl font-mono font-bold text-white">{score.overall_match}%</span>
+                  <span className={`text-xs font-mono font-medium px-2 py-0.5 rounded border ${verdictBadgeClass}`}>
                     {explainable.verdict}
                   </span>
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                  <div className="text-xs text-slate-400 mb-1">Academic Score</div>
-                  <div className="text-xl font-semibold text-emerald-400">{score.education}%</div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 font-mono text-center">
+                <div className="bg-black rounded-lg p-3 border border-zinc-850">
+                  <div className="text-[10px] text-zinc-500 mb-1">Keywords Score</div>
+                  <div className="text-base font-bold text-white">{score.keyword_score ?? score.skills}%</div>
                 </div>
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                  <div className="text-xs text-slate-400 mb-1">Skills Score</div>
-                  <div className="text-xl font-semibold text-srm-400">{score.skills}%</div>
+                <div className="bg-black rounded-lg p-3 border border-zinc-850">
+                  <div className="text-[10px] text-zinc-500 mb-1">Requirement Fit</div>
+                  <div className="text-base font-bold text-white">{score.requirement_score ?? score.education}%</div>
                 </div>
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
-                  <div className="text-xs text-slate-400 mb-1">Experience Score</div>
-                  <div className="text-xl font-semibold text-amber-400">{score.experience}%</div>
+                <div className="bg-black rounded-lg p-3 border border-zinc-850">
+                  <div className="text-[10px] text-zinc-500 mb-1">ATS Layout</div>
+                  <div className="text-base font-bold text-white">{score.formatting_score ?? 85}%</div>
+                </div>
+                <div className="bg-black rounded-lg p-3 border border-zinc-850">
+                  <div className="text-[10px] text-zinc-500 mb-1">CGPA Standing</div>
+                  <div className="text-base font-bold text-white">{candidate.education.cgpa} / 10</div>
                 </div>
               </div>
 
               <div className="space-y-4">
                 {explainable.positive_factors.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-emerald-400 flex items-center mb-2">
-                      <CheckCircle className="mr-1.5 h-4 w-4" /> Key Strengths
+                    <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center mb-2">
+                      <CheckCircle className="mr-1.5 h-3.5 w-3.5 text-white" /> Strengths
                     </h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-1.5 text-xs">
                       {explainable.positive_factors.map((factor, idx) => (
                         <li key={idx} className="flex items-start">
-                          <span className="text-emerald-500 mr-2">•</span>
-                          <span className="text-sm text-slate-300">{factor}</span>
+                          <span className="text-white mr-2">•</span>
+                          <span className="text-zinc-300">{factor}</span>
                         </li>
                       ))}
                     </ul>
@@ -286,15 +283,15 @@ export const CandidateDetail: React.FC = () => {
                 )}
                 
                 {explainable.penalty_factors.length > 0 && (
-                  <div className="pt-2">
-                    <h3 className="text-sm font-medium text-amber-400 flex items-center mb-2">
-                      <AlertCircle className="mr-1.5 h-4 w-4" /> Areas of Concern & Missing Skills
+                  <div className="pt-2 border-t border-zinc-850">
+                    <h3 className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider flex items-center mb-2">
+                      <AlertCircle className="mr-1.5 h-3.5 w-3.5 text-zinc-400" /> Missing Skills &amp; Gaps
                     </h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-1.5 text-xs">
                       {explainable.penalty_factors.map((penalty, idx) => (
                         <li key={idx} className="flex items-start">
-                          <span className="text-amber-500 mr-2">•</span>
-                          <span className="text-sm text-slate-300">{penalty}</span>
+                          <span className="text-zinc-500 mr-2">•</span>
+                          <span className="text-zinc-300">{penalty}</span>
                         </li>
                       ))}
                     </ul>
@@ -305,37 +302,36 @@ export const CandidateDetail: React.FC = () => {
           </div>
 
           {/* Skill Verification Evidence */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-white flex items-center">
-                <BarChart className="mr-2 h-5 w-5 text-slate-400" />
+          <div className="bg-zinc-950 border border-zinc-850 rounded-xl overflow-hidden">
+            <div className="p-5 border-b border-zinc-850 flex justify-between items-center">
+              <h2 className="text-sm font-bold text-white flex items-center font-mono">
                 Skill Evidence &amp; Verification
               </h2>
             </div>
-            <div className="p-6">
-              <div className="space-y-4">
+            <div className="p-5">
+              <div className="space-y-3">
                 {explainable.skill_evidence.map((evidence, idx) => {
                   const isMatched = evidence.match_status === 'matched';
                   const badgeClass = isMatched 
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+                    ? 'bg-zinc-900 text-white border-zinc-700' 
+                    : 'bg-black text-zinc-500 border-zinc-850';
 
                   return (
-                    <div key={idx} className="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/60">
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-sm font-semibold text-white flex items-center gap-2">
+                    <div key={idx} className="bg-black p-3.5 rounded-xl border border-zinc-850">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-semibold text-white flex items-center gap-2">
                           <span>{evidence.skill}</span>
                           {evidence.is_required && (
-                            <span className="text-[10px] bg-srm-950 text-srm-300 border border-srm-500/30 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] font-mono bg-zinc-900 text-zinc-300 border border-zinc-800 px-1.5 py-0.5 rounded">
                               Required
                             </span>
                           )}
                         </span>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded border ${badgeClass}`}>
+                        <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${badgeClass}`}>
                           {isMatched ? 'Verified' : 'Missing'}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-300">
+                      <div className="text-[11px] text-zinc-400 font-mono">
                         {evidence.candidate_evidence}
                       </div>
                     </div>
@@ -348,52 +344,52 @@ export const CandidateDetail: React.FC = () => {
 
         {/* Right Column: Candidate Profile */}
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-800">
-              <h2 className="text-lg font-semibold text-white">Candidate Details</h2>
+          <div className="bg-zinc-950 border border-zinc-850 rounded-xl overflow-hidden">
+            <div className="p-5 border-b border-zinc-850">
+              <h2 className="text-sm font-bold text-white font-mono">Candidate Profile</h2>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-5 space-y-5 text-xs font-mono">
               <div>
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center">
-                  <GraduationCap className="mr-1.5 h-4 w-4 text-srm-400" /> Education
+                <h3 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2 flex items-center">
+                  <GraduationCap className="mr-1.5 h-3.5 w-3.5 text-white" /> Education
                 </h3>
-                <div className="mb-4 last:mb-0">
-                  <div className="font-medium text-white text-sm">{candidate.education.degree} in {candidate.education.department}</div>
-                  <div className="text-sm text-slate-400">{candidate.education.college}</div>
-                  <div className="flex justify-between mt-1.5 text-xs">
-                    <span className="text-slate-500">Batch {candidate.education.graduation_year}</span>
-                    <span className="font-semibold text-emerald-400">CGPA: {candidate.education.cgpa.toFixed(2)} / 10</span>
+                <div className="mb-2">
+                  <div className="font-semibold text-white">{candidate.education.degree} in {candidate.education.department}</div>
+                  <div className="text-zinc-400 text-[11px]">{candidate.education.college}</div>
+                  <div className="flex justify-between mt-1 text-[11px]">
+                    <span className="text-zinc-500">Batch {candidate.education.graduation_year}</span>
+                    <span className="font-bold text-white">CGPA: {candidate.education.cgpa.toFixed(2)} / 10</span>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-800">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center">
-                  <Briefcase className="mr-1.5 h-4 w-4 text-amber-400" /> Experience &amp; Internships
+              <div className="pt-4 border-t border-zinc-850">
+                <h3 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2 flex items-center">
+                  <Briefcase className="mr-1.5 h-3.5 w-3.5 text-zinc-400" /> Experience
                 </h3>
                 {candidate.experience.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic">No formal work experience listed.</p>
+                  <p className="text-zinc-500 italic">No formal experience listed.</p>
                 ) : (
                   candidate.experience.map((exp: ExperienceRecord, idx: number) => (
-                    <div key={idx} className="mb-3 last:mb-0 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800">
-                      <div className="font-medium text-white text-xs">{exp.position}</div>
-                      <div className="text-xs text-slate-400">{exp.company}</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">{exp.duration_text}</div>
+                    <div key={idx} className="mb-2 last:mb-0 bg-black p-2.5 rounded-lg border border-zinc-850">
+                      <div className="font-semibold text-white">{exp.position}</div>
+                      <div className="text-zinc-400 text-[11px]">{exp.company}</div>
+                      <div className="text-[10px] text-zinc-500 mt-0.5">{exp.duration_text}</div>
                     </div>
                   ))
                 )}
               </div>
               
-              <div className="pt-4 border-t border-slate-800">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800 border border-slate-700">
+              <div className="pt-4 border-t border-zinc-850">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-black border border-zinc-850">
                   <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-srm-400" />
+                    <FileText className="h-4 w-4 text-white" />
                     <div>
                       <span className="text-xs font-semibold text-white block">Resume Document</span>
-                      <span className="text-[10px] text-slate-400 font-mono">PDF / Institutional Standard</span>
+                      <span className="text-[10px] text-zinc-500 font-mono">PDF Standard</span>
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-slate-500" />
+                  <ChevronRight className="h-4 w-4 text-zinc-500" />
                 </div>
               </div>
             </div>

@@ -24,14 +24,14 @@ export const SettingsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-white tracking-tight font-display">
             Institutional Settings & AI Governance
           </h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-zinc-400 mt-1">
             Configure SRM placement screening weights, tier thresholds, and institutional bias safeguards.
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span className="text-slate-300">Authorized Domain:</span>
-          <span className="font-mono text-amber-400 font-semibold">@srmist.edu.in</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs">
+          <ShieldCheck className="w-4 h-4 text-white" />
+          <span className="text-zinc-400">Authorized Domain:</span>
+          <span className="font-mono text-white font-semibold">@srmist.edu.in</span>
         </div>
       </div>
 
