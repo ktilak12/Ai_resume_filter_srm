@@ -3,16 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { 
   GraduationCap, 
   ShieldCheck, 
-  Sparkles, 
   ArrowLeft, 
-  CheckCircle2, 
   AlertCircle, 
-  ExternalLink, 
-  Layers, 
-  Briefcase,
-  Users,
-  Settings,
-  HelpCircle,
   LogIn
 } from 'lucide-react';
 import { loadGoogleScript } from '../services/googleAuth';
@@ -135,17 +127,13 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 sm:p-6 font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-black text-zinc-100 flex flex-col justify-between p-4 sm:p-6 font-sans relative">
       
-      {/* Background ambient accents */}
-      <div className="absolute top-0 left-1/3 w-96 h-96 bg-srm-600/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none translate-y-1/2"></div>
-
       {/* Top back navigation */}
       <div className="max-w-md w-full mx-auto relative z-10">
         <Link 
           to="/" 
-          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Landing Page</span>
@@ -153,40 +141,37 @@ export const LoginPage: React.FC = () => {
       </div>
 
       {/* Main Login Card */}
-      <div className="max-w-md w-full mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10">
+      <div className="max-w-md w-full mx-auto bg-zinc-950 border border-zinc-850 rounded-2xl p-8 shadow-2xl relative z-10">
         
         {/* SRM University Emblem & Header */}
-        <div className="text-center space-y-2.5 mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-srm-700 via-srm-500 to-amber-500 p-0.5 shadow-glow-srm flex items-center justify-center mx-auto">
-            <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-              <GraduationCap className="w-7 h-7 text-srm-400" />
-            </div>
+        <div className="text-center space-y-2 mb-8">
+          <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-white">
+            <GraduationCap className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-white tracking-tight font-display">
+          <h1 className="text-lg font-bold text-white tracking-tight">
             SRM Institute of Science and Technology
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-400">
             Directorate of Career Centre • Placement Portal
           </p>
         </div>
 
         {/* Portal Sign-In Header */}
         <div className="text-center mb-6 space-y-1">
-          <h2 className="text-base font-semibold text-white">Sign in to your account</h2>
-          <p className="text-xs text-slate-400">
-            Sign in with your Google account or institutional <br />
-            <span className="text-amber-400 font-mono font-semibold">@srmist.edu.in</span> ID
+          <h2 className="text-sm font-semibold text-white">Sign in to your account</h2>
+          <p className="text-xs text-zinc-400 font-mono">
+            Official @srmist.edu.in Portal Access
           </p>
         </div>
 
         {/* Auth Error Banner */}
         {authError && (
-          <div className="mb-6 p-3.5 rounded-xl bg-rose-950/80 border border-rose-500/40 text-left space-y-1 text-xs text-rose-200 animate-in fade-in">
-            <div className="flex items-center gap-1.5 text-rose-400 font-semibold">
+          <div className="mb-6 p-3.5 rounded-xl bg-zinc-900 border border-zinc-700 text-left space-y-1 text-xs text-zinc-200">
+            <div className="flex items-center gap-1.5 text-white font-semibold">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>Authentication Notice</span>
             </div>
-            <p className="text-[11px] leading-relaxed text-rose-300">
+            <p className="text-[11px] leading-relaxed text-zinc-400">
               {authError.message}
             </p>
           </div>
@@ -199,44 +184,26 @@ export const LoginPage: React.FC = () => {
             <div className="w-full flex flex-col items-center">
               <div ref={googleButtonRef} className="flex justify-center w-full min-h-[44px]"></div>
               {isRenderingGoogle && (
-                <p className="text-xs text-slate-400 animate-pulse mt-2">Loading Google Sign-In...</p>
+                <p className="text-xs text-zinc-500 animate-pulse mt-2">Loading Google Sign-In...</p>
               )}
             </div>
           ) : (
             <button
               onClick={handleManualGoogleClick}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 text-white text-sm font-medium border border-slate-700 hover:border-slate-600 transition-all shadow-md group"
+              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-850 text-white text-xs font-semibold border border-zinc-800 hover:border-zinc-700 transition-all group"
             >
-              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              <span>Sign in with Google</span>
+              <span>Sign in with Google Account</span>
             </button>
           )}
 
           {/* Divider */}
           <div className="relative w-full py-2">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800"></div>
+              <div className="w-full border-t border-zinc-850"></div>
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-slate-900 px-3 text-slate-500 uppercase font-semibold text-[10px] tracking-wider">
-                Or Direct Institutional Sign-In
+              <span className="bg-zinc-950 px-3 text-zinc-500 uppercase font-mono text-[10px] tracking-wider">
+                Direct Sign-In
               </span>
             </div>
           </div>
@@ -261,23 +228,23 @@ export const LoginPage: React.FC = () => {
                 placeholder="Full Name (e.g. Tilak K)"
                 value={directName}
                 onChange={(e) => setDirectName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-srm-500"
+                className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
               />
             </div>
             <div>
               <input
                 type="email"
-                placeholder="Email (e.g. yourname@srmist.edu.in)"
+                placeholder="Email (e.g. name@srmist.edu.in)"
                 value={directEmail}
                 onChange={(e) => setDirectEmail(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-srm-500"
+                className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <select
                 value={directRole}
                 onChange={(e) => setDirectRole(e.target.value as any)}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-2 text-white text-[11px] focus:outline-none focus:border-srm-500"
+                className="w-full bg-black border border-zinc-800 rounded-xl px-2.5 py-2 text-white text-[11px] focus:outline-none focus:border-zinc-500"
               >
                 <option value="Placement Officer">Placement Officer</option>
                 <option value="Faculty Coordinator">Faculty Coordinator</option>
@@ -288,7 +255,7 @@ export const LoginPage: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1"
+                className="w-full py-2 px-3 rounded-xl bg-white text-black hover:bg-zinc-200 font-bold text-xs transition-all flex items-center justify-center gap-1.5"
               >
                 <span>Enter Portal</span>
                 <LogIn className="w-3.5 h-3.5" />
@@ -299,22 +266,22 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* Domain Badge & Notice */}
-        <div className="mt-6 pt-4 border-t border-slate-800 text-center space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Google Authentication &amp; RBAC Active</span>
+        <div className="mt-6 pt-4 border-t border-zinc-850 text-center space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 text-xs text-zinc-400 font-mono">
+            <ShieldCheck className="w-3.5 h-3.5 text-white" />
+            <span>Role-Based Governance Active</span>
           </div>
-          <p className="text-[10px] text-slate-500 max-w-xs mx-auto">
-            Supports personal Google accounts and institutional @srmist.edu.in IDs.
+          <p className="text-[10px] text-zinc-500 max-w-xs mx-auto">
+            Authorized for SRMIST placement operations.
           </p>
         </div>
 
       </div>
 
       {/* Standard Footer */}
-      <div className="max-w-md w-full mx-auto text-center text-xs text-slate-600 relative z-10">
-        <p>© 2026 SRM Institute of Science and Technology. All rights reserved.</p>
-        <p className="text-[10px] text-slate-600 mt-0.5">Directorate of Career Centre • Kattankulathur</p>
+      <div className="max-w-md w-full mx-auto text-center text-xs text-zinc-600 relative z-10">
+        <p>© 2026 SRM Institute of Science and Technology.</p>
+        <p className="text-[10px] text-zinc-600 mt-0.5">Directorate of Career Centre • Kattankulathur</p>
       </div>
 
     </div>
