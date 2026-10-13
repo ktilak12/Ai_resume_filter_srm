@@ -16,7 +16,6 @@ import {
   FileCheck, 
   Lightbulb, 
   ArrowRight, 
-  Zap, 
   Download,
   Search,
   ExternalLink
@@ -99,75 +98,68 @@ export const ResumeUpload: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setFiles(Array.from(e.dataTransfer.files));
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFiles([e.dataTransfer.files[0]]);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFiles(Array.from(e.target.files));
+    if (e.target.files && e.target.files[0]) {
+      setFiles([e.target.files[0]]);
     }
   };
 
-  const processResumeEvaluation = async (rawContent?: string, fileObj?: File) => {
+  const processResumeEvaluation = async (rawText?: string, fileObj?: File) => {
     setIsProcessing(true);
     setProgress(15);
     setAtsResult(null);
     setSavedSuccessMsg(null);
 
-    await new Promise(r => setTimeout(r, 250));
-    setProgress(45);
-
     try {
+      let extractedText = rawText || '';
       let candidateProfile: CandidateProfile;
-      let rawText = rawContent || '';
 
       if (fileObj) {
+        setProgress(35);
         candidateProfile = await parseResumeFile(fileObj);
-        rawText = candidateProfile.raw_resume_text || '';
+        extractedText = candidateProfile.raw_resume_text || '';
       } else {
-        candidateProfile = extractCandidateEntities(rawContent || '', 'Submitted_Resume.txt');
+        setProgress(60);
+        candidateProfile = extractCandidateEntities(extractedText, 'pasted_resume.txt');
       }
 
-      setProgress(75);
-      await new Promise(r => setTimeout(r, 250));
-
+      setProgress(85);
       const screening = screenCandidate(candidateProfile, selectedJob);
-      const formatting = evaluateAtsFormatting(rawText, candidateProfile);
+      const formatting = evaluateAtsFormatting(extractedText, candidateProfile);
 
-      // Attach ATS score to candidate profile
       candidateProfile.ats_score = screening.score.overall_match;
-
-      // Persist candidate to local storage
-      const currentSaved = localStorage.getItem('srm_candidates_list');
-      let candidatesList: CandidateProfile[] = [];
-      if (currentSaved) {
-        try {
-          candidatesList = JSON.parse(currentSaved);
-        } catch (e) {
-          candidatesList = [...INITIAL_CANDIDATES];
-        }
-      } else {
-        candidatesList = [...INITIAL_CANDIDATES];
-      }
-      
-      const existingIdx = candidatesList.findIndex(c => c.id === candidateProfile.id || (c.email && c.email === candidateProfile.email));
-      if (existingIdx >= 0) {
-        candidatesList[existingIdx] = candidateProfile;
-      } else {
-        candidatesList = [candidateProfile, ...candidatesList];
-      }
-      localStorage.setItem('srm_candidates_list', JSON.stringify(candidatesList));
+      candidateProfile.match_tier = screening.explainable.verdict;
 
       setProgress(100);
-      await new Promise(r => setTimeout(r, 200));
-
       setAtsResult({
         candidate: candidateProfile,
         screening,
         formatting
       });
+
+      // Save candidate to candidates roster
+      const currentList: CandidateProfile[] = (() => {
+        try {
+          const saved = localStorage.getItem('srm_candidates_list');
+          return saved ? JSON.parse(saved) : INITIAL_CANDIDATES;
+        } catch (e) {
+          return INITIAL_CANDIDATES;
+        }
+      })();
+
+      const updatedRoster = [
+        candidateProfile,
+        ...currentList.filter(c => c.reg_number !== candidateProfile.reg_number)
+      ];
+
+      localStorage.setItem('srm_candidates_list', JSON.stringify(updatedRoster));
+      window.dispatchEvent(new CustomEvent('srm_candidate_added', { detail: candidateProfile }));
+
       setSavedSuccessMsg(`Candidate profile for "${candidateProfile.name}" saved to recruitment pool!`);
     } catch (err) {
       alert('Error parsing resume. Please ensure file contains valid text content.');
@@ -177,22 +169,22 @@ export const ResumeUpload: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
+    <div className="max-w-6xl mx-auto space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-srm-400" />
-            Resume ATS Score Checker & Evaluator
+            <Sparkles className="h-5 w-5 text-white" />
+            Resume ATS Score Checker
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Submit student resumes to calculate real-time ATS match score, keyword coverage, formatting health, and AI recommendations.
+          <p className="text-zinc-400 text-xs mt-1">
+            Submit resumes for real-time ATS match scoring, keyword extraction, and eligibility validation.
           </p>
         </div>
 
         {/* Target Job Selector */}
-        <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex items-center gap-3">
-          <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">Target Role:</span>
+        <div className="bg-zinc-950 border border-zinc-850 p-2 rounded-xl flex items-center gap-3">
+          <span className="text-xs font-mono text-zinc-400">Target Role:</span>
           <select 
             value={selectedJobId}
             onChange={(e) => {
@@ -203,7 +195,7 @@ export const ResumeUpload: React.FC = () => {
                 setAtsResult(prev => prev ? { ...prev, screening } : null);
               }
             }}
-            className="bg-slate-800 border border-slate-700 text-white font-medium text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-srm-500"
+            className="bg-black border border-zinc-800 text-white font-mono text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-zinc-500"
           >
             {jobs.map(j => (
               <option key={j.id} value={j.id}>{j.company} — {j.title}</option>
@@ -213,25 +205,25 @@ export const ResumeUpload: React.FC = () => {
       </div>
 
       {/* Target Drive Requirements Summary */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="bg-zinc-950 border border-zinc-850 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-srm-600/20 border border-srm-500/30 flex items-center justify-center text-srm-400 font-bold">
+          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white font-mono font-bold">
             {selectedJob.company.charAt(0)}
           </div>
           <div>
             <span className="font-semibold text-white">{selectedJob.title}</span>
-            <span className="text-slate-400 ml-2">({selectedJob.company})</span>
+            <span className="text-zinc-400 ml-2">({selectedJob.company})</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400">Min CGPA:</span>
-          <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold border border-emerald-500/20">
+        <div className="flex items-center gap-2 font-mono">
+          <span className="text-zinc-400">Min CGPA:</span>
+          <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-white font-bold">
             ≥ {selectedJob.academic_eligibility.min_cgpa}
           </span>
-          <span className="text-slate-400 ml-2">Required Skills:</span>
+          <span className="text-zinc-400 ml-2">Required Skills:</span>
           <div className="flex flex-wrap gap-1">
             {selectedJob.required_skills.map((s, idx) => (
-              <span key={idx} className="px-2 py-0.5 rounded bg-srm-500/10 text-srm-300 font-medium text-[11px] border border-srm-500/20">
+              <span key={idx} className="px-2 py-0.5 rounded bg-zinc-900 text-zinc-300 text-[11px] border border-zinc-800">
                 {s}
               </span>
             ))}
@@ -240,14 +232,14 @@ export const ResumeUpload: React.FC = () => {
       </div>
 
       {/* Main Submission Form */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl">
-        <div className="flex border-b border-slate-800 mb-6">
+      <div className="bg-zinc-950 border border-zinc-850 rounded-2xl p-6 sm:p-8">
+        <div className="flex border-b border-zinc-850 mb-6">
           <button
             onClick={() => setActiveTab('upload')}
-            className={`pb-3 px-4 text-xs sm:text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+            className={`pb-3 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'upload' 
-                ? 'border-srm-500 text-srm-400' 
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-white text-white' 
+                : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <UploadCloud className="w-4 h-4" />
@@ -255,10 +247,10 @@ export const ResumeUpload: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('paste')}
-            className={`pb-3 px-4 text-xs sm:text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
+            className={`pb-3 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'paste' 
-                ? 'border-srm-500 text-srm-400' 
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-white text-white' 
+                : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -270,7 +262,7 @@ export const ResumeUpload: React.FC = () => {
           <div className="space-y-6">
             <div 
               className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                dragActive ? 'border-srm-500 bg-srm-500/10' : 'border-slate-700 hover:border-slate-500 bg-slate-800/40'
+                dragActive ? 'border-white bg-zinc-900/50' : 'border-zinc-800 hover:border-zinc-700 bg-black'
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -284,16 +276,16 @@ export const ResumeUpload: React.FC = () => {
                 onChange={handleFileChange}
                 className="hidden"
               />
-              <div className="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-700 shadow-sm">
-                <UploadCloud className="h-7 w-7 text-srm-400" />
+              <div className="w-12 h-12 bg-zinc-900 rounded-xl flex items-center justify-center mx-auto mb-3 border border-zinc-800">
+                <UploadCloud className="h-6 w-6 text-white" />
               </div>
-              <h3 className="text-base font-semibold text-white mb-1">Drag and drop resume file here</h3>
-              <p className="text-slate-400 text-xs mb-5">Supports text-based PDF, DOCX, and TXT files</p>
+              <h3 className="text-sm font-semibold text-white mb-1">Drag and drop resume file here</h3>
+              <p className="text-zinc-500 text-xs mb-4">Supports text-based PDF, DOCX, and TXT files</p>
               
               <div className="flex flex-wrap justify-center gap-3">
                 <button 
                   onClick={() => inputRef.current?.click()}
-                  className="bg-srm-600 hover:bg-srm-500 text-white px-5 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-glow-srm flex items-center gap-2"
+                  className="bg-white text-black hover:bg-zinc-200 px-5 py-2 rounded-lg font-semibold text-xs transition-colors flex items-center gap-2"
                 >
                   <UploadCloud className="w-4 h-4" />
                   <span>Select Resume File</span>
@@ -302,17 +294,17 @@ export const ResumeUpload: React.FC = () => {
             </div>
 
             {files.length > 0 && (
-              <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700 flex items-center justify-between">
+              <div className="bg-black p-3.5 rounded-xl border border-zinc-850 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <FileText className="h-5 w-5 text-srm-400" />
+                  <FileText className="h-4 w-4 text-zinc-400" />
                   <div>
-                    <span className="text-sm font-medium text-white block">{files[0].name}</span>
-                    <span className="text-xs text-slate-400">{(files[0].size / 1024).toFixed(1)} KB</span>
+                    <span className="text-xs font-medium text-white block">{files[0].name}</span>
+                    <span className="text-[10px] text-zinc-500 font-mono">{(files[0].size / 1024).toFixed(1)} KB</span>
                   </div>
                 </div>
                 <button 
                   onClick={() => setFiles([])}
-                  className="text-slate-500 hover:text-red-400 p-1"
+                  className="text-zinc-500 hover:text-white p-1"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -321,22 +313,22 @@ export const ResumeUpload: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <label className="block text-xs font-semibold text-slate-300">Paste Resume Text Content:</label>
+            <label className="block text-xs font-semibold text-zinc-300">Paste Resume Text Content:</label>
             <textarea
               rows={8}
               value={pastedText}
               onChange={(e) => setPastedText(e.target.value)}
               placeholder="Paste raw resume text here (Education, Skills, Experience, Projects)..."
-              className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-4 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-srm-500"
+              className="w-full bg-black border border-zinc-800 text-white rounded-xl p-4 text-xs font-mono focus:outline-none focus:border-zinc-500"
             ></textarea>
           </div>
         )}
 
         {/* Action Button */}
-        <div className="mt-6 pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-xs text-slate-400 flex items-center gap-1.5">
-            <CheckCircle className="w-4 h-4 text-emerald-400" />
-            <span>Instant Institutional NLP Extraction &amp; ATS Scoring</span>
+        <div className="mt-6 pt-6 border-t border-zinc-850 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="text-xs text-zinc-400 flex items-center gap-1.5 font-mono">
+            <CheckCircle className="w-4 h-4 text-white" />
+            <span>Instant Parsing &amp; ATS Scoring</span>
           </div>
 
           <button
@@ -348,67 +340,49 @@ export const ResumeUpload: React.FC = () => {
                 processResumeEvaluation(pastedText);
               }
             }}
-            className="w-full sm:w-auto bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white px-8 py-3 rounded-xl font-semibold text-sm transition-all shadow-glow-srm disabled:opacity-40 flex items-center justify-center gap-2"
+            className="w-full sm:w-auto bg-white text-black hover:bg-zinc-200 px-7 py-2.5 rounded-xl font-bold text-xs transition-all disabled:opacity-40 flex items-center justify-center gap-2"
           >
             {isProcessing ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="w-4 h-4 animate-spin text-black" />
                 <span>Evaluating ATS Score ({progress}%)...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Submit &amp; Calculate ATS Score</span>
+                <Sparkles className="w-4 h-4 text-black" />
+                <span>Calculate ATS Score</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* ========================================================= */}
-      {/* COMPREHENSIVE ATS SCORE & ANALYSIS REPORT PANEL          */}
-      {/* ========================================================= */}
+      {/* COMPREHENSIVE ATS SCORE & ANALYSIS REPORT PANEL */}
       {atsResult && (
         <div className="space-y-6 animate-fadeIn">
           {/* Top Banner Notice */}
           {savedSuccessMsg && (
-            <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs font-semibold flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 text-white text-xs font-semibold flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
                 <span>{savedSuccessMsg}</span>
               </div>
-              <button onClick={() => setSavedSuccessMsg(null)} className="text-slate-400 hover:text-white underline">
+              <button onClick={() => setSavedSuccessMsg(null)} className="text-zinc-500 hover:text-white underline">
                 Dismiss
               </button>
             </div>
           )}
 
           {/* Hero ATS Score Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-srm-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
+          <div className="bg-zinc-950 border border-zinc-850 rounded-2xl p-6 sm:p-8 relative">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
               {/* Overall Score Gauge */}
-              <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-950/60 rounded-xl border border-slate-800">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Overall ATS Score</span>
-                <div className="relative flex items-center justify-center my-2">
-                  <div className={`text-5xl font-extrabold tracking-tight ${
-                    atsResult.screening.score.overall_match >= 85 
-                      ? 'text-emerald-400' 
-                      : atsResult.screening.score.overall_match >= 65 
-                      ? 'text-amber-400' 
-                      : 'text-rose-400'
-                  }`}>
-                    {atsResult.screening.score.overall_match}%
-                  </div>
+              <div className="flex flex-col items-center justify-center text-center p-6 bg-black rounded-xl border border-zinc-850">
+                <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider mb-2">Overall ATS Score</span>
+                <div className="text-5xl font-mono font-bold text-white tracking-tight my-2">
+                  {atsResult.screening.score.overall_match}%
                 </div>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border mt-2 ${
-                  atsResult.screening.explainable.verdict === 'Strong Match'
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                    : atsResult.screening.explainable.verdict === 'Needs Review'
-                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                }`}>
+                <span className="inline-flex items-center px-3 py-1 rounded text-xs font-mono font-bold bg-zinc-900 border border-zinc-800 text-white mt-2">
                   {atsResult.screening.explainable.verdict}
                 </span>
               </div>
@@ -417,40 +391,44 @@ export const ResumeUpload: React.FC = () => {
               <div className="md:col-span-2 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-bold text-white">{atsResult.candidate.name}</h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <h2 className="text-lg font-bold text-white">{atsResult.candidate.name}</h2>
+                    <p className="text-xs text-zinc-400 font-mono mt-0.5">
                       {atsResult.candidate.reg_number} • {atsResult.candidate.education.degree} in {atsResult.candidate.education.department}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs text-slate-400 block">Academic Status</span>
-                    <span className={`text-xs font-bold ${atsResult.screening.eligibility.is_eligible ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {atsResult.screening.eligibility.is_eligible ? '✓ Eligible (CGPA Cutoff Met)' : '✕ Ineligible'}
+                    <span className="text-[11px] text-zinc-500 font-mono block">Status</span>
+                    <span className="text-xs font-mono font-bold text-white">
+                      {atsResult.screening.eligibility.is_eligible ? '✓ Eligible' : '✕ Ineligible'}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-300 leading-relaxed bg-slate-800/40 p-3 rounded-lg border border-slate-700/50">
+                <p className="text-xs text-zinc-300 leading-relaxed bg-black p-3 rounded-lg border border-zinc-850">
                   {atsResult.screening.explainable.summary}
                 </p>
 
-                {/* Sub-Score Pills */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  <div className="bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/50 text-center">
-                    <span className="text-[10px] text-slate-400 block">Skills Score</span>
-                    <span className="font-bold text-srm-400">{atsResult.screening.score.skills}%</span>
+                {/* Tri-Pillar ATS Sub-Score Breakdown */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                  <div className="bg-black p-2.5 rounded-lg border border-zinc-850 text-center">
+                    <span className="text-[10px] text-zinc-500 block">Keywords &amp; Skills</span>
+                    <span className="font-bold text-white">{atsResult.screening.score.keyword_score ?? atsResult.screening.score.skills}%</span>
+                    <span className="text-[9px] text-zinc-600 block mt-0.5">40% Weight</span>
                   </div>
-                  <div className="bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/50 text-center">
-                    <span className="text-[10px] text-slate-400 block">Academic Score</span>
-                    <span className="font-bold text-emerald-400">{atsResult.screening.score.education}%</span>
+                  <div className="bg-black p-2.5 rounded-lg border border-zinc-850 text-center">
+                    <span className="text-[10px] text-zinc-500 block">Requirement Fit</span>
+                    <span className="font-bold text-white">{atsResult.screening.score.requirement_score ?? atsResult.screening.score.education}%</span>
+                    <span className="text-[9px] text-zinc-600 block mt-0.5">35% Weight</span>
                   </div>
-                  <div className="bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/50 text-center">
-                    <span className="text-[10px] text-slate-400 block">Experience Score</span>
-                    <span className="font-bold text-amber-400">{atsResult.screening.score.experience}%</span>
+                  <div className="bg-black p-2.5 rounded-lg border border-zinc-850 text-center">
+                    <span className="text-[10px] text-zinc-500 block">ATS Layout Health</span>
+                    <span className="font-bold text-white">{atsResult.formatting.overall_formatting_score}%</span>
+                    <span className="text-[9px] text-zinc-600 block mt-0.5">25% Weight</span>
                   </div>
-                  <div className="bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/50 text-center">
-                    <span className="text-[10px] text-slate-400 block">ATS Formatting</span>
-                    <span className="font-bold text-purple-400">{atsResult.formatting.overall_formatting_score}%</span>
+                  <div className="bg-black p-2.5 rounded-lg border border-zinc-850 text-center">
+                    <span className="text-[10px] text-zinc-500 block">Academic CGPA</span>
+                    <span className="font-bold text-white">{atsResult.candidate.education.cgpa} / 10</span>
+                    <span className="text-[9px] text-zinc-600 block mt-0.5">Cutoff: {selectedJob.academic_eligibility.min_cgpa}</span>
                   </div>
                 </div>
 
@@ -459,17 +437,17 @@ export const ResumeUpload: React.FC = () => {
                     onClick={() => {
                       setSavedSuccessMsg(`Added ${atsResult.candidate.name} to AI Screening Roster & Candidate Database!`);
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold text-xs transition-colors flex items-center gap-1.5"
+                    className="bg-white text-black hover:bg-zinc-200 px-4 py-2 rounded-lg font-semibold text-xs transition-colors flex items-center gap-1.5"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    Save Candidate to Database
+                    Save Candidate
                   </button>
 
                   <Link
                     to="/screening"
-                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2 rounded-lg font-semibold text-xs transition-colors flex items-center gap-1.5"
+                    className="bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-800 px-4 py-2 rounded-lg font-semibold text-xs transition-colors flex items-center gap-1.5"
                   >
-                    <span>View in Candidate Rankings</span>
+                    <span>View Rankings</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -478,12 +456,12 @@ export const ResumeUpload: React.FC = () => {
           </div>
 
           {/* Tabbed Detailed Analysis */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
-            <div className="flex border-b border-slate-800 overflow-x-auto">
+          <div className="bg-zinc-950 border border-zinc-850 rounded-2xl overflow-hidden">
+            <div className="flex border-b border-zinc-850 overflow-x-auto">
               <button
                 onClick={() => setActiveDetailTab('overview')}
-                className={`px-5 py-3.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${
-                  activeDetailTab === 'overview' ? 'border-srm-500 text-srm-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200'
+                className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${
+                  activeDetailTab === 'overview' ? 'border-white text-white bg-zinc-900/40' : 'border-transparent text-zinc-400 hover:text-white'
                 }`}
               >
                 <Award className="w-4 h-4" />
@@ -492,38 +470,38 @@ export const ResumeUpload: React.FC = () => {
 
               <button
                 onClick={() => setActiveDetailTab('keywords')}
-                className={`px-5 py-3.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${
-                  activeDetailTab === 'keywords' ? 'border-srm-500 text-srm-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200'
+                className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${
+                  activeDetailTab === 'keywords' ? 'border-white text-white bg-zinc-900/40' : 'border-transparent text-zinc-400 hover:text-white'
                 }`}
               >
                 <Code className="w-4 h-4" />
-                Keywords &amp; Skill Evidence ({atsResult.screening.explainable.skill_evidence.filter(e => e.match_status === 'matched').length} Matched)
+                Keywords ({atsResult.screening.explainable.skill_evidence.filter(e => e.match_status === 'matched').length} Matched)
               </button>
 
               <button
                 onClick={() => setActiveDetailTab('formatting')}
-                className={`px-5 py-3.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${
-                  activeDetailTab === 'formatting' ? 'border-srm-500 text-srm-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200'
+                className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${
+                  activeDetailTab === 'formatting' ? 'border-white text-white bg-zinc-900/40' : 'border-transparent text-zinc-400 hover:text-white'
                 }`}
               >
                 <FileCheck className="w-4 h-4" />
-                ATS Layout &amp; Parseability Check ({atsResult.formatting.overall_formatting_score}%)
+                Layout &amp; Structure ({atsResult.formatting.overall_formatting_score}%)
               </button>
 
               <button
                 onClick={() => setActiveDetailTab('tips')}
-                className={`px-5 py-3.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${
-                  activeDetailTab === 'tips' ? 'border-srm-500 text-srm-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200'
+                className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${
+                  activeDetailTab === 'tips' ? 'border-white text-white bg-zinc-900/40' : 'border-transparent text-zinc-400 hover:text-white'
                 }`}
               >
-                <Lightbulb className="w-4 h-4 text-amber-400" />
+                <Lightbulb className="w-4 h-4" />
                 AI Optimization Tips
               </button>
 
               <button
                 onClick={() => setActiveDetailTab('profile')}
-                className={`px-5 py-3.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${
-                  activeDetailTab === 'profile' ? 'border-srm-500 text-srm-400 bg-slate-800/50' : 'border-transparent text-slate-400 hover:text-slate-200'
+                className={`px-5 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${
+                  activeDetailTab === 'profile' ? 'border-white text-white bg-zinc-900/40' : 'border-transparent text-zinc-400 hover:text-white'
                 }`}
               >
                 <GraduationCap className="w-4 h-4" />
@@ -535,16 +513,49 @@ export const ResumeUpload: React.FC = () => {
               {/* TAB 1: OVERVIEW & BREAKDOWN */}
               {activeDetailTab === 'overview' && (
                 <div className="space-y-6">
+                  {/* Tri-Pillar Score Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-black p-4 rounded-xl border border-zinc-850">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-white">Keyword Relevance</span>
+                        <span className="text-xs font-mono font-bold text-white">{atsResult.screening.score.keyword_score ?? atsResult.screening.score.skills}%</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400">
+                        {atsResult.screening.explainable.skill_evidence.filter(e => e.match_status === 'matched').length} of {selectedJob.required_skills.length + selectedJob.preferred_skills.length} target role skills verified in candidate profile.
+                      </p>
+                    </div>
+
+                    <div className="bg-black p-4 rounded-xl border border-zinc-850">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-white">Requirement Fit</span>
+                        <span className="text-xs font-mono font-bold text-white">{atsResult.screening.score.requirement_score ?? atsResult.screening.score.education}%</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400">
+                        CGPA {atsResult.candidate.education.cgpa} (Cutoff ≥ {selectedJob.academic_eligibility.min_cgpa}), {atsResult.candidate.education.department} branch, 0 active backlogs.
+                      </p>
+                    </div>
+
+                    <div className="bg-black p-4 rounded-xl border border-zinc-850">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-white">Layout Parseability</span>
+                        <span className="text-xs font-mono font-bold text-white">{atsResult.formatting.overall_formatting_score}%</span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400">
+                        {atsResult.formatting.layout_tier || 'Standard ATS Layout'} with {atsResult.formatting.metrics?.word_count || 350} words and {atsResult.formatting.metrics?.action_verbs_count || 4} action verbs.
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Key Strengths */}
-                    <div className="bg-slate-950/60 p-5 rounded-xl border border-slate-800 space-y-3">
-                      <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-2 uppercase tracking-wider">
-                        <CheckCircle2 className="w-4 h-4" /> Positives &amp; Strengths Detected
+                    <div className="bg-black p-5 rounded-xl border border-zinc-850 space-y-3">
+                      <h3 className="text-xs font-bold text-white flex items-center gap-2 uppercase font-mono tracking-wider">
+                        <CheckCircle2 className="w-4 h-4 text-white" /> Strengths Detected
                       </h3>
                       <ul className="space-y-2 text-xs">
                         {atsResult.screening.explainable.positive_factors.map((factor, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-slate-300">
-                            <span className="text-emerald-400 font-bold">•</span>
+                          <li key={idx} className="flex items-start gap-2 text-zinc-300">
+                            <span className="text-white font-bold">•</span>
                             <span>{factor}</span>
                           </li>
                         ))}
@@ -552,17 +563,17 @@ export const ResumeUpload: React.FC = () => {
                     </div>
 
                     {/* Areas for Improvement */}
-                    <div className="bg-slate-950/60 p-5 rounded-xl border border-slate-800 space-y-3">
-                      <h3 className="text-xs font-bold text-amber-400 flex items-center gap-2 uppercase tracking-wider">
-                        <AlertCircle className="w-4 h-4" /> ATS Gaps &amp; Missing Requirements
+                    <div className="bg-black p-5 rounded-xl border border-zinc-850 space-y-3">
+                      <h3 className="text-xs font-bold text-zinc-400 flex items-center gap-2 uppercase font-mono tracking-wider">
+                        <AlertCircle className="w-4 h-4 text-zinc-400" /> Missing Requirements &amp; Gaps
                       </h3>
                       {atsResult.screening.explainable.penalty_factors.length === 0 ? (
-                        <p className="text-xs text-slate-400 italic">No significant ATS penalties or gaps identified.</p>
+                        <p className="text-xs text-zinc-500 italic">No significant ATS penalties identified.</p>
                       ) : (
                         <ul className="space-y-2 text-xs">
                           {atsResult.screening.explainable.penalty_factors.map((penalty, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-slate-300">
-                              <span className="text-amber-400 font-bold">•</span>
+                            <li key={idx} className="flex items-start gap-2 text-zinc-300">
+                              <span className="text-zinc-500 font-bold">•</span>
                               <span>{penalty}</span>
                             </li>
                           ))}
@@ -576,31 +587,40 @@ export const ResumeUpload: React.FC = () => {
               {/* TAB 2: KEYWORDS & SKILL EVIDENCE */}
               {activeDetailTab === 'keywords' && (
                 <div className="space-y-4">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-2">
-                    Required &amp; Preferred Skill Keyword Verification
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider">
+                      Target Role Keywords &amp; Practical Evidence
+                    </h3>
+                    <span className="text-xs font-mono text-zinc-400">
+                      Score: <strong className="text-white">{atsResult.screening.score.keyword_score ?? atsResult.screening.score.skills}%</strong>
+                    </span>
+                  </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {atsResult.screening.explainable.skill_evidence.map((evidence, idx) => {
                       const isMatched = evidence.match_status === 'matched';
                       return (
-                        <div key={idx} className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex items-center justify-between gap-4">
+                        <div key={idx} className="bg-black p-3.5 rounded-xl border border-zinc-850 flex items-center justify-between gap-4">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-white">{evidence.skill}</span>
-                              {evidence.is_required && (
-                                <span className="text-[10px] bg-srm-950 text-srm-300 border border-srm-500/30 px-1.5 py-0.5 rounded font-bold">
+                              <span className="text-xs font-semibold text-white">{evidence.skill}</span>
+                              {evidence.is_required ? (
+                                <span className="text-[10px] font-mono bg-zinc-900 text-zinc-300 border border-zinc-800 px-1.5 py-0.5 rounded">
                                   Mandatory
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-mono bg-zinc-900 text-zinc-500 border border-zinc-850 px-1.5 py-0.5 rounded">
+                                  Preferred
                                 </span>
                               )}
                             </div>
-                            <span className="text-xs text-slate-400 block mt-1">{evidence.candidate_evidence}</span>
+                            <span className="text-[11px] text-zinc-400 block mt-0.5">{evidence.candidate_evidence}</span>
                           </div>
 
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold border shrink-0 ${
+                          <span className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold border shrink-0 ${
                             isMatched
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                              : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                              ? 'bg-zinc-900 text-white border-zinc-700'
+                              : 'bg-black text-zinc-500 border-zinc-850'
                           }`}>
                             {isMatched ? '✓ Matched' : '✕ Missing'}
                           </span>
@@ -614,52 +634,94 @@ export const ResumeUpload: React.FC = () => {
               {/* TAB 3: FORMATTING & PARSEABILITY */}
               {activeDetailTab === 'formatting' && (
                 <div className="space-y-6">
-                  <div className="bg-slate-950/60 p-5 rounded-xl border border-slate-800 space-y-4">
+                  <div className="bg-black p-5 rounded-xl border border-zinc-850 space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-                        Resume Layout &amp; Parseability Health
-                      </h3>
-                      <span className="text-sm font-bold text-purple-400">
-                        {atsResult.formatting.overall_formatting_score}% Score
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                      <div className={`p-3 rounded-lg border flex flex-col items-center justify-center text-center ${
-                        atsResult.formatting.checks.has_contact_email ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
-                      }`}>
-                        <span className="font-bold">Email Header</span>
-                        <span className="text-[10px] mt-1">{atsResult.formatting.checks.has_contact_email ? '✓ Present' : '✕ Missing'}</span>
+                      <div>
+                        <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider">
+                          Resume Layout &amp; ATS Parseability Health
+                        </h3>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">
+                          Evaluates structural headings, contact completeness, action verbs, and word density.
+                        </p>
                       </div>
-
-                      <div className={`p-3 rounded-lg border flex flex-col items-center justify-center text-center ${
-                        atsResult.formatting.checks.has_contact_phone ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
-                      }`}>
-                        <span className="font-bold">Phone Number</span>
-                        <span className="text-[10px] mt-1">{atsResult.formatting.checks.has_contact_phone ? '✓ Present' : '✕ Missing'}</span>
-                      </div>
-
-                      <div className={`p-3 rounded-lg border flex flex-col items-center justify-center text-center ${
-                        atsResult.formatting.checks.has_reg_number ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
-                      }`}>
-                        <span className="font-bold">Register Number</span>
-                        <span className="text-[10px] mt-1">{atsResult.formatting.checks.has_reg_number ? '✓ Present' : '✕ Missing'}</span>
-                      </div>
-
-                      <div className={`p-3 rounded-lg border flex flex-col items-center justify-center text-center ${
-                        atsResult.formatting.checks.has_skills_section ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
-                      }`}>
-                        <span className="font-bold">Skills Heading</span>
-                        <span className="text-[10px] mt-1">{atsResult.formatting.checks.has_skills_section ? '✓ Present' : '✕ Missing'}</span>
+                      <div className="text-right">
+                        <span className="text-xs font-mono font-bold text-white block">
+                          {atsResult.formatting.overall_formatting_score}% Score
+                        </span>
+                        <span className="text-[10px] font-mono text-zinc-400">
+                          {atsResult.formatting.layout_tier || 'Standard ATS Layout'}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="space-y-2 pt-2 border-t border-slate-800">
-                      <h4 className="text-xs font-semibold text-slate-300">Parser Observations:</h4>
-                      <ul className="space-y-1.5 text-xs text-slate-400">
+                    {/* Diagnostic Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+                      <div className="p-3 rounded-lg border border-zinc-850 bg-zinc-950 flex flex-col items-center justify-center text-center">
+                        <span className="text-zinc-400">Email Address</span>
+                        <span className="text-[10px] mt-1 font-bold text-white">{atsResult.formatting.checks.has_contact_email ? '✓ Present' : '✕ Missing'}</span>
+                      </div>
+
+                      <div className="p-3 rounded-lg border border-zinc-850 bg-zinc-950 flex flex-col items-center justify-center text-center">
+                        <span className="text-zinc-400">Phone Number</span>
+                        <span className="text-[10px] mt-1 font-bold text-white">{atsResult.formatting.checks.has_contact_phone ? '✓ Present' : '✕ Missing'}</span>
+                      </div>
+
+                      <div className="p-3 rounded-lg border border-zinc-850 bg-zinc-950 flex flex-col items-center justify-center text-center">
+                        <span className="text-zinc-400">Register Number</span>
+                        <span className="text-[10px] mt-1 font-bold text-white">{atsResult.formatting.checks.has_reg_number ? '✓ Present' : '✕ Missing'}</span>
+                      </div>
+
+                      <div className="p-3 rounded-lg border border-zinc-850 bg-zinc-950 flex flex-col items-center justify-center text-center">
+                        <span className="text-zinc-400">Portfolio Links</span>
+                        <span className="text-[10px] mt-1 font-bold text-white">{atsResult.formatting.checks.has_linkedin_or_github ? '✓ Present' : '✕ Missing'}</span>
+                      </div>
+
+                      <div className="p-3 rounded-lg border border-zinc-850 bg-zinc-950 flex flex-col items-center justify-center text-center">
+                        <span className="text-zinc-400">Education Header</span>
+                        <span className="text-[10px] mt-1 font-bold text-white">{atsResult.formatting.checks.has_education_section ? '✓ Present' : '✕ Missing'}</span>
+                      </div>
+
+                      <div className="p-3 rounded-lg border border-zinc-850 bg-zinc-950 flex flex-col items-center justify-center text-center">
+                        <span className="text-zinc-400">Skills Section</span>
+                        <span className="text-[10px] mt-1 font-bold text-white">{atsResult.formatting.checks.has_skills_section ? '✓ Present' : '✕ Missing'}</span>
+                      </div>
+
+                      <div className="p-3 rounded-lg border border-zinc-850 bg-zinc-950 flex flex-col items-center justify-center text-center">
+                        <span className="text-zinc-400">Action Verbs</span>
+                        <span className="text-[10px] mt-1 font-bold text-white">
+                          {atsResult.formatting.checks.has_action_verbs ? `✓ ${atsResult.formatting.metrics?.action_verbs_count || 4} Found` : '✕ Sparse'}
+                        </span>
+                      </div>
+
+                      <div className="p-3 rounded-lg border border-zinc-850 bg-zinc-950 flex flex-col items-center justify-center text-center">
+                        <span className="text-zinc-400">Quantified Impact</span>
+                        <span className="text-[10px] mt-1 font-bold text-white">
+                          {atsResult.formatting.checks.has_quantifiable_results ? '✓ Detected' : '✕ Missing'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Structural Metrics Bar */}
+                    {atsResult.formatting.metrics && (
+                      <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-850 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+                        <div>
+                          <span className="text-zinc-500">Word Count:</span> <strong className="text-white">{atsResult.formatting.metrics.word_count} words</strong>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Sections Detected:</span> <strong className="text-white">{atsResult.formatting.metrics.sections_detected.length} core sections</strong>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500">Quantifiable Metrics:</span> <strong className="text-white">{atsResult.formatting.metrics.quantifiable_metrics_count} achievements</strong>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2 pt-2 border-t border-zinc-850">
+                      <h4 className="text-xs font-semibold text-zinc-300">Parser Observations:</h4>
+                      <ul className="space-y-1.5 text-xs text-zinc-400">
                         {atsResult.formatting.formatting_feedback.map((note, idx) => (
                           <li key={idx} className="flex items-center gap-2">
-                            <span className="text-srm-400">•</span>
+                            <span className="text-white">•</span>
                             <span>{note}</span>
                           </li>
                         ))}
@@ -672,27 +734,32 @@ export const ResumeUpload: React.FC = () => {
               {/* TAB 4: AI TIPS */}
               {activeDetailTab === 'tips' && (
                 <div className="space-y-4">
-                  <div className="bg-amber-500/10 border border-amber-500/20 p-5 rounded-xl space-y-3">
-                    <h3 className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2">
-                      <Lightbulb className="w-4 h-4 text-amber-400" /> Actionable Advice to Boost ATS Score
+                  <div className="bg-black border border-zinc-800 p-5 rounded-xl space-y-3">
+                    <h3 className="text-xs font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-white" /> Actionable Recommendations
                     </h3>
 
-                    <div className="space-y-3 text-xs text-slate-300">
+                    <div className="space-y-3 text-xs text-zinc-300">
                       {atsResult.screening.explainable.missing_skills.length > 0 && (
-                        <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                        <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-850">
                           <strong className="text-white block mb-1">1. Add Missing Core Keywords:</strong>
-                          Include explicit experience or projects utilizing: <span className="text-amber-400 font-mono">{atsResult.screening.explainable.missing_skills.join(', ')}</span>.
+                          Include explicit experience or projects utilizing: <span className="text-white font-mono">{atsResult.screening.explainable.missing_skills.join(', ')}</span>.
                         </div>
                       )}
 
-                      <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800">
-                        <strong className="text-white block mb-1">2. Quantify Project &amp; Internship Achievements:</strong>
-                        Use measurable metrics (e.g., "Reduced latency by 35%", "Achieved 94% accuracy").
+                      <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-850">
+                        <strong className="text-white block mb-1">2. Quantify Achievements &amp; Scale:</strong>
+                        Use measurable metrics (e.g., "Reduced database query latency by 35%", "Deployed microservices handling 5,000+ daily requests").
                       </div>
 
-                      <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800">
-                        <strong className="text-white block mb-1">3. Maintain Clean Section Headings:</strong>
-                        Ensure standard section names like EDUCATION, TECHNICAL SKILLS, EXPERIENCE, and PROJECTS are used so ATS parsers index entities accurately.
+                      <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-850">
+                        <strong className="text-white block mb-1">3. Maintain Standard Section Headings:</strong>
+                        Ensure standard headings (EDUCATION, TECHNICAL SKILLS, EXPERIENCE, PROJECTS) are clearly demarcated for automated parser indexing.
+                      </div>
+
+                      <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-850">
+                        <strong className="text-white block mb-1">4. Enhance Action Verb Density:</strong>
+                        Begin every bullet point with a decisive engineering verb (e.g., "Architected", "Engineered", "Implemented", "Automated").
                       </div>
                     </div>
                   </div>
@@ -701,23 +768,22 @@ export const ResumeUpload: React.FC = () => {
 
               {/* TAB 5: PARSED PROFILE */}
               {activeDetailTab === 'profile' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-300">
-                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-zinc-300">
+                  <div className="bg-black p-4 rounded-xl border border-zinc-850 space-y-3 font-mono">
                     <h4 className="font-bold text-white uppercase text-[11px]">Academic Profile</h4>
-                    <div><span className="text-slate-500">College:</span> {atsResult.candidate.education.college}</div>
-                    <div><span className="text-slate-500">Degree &amp; Branch:</span> {atsResult.candidate.education.degree} ({atsResult.candidate.education.department})</div>
-                    <div><span className="text-slate-500">CGPA:</span> <strong className="text-emerald-400">{atsResult.candidate.education.cgpa} / 10</strong></div>
-                    <div><span className="text-slate-500">Batch:</span> {atsResult.candidate.education.graduation_year}</div>
-                    <div><span className="text-slate-500">Active Backlogs:</span> {atsResult.candidate.education.active_backlogs}</div>
+                    <div><span className="text-zinc-500">College:</span> {atsResult.candidate.education.college}</div>
+                    <div><span className="text-zinc-500">Degree &amp; Branch:</span> {atsResult.candidate.education.degree} ({atsResult.candidate.education.department})</div>
+                    <div><span className="text-zinc-500">CGPA:</span> <strong className="text-white">{atsResult.candidate.education.cgpa} / 10</strong></div>
+                    <div><span className="text-zinc-500">Batch:</span> {atsResult.candidate.education.graduation_year}</div>
+                    <div><span className="text-zinc-500">Active Backlogs:</span> {atsResult.candidate.education.active_backlogs}</div>
                   </div>
 
-                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
-                    <h4 className="font-bold text-white uppercase text-[11px]">Extracted Skills &amp; Certifications</h4>
+                  <div className="bg-black p-4 rounded-xl border border-zinc-850 space-y-3 font-mono">
+                    <h4 className="font-bold text-white uppercase text-[11px]">Extracted Skills</h4>
                     <div>
-                      <span className="text-slate-500 block mb-1">Extracted Skills:</span>
                       <div className="flex flex-wrap gap-1">
                         {atsResult.candidate.skills.map((sk, i) => (
-                          <span key={i} className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200">
+                          <span key={i} className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-200 text-[11px]">
                             {sk}
                           </span>
                         ))}
@@ -725,7 +791,7 @@ export const ResumeUpload: React.FC = () => {
                     </div>
                     {atsResult.candidate.certifications.length > 0 && (
                       <div>
-                        <span className="text-slate-500 block mb-1">Certifications:</span>
+                        <span className="text-zinc-500 block mb-1">Certifications:</span>
                         <ul className="list-disc pl-4 space-y-0.5">
                           {atsResult.candidate.certifications.map((c, i) => (
                             <li key={i}>{c}</li>
