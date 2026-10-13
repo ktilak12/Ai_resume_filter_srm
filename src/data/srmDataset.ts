@@ -9,7 +9,7 @@ export const INITIAL_JOBS: JobRequirement[] = [
     location: 'Bangalore / Hyderabad',
     ctc_lpa: '28.5 - 34.0 LPA',
     application_deadline: '2026-11-30',
-    open_vacancies: 15,
+    open_vacancies: 10,
     status: 'Active',
     academic_eligibility: {
       allowed_degrees: ['B.Tech', 'M.Tech'],
@@ -18,15 +18,15 @@ export const INITIAL_JOBS: JobRequirement[] = [
       max_active_backlogs: 0,
       graduation_year: 2026
     },
-    required_skills: ['Data Structures', 'Algorithms', 'C++', 'Java', 'Python', 'Distributed Systems'],
-    preferred_skills: ['Cloud Computing', 'System Design', 'Git', 'Kubernetes'],
+    required_skills: ['Data Structures', 'Algorithms', 'C++', 'Java', 'Python'],
+    preferred_skills: ['Cloud Computing', 'System Design', 'Git'],
     min_experience_years: 0,
     freshers_accepted: true,
     internship_preferred: true,
-    job_description: 'Google Campus Recruitment Drive 2026 for Software Development Engineers across core search, cloud infrastructure, and AI engineering teams.',
-    total_applicants_count: 342,
-    processed_count: 342,
-    shortlisted_count: 48,
+    job_description: 'Google campus recruitment drive for core software engineering teams.',
+    total_applicants_count: 24,
+    processed_count: 24,
+    shortlisted_count: 6,
     created_at: new Date().toISOString()
   },
   {
@@ -37,7 +37,7 @@ export const INITIAL_JOBS: JobRequirement[] = [
     location: 'Hyderabad / Bangalore',
     ctc_lpa: '22.0 - 26.0 LPA',
     application_deadline: '2026-12-15',
-    open_vacancies: 20,
+    open_vacancies: 8,
     status: 'Active',
     academic_eligibility: {
       allowed_degrees: ['B.Tech', 'M.Tech', 'MCA'],
@@ -46,15 +46,15 @@ export const INITIAL_JOBS: JobRequirement[] = [
       max_active_backlogs: 0,
       graduation_year: 2026
     },
-    required_skills: ['Python', 'Azure', 'Data Structures', 'C#', 'SQL', 'Git'],
-    preferred_skills: ['Machine Learning', 'Docker', 'REST APIs', 'React'],
+    required_skills: ['Python', 'Azure', 'Data Structures', 'SQL', 'Git'],
+    preferred_skills: ['Machine Learning', 'Docker', 'REST APIs'],
     min_experience_years: 0,
     freshers_accepted: true,
     internship_preferred: true,
-    job_description: 'Microsoft Azure & AI Division campus drive for engineering graduates to build intelligent cloud scale solutions.',
-    total_applicants_count: 280,
-    processed_count: 280,
-    shortlisted_count: 35,
+    job_description: 'Microsoft Azure & AI division campus drive for engineering graduates.',
+    total_applicants_count: 18,
+    processed_count: 18,
+    shortlisted_count: 5,
     created_at: new Date().toISOString()
   },
   {
@@ -65,7 +65,7 @@ export const INITIAL_JOBS: JobRequirement[] = [
     location: 'Chennai / Hyderabad',
     ctc_lpa: '18.0 - 22.5 LPA',
     application_deadline: '2026-12-20',
-    open_vacancies: 25,
+    open_vacancies: 12,
     status: 'Active',
     academic_eligibility: {
       allowed_degrees: ['B.Tech', 'M.Tech', 'MCA'],
@@ -74,43 +74,15 @@ export const INITIAL_JOBS: JobRequirement[] = [
       max_active_backlogs: 0,
       graduation_year: 2026
     },
-    required_skills: ['AWS', 'Python', 'Linux', 'Networking', 'SQL', 'Git'],
-    preferred_skills: ['Terraform', 'Docker', 'Java', 'Data Structures'],
+    required_skills: ['AWS', 'Python', 'Linux', 'SQL', 'Git'],
+    preferred_skills: ['Docker', 'Terraform', 'Networking'],
     min_experience_years: 0,
     freshers_accepted: true,
     internship_preferred: false,
-    job_description: 'Amazon AWS Campus Hiring Program for Associate Solutions Architects designing cloud-native architectures.',
-    total_applicants_count: 410,
-    processed_count: 410,
-    shortlisted_count: 52,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'job-deloitte-consulting',
-    title: 'Technology Consulting Analyst',
-    company: 'Deloitte USI',
-    job_type: 'Full-time',
-    location: 'Bangalore / Hyderabad / Chennai',
-    ctc_lpa: '10.5 - 14.0 LPA',
-    application_deadline: '2027-01-10',
-    open_vacancies: 50,
-    status: 'Active',
-    academic_eligibility: {
-      allowed_degrees: ['B.Tech', 'M.Tech', 'MCA', 'MBA'],
-      allowed_departments: ['CSE', 'IT', 'ECE', 'Mechanical', 'AI & DS', 'Management Studies (MBA)'],
-      min_cgpa: 7.0,
-      max_active_backlogs: 0,
-      graduation_year: 2026
-    },
-    required_skills: ['SQL', 'Python', 'Data Analytics', 'Business Intelligence', 'Problem Solving'],
-    preferred_skills: ['Tableau', 'Power BI', 'Excel', 'Agile'],
-    min_experience_years: 0,
-    freshers_accepted: true,
-    internship_preferred: false,
-    job_description: 'Deloitte campus placement drive for technology consultants delivering digital transformation and enterprise analytics solutions.',
-    total_applicants_count: 520,
-    processed_count: 520,
-    shortlisted_count: 80,
+    job_description: 'Amazon AWS recruitment program for Associate Solutions Architects.',
+    total_applicants_count: 30,
+    processed_count: 30,
+    shortlisted_count: 8,
     created_at: new Date().toISOString()
   }
 ];
@@ -123,17 +95,17 @@ export const INITIAL_CANDIDATES: CandidateProfile[] = [
     email: 'aravind.s@srmist.edu.in',
     phone: '+91 98401 22334',
     location: 'Chennai, Tamil Nadu',
-    linkedin: 'linkedin.com/in/aravind-kumar-srm',
+    linkedin: 'linkedin.com/in/aravind-kumar',
     github: 'github.com/aravind-dev',
     education: {
       degree: 'B.Tech',
       department: 'Computer Science & Engineering',
-      college: 'SRM Institute of Science and Technology, Kattankulathur',
+      college: 'SRM Institute of Science and Technology',
       cgpa: 9.14,
       graduation_year: 2026,
       active_backlogs: 0
     },
-    skills: ['Data Structures', 'Algorithms', 'C++', 'Java', 'Python', 'Distributed Systems', 'Git', 'SQL'],
+    skills: ['Data Structures', 'Algorithms', 'C++', 'Java', 'Python', 'SQL', 'Git'],
     experience: [
       {
         company: 'Zoho Corporation',
@@ -149,15 +121,10 @@ export const INITIAL_CANDIDATES: CandidateProfile[] = [
         name: 'Distributed Key-Value Store',
         technologies: ['C++', 'gRPC', 'Raft Consensus'],
         description: 'Fault-tolerant distributed storage engine implementing the Raft consensus algorithm.'
-      },
-      {
-        name: 'AI Resume Ranking Engine',
-        technologies: ['Python', 'FastAPI', 'React', 'Transformers'],
-        description: 'NLP-based resume entity parser and multi-factor similarity matching platform.'
       }
     ],
-    certifications: ['AWS Certified Cloud Practitioner', 'Google Data Structures & Algorithms Specialization'],
-    raw_resume_text: 'Aravind Kumar S | RA2311003010142 | B.Tech CSE SRMIST | CGPA 9.14 | Skills: C++, Java, Python, Data Structures, Algorithms, Distributed Systems, SQL, Git'
+    certifications: ['AWS Certified Cloud Practitioner'],
+    raw_resume_text: 'Aravind Kumar S | RA2311003010142 | B.Tech CSE SRMIST | CGPA 9.14 | Skills: C++, Java, Python, Data Structures, Algorithms, SQL, Git'
   },
   {
     id: 'cand-srm-02',
@@ -171,30 +138,30 @@ export const INITIAL_CANDIDATES: CandidateProfile[] = [
     education: {
       degree: 'B.Tech',
       department: 'AI & Data Science',
-      college: 'SRM Institute of Science and Technology, Kattankulathur',
+      college: 'SRM Institute of Science and Technology',
       cgpa: 8.92,
       graduation_year: 2026,
       active_backlogs: 0
     },
-    skills: ['Python', 'Azure', 'Machine Learning', 'SQL', 'Data Structures', 'Git', 'Docker', 'REST APIs'],
+    skills: ['Python', 'Azure', 'Machine Learning', 'SQL', 'Data Structures', 'Git', 'Docker'],
     experience: [
       {
         company: 'Microsoft Tech Club SRM',
         position: 'AI & Cloud Lead',
         duration_months: 12,
         duration_text: 'Aug 2024 - Present',
-        responsibilities: ['Organized workshops on Azure OpenAI Services', 'Mentored 200+ students in ML pipelines'],
+        responsibilities: ['Organized workshops on Azure OpenAI', 'Mentored students in ML pipelines'],
         is_internship: false
       }
     ],
     projects: [
       {
-        name: 'Intelligent Cloud Document Parser',
-        technologies: ['Python', 'Azure Cognitive Services', 'FastAPI'],
-        description: 'Multi-modal document analysis and automated entity extraction using vision LLMs.'
+        name: 'Document Analysis Pipeline',
+        technologies: ['Python', 'FastAPI', 'Azure AI'],
+        description: 'Multi-modal document analysis and automated entity extraction.'
       }
     ],
-    certifications: ['Microsoft Certified: Azure AI Fundamentals', 'TensorFlow Developer Certificate'],
+    certifications: ['Microsoft Certified: Azure AI Fundamentals'],
     raw_resume_text: 'Pooja Venkatesh | RA2311003010219 | B.Tech AI & DS SRMIST | CGPA 8.92 | Skills: Python, Azure, Machine Learning, SQL, Data Structures, Git'
   },
   {
@@ -209,89 +176,31 @@ export const INITIAL_CANDIDATES: CandidateProfile[] = [
     education: {
       degree: 'B.Tech',
       department: 'Information Technology',
-      college: 'SRM Institute of Science and Technology, Kattankulathur',
+      college: 'SRM Institute of Science and Technology',
       cgpa: 8.45,
       graduation_year: 2026,
       active_backlogs: 0
     },
-    skills: ['AWS', 'Python', 'Linux', 'Networking', 'SQL', 'Docker', 'Git', 'Terraform'],
+    skills: ['AWS', 'Python', 'Linux', 'SQL', 'Docker', 'Git'],
     experience: [
       {
         company: 'Cognizant',
         position: 'Cloud Infrastructure Intern',
         duration_months: 3,
         duration_text: 'May 2025 - Jul 2025',
-        responsibilities: ['Provisioned AWS VPC, ECS clusters and CI/CD pipelines using Terraform'],
+        responsibilities: ['Provisioned AWS ECS clusters and CI/CD pipelines'],
         is_internship: true
       }
     ],
     projects: [
       {
-        name: 'Auto-Scaling Microservices Infrastructure',
-        technologies: ['AWS ECS', 'Terraform', 'Docker', 'CloudWatch'],
-        description: 'Production infrastructure template featuring automated zero-downtime rolling deployments.'
+        name: 'Auto-Scaling Infrastructure',
+        technologies: ['AWS ECS', 'Docker', 'CloudWatch'],
+        description: 'Cloud infrastructure template featuring automated rolling deployments.'
       }
     ],
     certifications: ['AWS Certified Solutions Architect – Associate'],
-    raw_resume_text: 'Rohan Sundaram | RA2311003010355 | B.Tech IT SRMIST | CGPA 8.45 | Skills: AWS, Python, Linux, Networking, SQL, Docker, Git, Terraform'
-  },
-  {
-    id: 'cand-srm-04',
-    reg_number: 'RA2311003010488',
-    name: 'Sneha Rangarajan',
-    email: 'sneha.r@srmist.edu.in',
-    phone: '+91 99620 11223',
-    location: 'Chennai, Tamil Nadu',
-    linkedin: 'linkedin.com/in/sneha-rangarajan',
-    github: 'github.com/sneha-analytics',
-    education: {
-      degree: 'B.Tech',
-      department: 'Computer Science & Engineering',
-      college: 'SRM Institute of Science and Technology, Kattankulathur',
-      cgpa: 7.82,
-      graduation_year: 2026,
-      active_backlogs: 0
-    },
-    skills: ['SQL', 'Python', 'Data Analytics', 'Power BI', 'Tableau', 'Excel', 'Problem Solving'],
-    experience: [],
-    projects: [
-      {
-        name: 'Campus Placement Predictive Dashboard',
-        technologies: ['Power BI', 'SQL', 'Python Pandas'],
-        description: 'Interactive analytics dashboard displaying placement trends, branch-wise cutoffs, and CTC statistics.'
-      }
-    ],
-    certifications: ['Microsoft Power BI Data Analyst Associate'],
-    raw_resume_text: 'Sneha Rangarajan | RA2311003010488 | B.Tech CSE SRMIST | CGPA 7.82 | Skills: SQL, Python, Data Analytics, Power BI, Tableau, Excel'
-  },
-  {
-    id: 'cand-srm-05',
-    reg_number: 'RA2311003010567',
-    name: 'Karthik Balaji',
-    email: 'karthik.b@srmist.edu.in',
-    phone: '+91 98840 99887',
-    location: 'Chennai, Tamil Nadu',
-    linkedin: 'linkedin.com/in/karthik-balaji',
-    github: 'github.com/karthik-b',
-    education: {
-      degree: 'B.Tech',
-      department: 'Electronics & Communication',
-      college: 'SRM Institute of Science and Technology, Kattankulathur',
-      cgpa: 6.85,
-      graduation_year: 2026,
-      active_backlogs: 1
-    },
-    skills: ['C', 'C++', 'Embedded Systems', 'Python', 'Linux', 'Git'],
-    experience: [],
-    projects: [
-      {
-        name: 'IoT Environmental Sensor Node',
-        technologies: ['ESP32', 'C++', 'MQTT'],
-        description: 'Low-power telemetry sensor logging air quality parameters to remote dashboard.'
-      }
-    ],
-    certifications: [],
-    raw_resume_text: 'Karthik Balaji | RA2311003010567 | B.Tech ECE SRMIST | CGPA 6.85 | Backlogs: 1 | Skills: C, C++, Embedded Systems, Python, Linux'
+    raw_resume_text: 'Rohan Sundaram | RA2311003010355 | B.Tech IT SRMIST | CGPA 8.45 | Skills: AWS, Python, Linux, SQL, Docker, Git'
   }
 ];
 
@@ -310,28 +219,48 @@ export const INITIAL_INTERVIEWS: Interview[] = [
     date: '2026-10-15',
     time: '10:00 AM',
     interviewer: 'Google Tech Panel',
-    venue: 'Placement Cell Block - Room 304 / Google Meet',
+    venue: 'Room 304 / Google Meet',
     status: 'Scheduled',
-    feedback: 'Strong performance on data structures algorithm screening.',
+    feedback: 'High proficiency on data structures and algorithms.',
     created_at: new Date().toISOString()
   }
 ];
 
 export const SRM_DEPARTMENT_STATS: any[] = [
-  { department: 'CSE', total: 420, placed: 312, avgLpa: 14.2 },
-  { department: 'IT', total: 280, placed: 198, avgLpa: 12.8 },
-  { department: 'AI & DS', total: 190, placed: 154, avgLpa: 15.6 },
-  { department: 'ECE', total: 240, placed: 165, avgLpa: 9.8 },
-  { department: 'Mechanical', total: 180, placed: 98, avgLpa: 7.2 }
+  { department: 'CSE', applications: 24, avg_cgpa: 8.85, avg_ai_score: 84, shortlisted: 6, selected: 2 },
+  { department: 'AI & DS', applications: 18, avg_cgpa: 8.72, avg_ai_score: 82, shortlisted: 5, selected: 2 },
+  { department: 'IT', applications: 20, avg_cgpa: 8.40, avg_ai_score: 79, shortlisted: 4, selected: 1 }
 ];
 
 export const SRM_SKILL_DEMAND_STATS: any[] = [
-  { skill: 'Python', demandCount: 28, growth: '+24%' },
-  { skill: 'Data Structures', demandCount: 35, growth: '+18%' },
-  { skill: 'SQL', demandCount: 24, growth: '+15%' },
-  { skill: 'AWS / Cloud', demandCount: 22, growth: '+42%' },
-  { skill: 'React / Next.js', demandCount: 19, growth: '+30%' }
+  { skill: 'Python', category: 'Language', demandCount: 15, candidateProficiency: 18 },
+  { skill: 'Data Structures', category: 'Core CS', demandCount: 12, candidateProficiency: 14 },
+  { skill: 'AWS / Cloud', category: 'Cloud', demandCount: 10, candidateProficiency: 8 },
+  { skill: 'SQL', category: 'Database', demandCount: 10, candidateProficiency: 15 }
 ];
 
 export const SAMPLE_JOBS_PRESET = INITIAL_JOBS;
 export const SAMPLE_CANDIDATES_PRESET = INITIAL_CANDIDATES;
+
+export const DEMO_DATA_VERSION = 'v2_minimal_data';
+
+export const ensureCleanDemoData = (force: boolean = false): boolean => {
+  try {
+    const currentVer = localStorage.getItem('srm_data_version');
+    if (force || currentVer !== DEMO_DATA_VERSION) {
+      localStorage.setItem('srm_data_version', DEMO_DATA_VERSION);
+      localStorage.setItem('srm_jobs_list', JSON.stringify(INITIAL_JOBS));
+      localStorage.setItem('srm_candidates_list', JSON.stringify(INITIAL_CANDIDATES));
+      localStorage.setItem('srm_interviews_list', JSON.stringify(INITIAL_INTERVIEWS));
+      return true;
+    }
+  } catch (e) {
+    console.error('Failed to sync clean demo data:', e);
+  }
+  return false;
+};
+
+// Auto-run once to ensure user's browser updates from old bloated data
+if (typeof window !== 'undefined') {
+  ensureCleanDemoData(false);
+}

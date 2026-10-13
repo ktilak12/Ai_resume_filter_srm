@@ -84,6 +84,7 @@ export interface ExperienceRecord {
   duration_text: string;
   is_internship: boolean;
   responsibilities: string[];
+  description?: string;
 }
 
 export interface ProjectRecord {
@@ -105,6 +106,7 @@ export interface CandidateProfile {
   github?: string;
   avatar?: string;
   ats_score?: number;
+  match_tier?: MatchTier;
   status?: CandidateStatus;
   education: EducationRecord;
   skills: string[];
@@ -134,6 +136,9 @@ export interface ScoreBreakdown {
   projects: number; // 0-100
   certifications: number; // 0-100
   overall_match: number; // 0-100
+  formatting_score?: number; // 0-100 Layout & Parseability Health
+  keyword_score?: number; // 0-100 Keyword Relevance
+  requirement_score?: number; // 0-100 Job Requirement Alignment
 }
 
 export interface SkillEvidence {
