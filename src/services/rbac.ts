@@ -81,7 +81,7 @@ export const ROLE_DETAILS: Record<UserRole, {
   'Super Admin': {
     title: 'Super Administrator',
     description: 'Unrestricted institutional authority across SRM placement drives, AI scoring calibrations, and system settings.',
-    badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+    badgeColor: 'bg-zinc-900 text-white border-zinc-700',
     restrictedNotice: 'Full system authorization granted.',
     allowedSummary: [
       'Publish & Delete Placement Drives',
@@ -96,7 +96,7 @@ export const ROLE_DETAILS: Record<UserRole, {
   'Placement Officer': {
     title: 'SRM Placement Directorate',
     description: 'Authorized to conduct institutional placement drives, screen candidates, issue shortlist letters, and adjust AI models.',
-    badgeColor: 'bg-srm-500/20 text-srm-300 border-srm-500/30',
+    badgeColor: 'bg-zinc-900 text-white border-zinc-700',
     restrictedNotice: 'Comprehensive placement operations authorization.',
     allowedSummary: [
       'Publish & Manage Placement Drives',
@@ -113,7 +113,7 @@ export const ROLE_DETAILS: Record<UserRole, {
   'Corporate Recruiter': {
     title: 'Corporate Partner Recruiter',
     description: 'Authorized to evaluate candidate profiles, shortlist for company drives, and coordinate technical/HR interviews.',
-    badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+    badgeColor: 'bg-zinc-900 text-zinc-300 border-zinc-800',
     restrictedNotice: 'Restricted: Cannot calibrate institutional AI scoring weights or alter university eligibility cutoffs.',
     allowedSummary: [
       'View AI Matched Candidate Profiles',
@@ -130,7 +130,7 @@ export const ROLE_DETAILS: Record<UserRole, {
   'Faculty Coordinator': {
     title: 'Department Placement Faculty In-Charge',
     description: 'Authorized to upload student batches, review department scores, and track placement statistics.',
-    badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/20',
+    badgeColor: 'bg-zinc-900 text-zinc-300 border-zinc-800',
     restrictedNotice: 'Restricted: Cannot dispatch rejection emails, create company drives, or modify global AI weights.',
     allowedSummary: [
       'Upload Department Resumes for ATS Scoring',
@@ -147,7 +147,7 @@ export const ROLE_DETAILS: Record<UserRole, {
   'Student Coordinator': {
     title: 'Placement Student Representative',
     description: 'Authorized to assist with resume collection, run ATS resume checks, and inspect job criteria.',
-    badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+    badgeColor: 'bg-zinc-900 text-zinc-400 border-zinc-800',
     restrictedNotice: 'Restricted: Read-only candidate review. Cannot send emails, reject applicants, or schedule interviews.',
     allowedSummary: [
       'Submit & Calculate Resume ATS Scores',

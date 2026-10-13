@@ -45,44 +45,44 @@ export const AllCandidatesView: React.FC<AllCandidatesViewProps> = ({
     <div className="space-y-6 pb-12">
       
       {/* Header */}
-      <div className="glass-panel rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-srm-500/20 text-srm-300 border border-srm-500/30 flex items-center gap-1">
-              <Users className="w-3 h-3" />
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-900 text-zinc-300 border border-zinc-700 flex items-center gap-1">
+              <Users className="w-3 h-3 text-white" />
               Student Directory
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-zinc-400">
               • SRMIST 2027 Placement Intake Roster
             </span>
           </div>
           <h1 className="text-2xl font-bold font-display text-white tracking-tight mt-1">
             Registered Candidate Profiles ({candidates.length})
           </h1>
-          <p className="text-xs text-slate-300">
+          <p className="text-xs text-zinc-400">
             Browse verified academic standing, technical skill profiles, and internship history
           </p>
         </div>
       </div>
 
       {/* Search & Filter toolbar */}
-      <div className="glass-panel rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3 flex-1">
           <div className="relative flex-1 min-w-[220px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
             <input
               type="text"
               placeholder="Search by student name, RA register number, skill..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-srm-500"
+              className="w-full bg-black border border-zinc-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
             />
           </div>
 
           <select
             value={selectedDept}
             onChange={(e) => setSelectedDept(e.target.value)}
-            className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-srm-500"
+            className="bg-black border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500"
           >
             <option value="all">All Departments</option>
             <option value="Computer Science">Computer Science (CSE)</option>
@@ -93,8 +93,8 @@ export const AllCandidatesView: React.FC<AllCandidatesViewProps> = ({
           </select>
         </div>
 
-        <div className="text-xs text-slate-400">
-          Showing <strong>{filtered.length}</strong> student profiles
+        <div className="text-xs text-zinc-400">
+          Showing <strong className="text-white">{filtered.length}</strong> student profiles
         </div>
       </div>
 
@@ -103,36 +103,36 @@ export const AllCandidatesView: React.FC<AllCandidatesViewProps> = ({
         {filtered.map((cand) => (
           <div
             key={cand.id}
-            className="glass-panel glass-panel-hover rounded-2xl p-5 space-y-3 relative flex flex-col justify-between"
+            className="bg-zinc-950 border border-zinc-800 hover:border-zinc-700 transition-colors rounded-2xl p-5 space-y-3 relative flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-srm-600/30 border border-srm-500/30 flex items-center justify-center text-srm-300 font-bold text-sm">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white font-bold text-sm">
                     {cand.name.charAt(0)}
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-white">
                       {cand.name}
                     </h3>
-                    <div className="text-[11px] text-slate-400 font-mono">
+                    <div className="text-[11px] text-zinc-400 font-mono">
                       {cand.reg_number}
                     </div>
                   </div>
                 </div>
 
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-zinc-900 text-white border border-zinc-700">
                   CGPA: {cand.education.cgpa.toFixed(2)}
                 </span>
               </div>
 
               {/* Education */}
-              <div className="mt-3 text-xs text-slate-300 space-y-1">
-                <div className="flex items-center gap-1.5 text-slate-400">
-                  <GraduationCap className="w-3.5 h-3.5 text-srm-400" />
+              <div className="mt-3 text-xs text-zinc-300 space-y-1">
+                <div className="flex items-center gap-1.5 text-zinc-400">
+                  <GraduationCap className="w-3.5 h-3.5 text-white" />
                   <span>{cand.education.degree} • {cand.education.department}</span>
                 </div>
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[11px] text-zinc-500">
                   Batch: {cand.education.graduation_year} • Backlogs: {cand.education.active_backlogs}
                 </div>
               </div>
@@ -141,12 +141,12 @@ export const AllCandidatesView: React.FC<AllCandidatesViewProps> = ({
               <div className="mt-3">
                 <div className="flex flex-wrap gap-1">
                   {cand.skills.slice(0, 5).map((skill, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">
+                    <span key={i} className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800/80 text-zinc-300 text-[10px]">
                       {skill}
                     </span>
                   ))}
                   {cand.skills.length > 5 && (
-                    <span className="text-[10px] text-slate-400 self-center">
+                    <span className="text-[10px] text-zinc-500 self-center">
                       +{cand.skills.length - 5}
                     </span>
                   )}
@@ -155,14 +155,14 @@ export const AllCandidatesView: React.FC<AllCandidatesViewProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-slate-400 text-[11px]">
+            <div className="mt-3 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs">
+              <span className="text-zinc-500 text-[11px]">
                 {cand.experience.length > 0 ? `${cand.experience[0].company} (Intern)` : 'Fresher Profile'}
               </span>
 
               <button
                 onClick={() => onSelectCandidate(cand)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-srm-600/30 hover:bg-srm-600 text-srm-300 hover:text-white border border-srm-500/30 text-xs font-semibold transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-200 text-black text-xs font-semibold transition-all"
               >
                 <Eye className="w-3.5 h-3.5" />
                 <span>View Full Profile</span>

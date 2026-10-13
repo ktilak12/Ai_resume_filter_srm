@@ -110,21 +110,21 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
     <div className="space-y-6 pb-12">
       
       {/* Header */}
-      <div className="glass-panel rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-900 text-zinc-300 border border-zinc-700 flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-white" />
               Interview Operations
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-zinc-400">
               • SRM Placement Cell Logistics & Evaluation
             </span>
           </div>
           <h1 className="text-2xl font-bold font-display text-white tracking-tight mt-1">
             Interview Management & Scheduling
           </h1>
-          <p className="text-xs text-slate-300">
+          <p className="text-xs text-zinc-400">
             Track multi-round technical and HR interviews, manage panel rooms, and record final placement offers
           </p>
         </div>
@@ -132,14 +132,14 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
         {canSchedule ? (
           <button
             onClick={() => setIsScheduleModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white text-xs font-bold shadow-md transition-all self-start md:self-auto"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-semibold transition-all self-start md:self-auto"
           >
             <Plus className="w-4 h-4" />
             <span>Schedule New Interview</span>
           </button>
         ) : (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-[11px] text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-400">
+            <span className="w-2 h-2 rounded-full bg-zinc-500"></span>
             <span>Scheduling restricted for {activeRole} (Read-only access)</span>
           </div>
         )}
@@ -147,45 +147,45 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="glass-panel rounded-2xl p-4">
-          <div className="text-xs text-slate-400">Scheduled Interviews</div>
-          <div className="text-2xl font-bold text-purple-400 mt-1">
+        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4">
+          <div className="text-xs text-zinc-400">Scheduled Interviews</div>
+          <div className="text-2xl font-bold text-white mt-1">
             {interviews.filter(i => i.status === 'Scheduled').length}
           </div>
         </div>
 
-        <div className="glass-panel rounded-2xl p-4">
-          <div className="text-xs text-slate-400">Cleared / Advanced</div>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">
+        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4">
+          <div className="text-xs text-zinc-400">Cleared / Advanced</div>
+          <div className="text-2xl font-bold text-white mt-1">
             {interviews.filter(i => i.status === 'Cleared').length}
           </div>
         </div>
 
-        <div className="glass-panel rounded-2xl p-4">
-          <div className="text-xs text-slate-400">Final Offers Released</div>
-          <div className="text-2xl font-bold text-amber-400 mt-1">
+        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4">
+          <div className="text-xs text-zinc-400">Final Offers Released</div>
+          <div className="text-2xl font-bold text-white mt-1">
             {interviews.filter(i => i.round === 'Final Placement Offer' || i.status === 'Cleared').length + 32}
           </div>
         </div>
 
-        <div className="glass-panel rounded-2xl p-4">
-          <div className="text-xs text-slate-400">Active Panel Rooms</div>
-          <div className="text-2xl font-bold text-srm-400 mt-1">6 Suites</div>
+        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4">
+          <div className="text-xs text-zinc-400">Active Panel Rooms</div>
+          <div className="text-2xl font-bold text-white mt-1">6 Suites</div>
         </div>
       </div>
 
       {/* Interviews Table */}
-      <div className="glass-panel rounded-2xl p-6 overflow-x-auto space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 overflow-x-auto space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
           <h2 className="text-base font-bold font-display text-white flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-purple-400" />
+            <Calendar className="w-4 h-4 text-white" />
             Upcoming Scheduled Interview Rounds
           </h2>
 
           <select
             value={filterRound}
             onChange={(e) => setFilterRound(e.target.value)}
-            className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
+            className="bg-black border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500"
           >
             <option value="all">All Rounds</option>
             <option value="Technical Round 1">Technical Round 1</option>
@@ -197,7 +197,7 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
 
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
+            <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider text-[10px]">
               <th className="py-3 px-3">Candidate & Reg No</th>
               <th className="py-3 px-3">Company & Role</th>
               <th className="py-3 px-3">Interview Round</th>
@@ -207,25 +207,25 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
               <th className="py-3 px-3 text-right">Update Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 text-slate-200">
+          <tbody className="divide-y divide-zinc-800/60 text-zinc-200">
             {filtered.map((item) => (
-              <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+              <tr key={item.id} className="hover:bg-zinc-900/50 transition-colors">
                 <td className="py-3.5 px-3">
                   <div>
                     <div className="font-semibold text-white">{item.candidate_name}</div>
-                    <div className="text-[11px] text-slate-400">{item.candidate_reg_no} ({item.candidate_dept})</div>
+                    <div className="text-[11px] text-zinc-400">{item.candidate_reg_no} ({item.candidate_dept})</div>
                   </div>
                 </td>
 
                 <td className="py-3.5 px-3">
                   <div>
                     <div className="font-medium text-white">{item.job_title}</div>
-                    <div className="text-[11px] text-amber-400">{item.company}</div>
+                    <div className="text-[11px] text-zinc-400">{item.company}</div>
                   </div>
                 </td>
 
                 <td className="py-3.5 px-3">
-                  <span className="px-2.5 py-1 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 font-semibold text-[11px]">
+                  <span className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-200 font-semibold text-[11px]">
                     {item.round}
                   </span>
                 </td>
@@ -233,19 +233,19 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
                 <td className="py-3.5 px-3">
                   <div>
                     <div className="font-medium text-white flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-slate-400" /> {item.date}
+                      <Calendar className="w-3 h-3 text-zinc-400" /> {item.date}
                     </div>
-                    <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-500" /> {item.time}
+                    <div className="text-[11px] text-zinc-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-zinc-500" /> {item.time}
                     </div>
                   </div>
                 </td>
 
                 <td className="py-3.5 px-3">
                   <div>
-                    <div className="font-medium text-slate-300">{item.interviewer}</div>
-                    <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-srm-400" /> {item.venue}
+                    <div className="font-medium text-zinc-300">{item.interviewer}</div>
+                    <div className="text-[11px] text-zinc-400 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-zinc-400" /> {item.venue}
                     </div>
                   </div>
                 </td>
@@ -253,10 +253,10 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
                 <td className="py-3.5 px-3 text-center">
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                     item.status === 'Cleared'
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      ? 'bg-white text-black font-semibold'
                       : item.status === 'Scheduled'
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'bg-slate-800 text-slate-300'
+                      ? 'bg-zinc-800 text-white border border-zinc-700'
+                      : 'bg-zinc-900 text-zinc-400 border border-zinc-800'
                   }`}>
                     {item.status}
                   </span>
@@ -267,20 +267,20 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => onUpdateInterviewStatus(item.id, 'Cleared')}
-                        className="px-2 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white text-[11px] font-semibold transition-colors"
+                        className="px-2.5 py-1 rounded bg-white hover:bg-zinc-200 text-black text-[11px] font-semibold transition-colors"
                         title="Clear & Advance"
                       >
                         Clear
                       </button>
                       <button
                         onClick={() => onUpdateInterviewStatus(item.id, 'Completed')}
-                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition-colors"
+                        className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] transition-colors"
                       >
                         Done
                       </button>
                     </div>
                   ) : (
-                    <span className="text-[10px] text-slate-500 italic">Read-only</span>
+                    <span className="text-[10px] text-zinc-500 italic">Read-only</span>
                   )}
                 </td>
               </tr>
@@ -291,47 +291,47 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
 
       {/* Schedule Interview Modal */}
       {isScheduleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg glass-dropdown rounded-2xl border border-slate-700 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="relative w-full max-w-lg bg-zinc-950 rounded-2xl border border-zinc-800 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-purple-400" />
+                <Calendar className="w-4 h-4 text-white" />
                 Schedule Candidate Interview Round
               </h3>
-              <button onClick={() => setIsScheduleModalOpen(false)} className="p-1 text-slate-400 hover:text-white">
+              <button onClick={() => setIsScheduleModalOpen(false)} className="p-1 text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateInterview} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Candidate Full Name *</label>
+                <label className="block font-semibold text-zinc-300 mb-1">Candidate Full Name *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. John Doe"
                   value={candName}
                   onChange={(e) => setCandName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">SRM Reg Number</label>
+                  <label className="block font-semibold text-zinc-300 mb-1">SRM Reg Number</label>
                   <input
                     type="text"
                     value={candRegNo}
                     onChange={(e) => setCandRegNo(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Department</label>
+                  <label className="block font-semibold text-zinc-300 mb-1">Department</label>
                   <select
                     value={candDept}
                     onChange={(e) => setCandDept(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-white"
                   >
                     <option value="CSE">CSE</option>
                     <option value="IT">IT</option>
@@ -344,11 +344,11 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Target Placement Drive</label>
+                  <label className="block font-semibold text-zinc-300 mb-1">Target Placement Drive</label>
                   <select
                     value={jobId}
                     onChange={(e) => setJobId(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-white"
                   >
                     {jobs.map(j => (
                       <option key={j.id} value={j.id}>{j.title} ({j.company})</option>
@@ -357,11 +357,11 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Interview Round</label>
+                  <label className="block font-semibold text-zinc-300 mb-1">Interview Round</label>
                   <select
                     value={round}
                     onChange={(e) => setRound(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-white"
                   >
                     <option value="Technical Round 1">Technical Round 1</option>
                     <option value="Technical Round 2">Technical Round 2</option>
@@ -374,57 +374,57 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Date</label>
+                  <label className="block font-semibold text-zinc-300 mb-1">Date</label>
                   <input
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-white"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Time</label>
+                  <label className="block font-semibold text-zinc-300 mb-1">Time</label>
                   <input
                     type="text"
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
                     placeholder="e.g. 10:30 AM"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Interviewer Panelist</label>
+                <label className="block font-semibold text-zinc-300 mb-1">Interviewer Panelist</label>
                 <input
                   type="text"
                   value={interviewer}
                   onChange={(e) => setInterviewer(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Venue / Online Link</label>
+                <label className="block font-semibold text-zinc-300 mb-1">Venue / Online Link</label>
                 <input
                   type="text"
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setIsScheduleModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-zinc-400 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold"
+                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold"
                 >
                   Confirm & Send Invite
                 </button>
