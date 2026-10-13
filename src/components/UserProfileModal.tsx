@@ -79,23 +79,23 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-xl my-8 bg-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-xl my-8 bg-zinc-950 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-start justify-between pb-4 border-b border-zinc-800">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-srm-500/20 text-srm-400 border border-srm-500/30">
+            <div className="p-2.5 rounded-2xl bg-zinc-900 text-white border border-zinc-800">
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold font-display text-white tracking-tight flex items-center gap-2">
                 {isMandatoryOnboarding ? 'Welcome to SRM ResumeAI' : 'Institutional Profile'}
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-900 text-white border border-zinc-800">
                   Verified Portal
                 </span>
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-zinc-400 mt-0.5">
                 {isMandatoryOnboarding 
                   ? 'Please confirm your institutional details to personalize your placement workspace.' 
                   : 'Manage your active role and university credentials.'}
@@ -106,7 +106,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {!isMandatoryOnboarding && onClose && (
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -118,35 +118,35 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Full Name & Email */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">
+              <label className="block font-semibold text-zinc-300 mb-1.5">
                 Full Name *
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Tilak K"
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-srm-500 focus:ring-1 focus:ring-srm-500"
+                  className="w-full bg-black border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">
+              <label className="block font-semibold text-zinc-300 mb-1.5">
                 Institutional / Work Email *
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. user@srmist.edu.in"
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-srm-500 focus:ring-1 focus:ring-srm-500"
+                  className="w-full bg-black border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
                 />
               </div>
             </div>
@@ -154,13 +154,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           {/* Role Selection */}
           <div>
-            <label className="block font-semibold text-slate-300 mb-1.5">
+            <label className="block font-semibold text-zinc-300 mb-1.5">
               Portal Access Role *
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
-              className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-srm-500"
+              className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-white"
             >
               <option value="Placement Officer">Placement Officer (Directorate of Career Centre)</option>
               <option value="Faculty Coordinator">Faculty Coordinator (Department Placement In-Charge)</option>
@@ -173,7 +173,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Reg Number / Staff ID & Phone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">
+              <label className="block font-semibold text-zinc-300 mb-1.5">
                 SRM Register No / Employee ID
               </label>
               <input
@@ -181,22 +181,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 value={regNumber}
                 onChange={(e) => setRegNumber(e.target.value)}
                 placeholder="e.g. RA2311003010142 or SRM-EMP-9021"
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-srm-500"
+                className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">
+              <label className="block font-semibold text-zinc-300 mb-1.5">
                 Contact Phone Number
               </label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="e.g. +91 98401 22334"
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-srm-500"
+                  className="w-full bg-black border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
                 />
               </div>
             </div>
@@ -205,13 +205,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Campus & Department */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">
+              <label className="block font-semibold text-zinc-300 mb-1.5">
                 SRM Campus / Office
               </label>
               <select
                 value={campus}
                 onChange={(e) => setCampus(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-srm-500"
+                className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-white"
               >
                 <option value="Kattankulathur (Main Campus)">Kattankulathur (Main Campus)</option>
                 <option value="Vadapalani Campus">Vadapalani Campus</option>
@@ -223,13 +223,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">
+              <label className="block font-semibold text-zinc-300 mb-1.5">
                 Department / Specialization
               </label>
               <select
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-srm-500"
+                className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-white"
               >
                 <option value="Computer Science & Engineering">Computer Science &amp; Engineering (CSE)</option>
                 <option value="Information Technology">Information Technology (IT)</option>
@@ -246,13 +246,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Batch Year or Designation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">
+              <label className="block font-semibold text-zinc-300 mb-1.5">
                 Graduation Batch Year
               </label>
               <select
                 value={batchYear}
                 onChange={(e) => setBatchYear(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-srm-500"
+                className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-white"
               >
                 <option value="2026 Batch">2026 Batch</option>
                 <option value="2027 Batch">2027 Batch</option>
@@ -262,7 +262,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-300 mb-1.5">
+              <label className="block font-semibold text-zinc-300 mb-1.5">
                 Title / Designation
               </label>
               <input
@@ -270,18 +270,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 value={designation}
                 onChange={(e) => setDesignation(e.target.value)}
                 placeholder="e.g. Lead Placement Officer or Student"
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-srm-500"
+                className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
               />
             </div>
           </div>
 
           {/* Submit / Save Button */}
-          <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-zinc-800 flex items-center justify-end gap-3">
             {!isMandatoryOnboarding && onClose && (
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl text-slate-400 hover:text-white transition-colors"
+                className="px-4 py-2.5 rounded-xl text-zinc-400 hover:text-white transition-colors"
               >
                 Cancel
               </button>
@@ -290,16 +290,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <button
               type="submit"
               disabled={isSaved}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white font-bold shadow-glow-srm transition-all"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold transition-all"
             >
               {isSaved ? (
                 <>
-                  <Check className="w-4 h-4 text-white" />
+                  <Check className="w-4 h-4 text-black" />
                   <span>Profile Saved!</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <Sparkles className="w-4 h-4 text-black" />
                   <span>Save &amp; Continue to Portal</span>
                 </>
               )}

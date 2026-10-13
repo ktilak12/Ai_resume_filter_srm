@@ -28,31 +28,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange
 }) => {
   return (
-    <header className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3 transition-all">
+    <header className="sticky top-0 z-30 bg-black/90 backdrop-blur-md border-b border-zinc-800 px-4 lg:px-8 py-3 transition-all">
       <div className="flex items-center justify-between gap-4">
         
         {/* Left: Brand / Logo */}
         <div className="flex items-center gap-3">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-srm-700 via-srm-500 to-amber-500 p-0.5 shadow-glow-srm">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-srm-400" />
-            </div>
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
-            </span>
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800">
+            <GraduationCap className="w-5 h-5 text-white" />
           </div>
 
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xl font-bold font-display tracking-tight text-white flex items-center">
-                SRM <span className="text-srm-400 ml-1">ResumeAI</span>
+                SRM <span className="text-white ml-1 font-normal">ResumeAI</span>
               </span>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-srm-950 border border-srm-500/30 text-srm-300">
+              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-900 border border-zinc-800 text-zinc-300">
                 Institutional Edition
               </span>
             </div>
-            <p className="text-xs text-slate-400 hidden sm:block">
+            <p className="text-xs text-zinc-500 hidden sm:block">
               Directorate of Career Centre • SRMIST Kattankulathur
             </p>
           </div>
@@ -61,18 +55,18 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Center: Global Search Bar */}
         <div className="hidden md:flex flex-1 max-w-md mx-4">
           <div className="relative w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input
               type="text"
               placeholder="Search candidate by name, reg no (RA...), skill, or job..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-srm-500 focus:ring-1 focus:ring-srm-500 transition-all"
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-10 pr-4 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-white transition-all"
             />
             {searchQuery && (
               <button 
                 onClick={() => onSearchChange('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-white"
               >
                 Clear
               </button>
@@ -84,15 +78,15 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-3">
           
           {/* Season Indicator */}
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300">
-            <Building2 className="w-3.5 h-3.5 text-amber-400" />
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-300">
+            <Building2 className="w-3.5 h-3.5 text-zinc-400" />
             <span>Season: <strong className="text-white">2026–27</strong></span>
           </div>
 
           {/* New Job Button */}
           <button
             onClick={onOpenNewJobModal}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-srm-600 to-srm-500 hover:from-srm-500 hover:to-srm-400 text-white text-xs sm:text-sm font-semibold shadow-glow-srm transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs sm:text-sm font-semibold transition-all active:scale-95"
           >
             <PlusCircle className="w-4 h-4" />
             <span className="hidden xs:inline">+ New Job</span>
@@ -103,8 +97,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Role Switcher */}
           <div className="relative group">
-            <button className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 text-xs text-slate-200 hover:border-slate-600 transition-all">
-              <div className="w-6 h-6 rounded-lg bg-srm-600/30 border border-srm-500/40 flex items-center justify-center text-srm-400 font-bold text-[11px]">
+            <button className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 hover:border-zinc-700 transition-all">
+              <div className="w-6 h-6 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white font-bold text-[11px]">
                 {currentRole.charAt(0)}
               </div>
               <div className="text-left hidden sm:block">

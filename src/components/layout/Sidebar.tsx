@@ -85,29 +85,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
 
   return (
     <div className={`
-      fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+      fixed inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-850 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
     `}>
-      <div className="h-16 flex items-center px-6 border-b border-slate-800">
+      <div className="h-16 flex items-center px-6 border-b border-zinc-850">
         <Link to="/" className="flex items-center space-x-3 hover:opacity-90 transition-opacity">
-          <div className="w-8 h-8 rounded-lg bg-srm-600 flex items-center justify-center text-white text-lg shadow-sm">
+          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white text-base font-bold shadow-sm">
             🎓
           </div>
           <div>
-            <span className="text-white font-bold text-lg tracking-tight font-display">
-              SRM<span className="text-srm-400">ResumeAI</span>
+            <span className="text-white font-bold text-base tracking-tight font-sans">
+              SRM <span className="text-zinc-400">ResumeAI</span>
             </span>
-            <span className="block text-[10px] text-slate-400 -mt-1 font-mono">Institutional Edition</span>
+            <span className="block text-[10px] text-zinc-500 -mt-1 font-mono uppercase">Institutional</span>
           </div>
         </Link>
       </div>
       
       <div className="py-4">
         <div className="px-6 mb-2 flex items-center justify-between">
-          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+          <p className="text-[10px] font-mono font-semibold text-zinc-500 uppercase tracking-wider">
             Portal Menu
           </p>
-          <Link to="/" className="text-[10px] text-srm-400 hover:underline flex items-center gap-1">
+          <Link to="/" className="text-[10px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 transition-colors">
             <Home className="w-3 h-3" />
             <span>Landing</span>
           </Link>
@@ -120,10 +120,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all group ${
+                  `flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-all ${
                     isActive
-                      ? 'bg-srm-900/60 text-srm-300 font-semibold shadow-sm border border-srm-500/30'
-                      : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                      ? 'bg-white text-black font-semibold'
+                      : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
                   }`
                 }
               >
@@ -135,15 +135,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
         </nav>
       </div>
       
-      <div className="absolute bottom-0 w-full p-4 border-t border-slate-800/80">
-        <div className="bg-slate-950/60 rounded-xl p-3 border border-slate-800">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <p className="text-[11px] font-medium text-slate-300">
+      <div className="absolute bottom-0 w-full p-4 border-t border-zinc-850">
+        <div className="bg-black rounded-lg p-3 border border-zinc-850">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+            <p className="text-[11px] font-medium text-white truncate">
               {currentUser?.name || 'SRMIST User'}
             </p>
           </div>
-          <p className="text-[10px] text-slate-400 font-mono truncate">
+          <p className="text-[10px] text-zinc-500 font-mono truncate">
             {currentUser?.email || 'srmist.edu.in'}
           </p>
         </div>

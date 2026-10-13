@@ -20,7 +20,7 @@ const Layout: React.FC = () => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   return (
-    <div className="flex h-screen bg-slate-950 overflow-hidden font-sans text-slate-100">
+    <div className="flex h-screen bg-black overflow-hidden font-sans text-zinc-100">
       {/* First-Time Login Onboarding Profile Modal */}
       {currentUser && !currentUser.isProfileComplete && (
         <UserProfileModal 
@@ -32,7 +32,7 @@ const Layout: React.FC = () => {
       {/* Overlay for mobile sidebar */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -46,7 +46,7 @@ const Layout: React.FC = () => {
           toggleSidebar={toggleSidebar} 
         />
         
-        <main className="flex-1 overflow-y-auto bg-slate-950 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto bg-black p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-7xl">
             <Outlet context={{ userRole }} />
           </div>

@@ -145,14 +145,14 @@ export const NotificationCenter: React.FC = () => {
   const getCategoryIcon = (category: AppNotification['category']) => {
     switch (category) {
       case 'drive':
-        return <Briefcase className="w-3.5 h-3.5 text-blue-400" />;
+        return <Briefcase className="w-3.5 h-3.5 text-zinc-300" />;
       case 'interview':
-        return <Calendar className="w-3.5 h-3.5 text-purple-400" />;
+        return <Calendar className="w-3.5 h-3.5 text-zinc-300" />;
       case 'ats':
-        return <Sparkles className="w-3.5 h-3.5 text-amber-400" />;
+        return <Sparkles className="w-3.5 h-3.5 text-zinc-300" />;
       case 'system':
       default:
-        return <Info className="w-3.5 h-3.5 text-srm-400" />;
+        return <Info className="w-3.5 h-3.5 text-zinc-300" />;
     }
   };
 
@@ -162,38 +162,38 @@ export const NotificationCenter: React.FC = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Open Notifications"
-        className={`p-2 text-slate-400 hover:text-slate-100 relative rounded-full hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-srm-500 ${
-          isOpen ? 'bg-slate-800 text-white ring-2 ring-srm-500/50' : ''
+        className={`p-2 text-zinc-400 hover:text-white relative rounded-lg hover:bg-zinc-900 transition-colors focus:outline-none ${
+          isOpen ? 'bg-zinc-900 text-white' : ''
         }`}
       >
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-amber-500 text-slate-950 font-extrabold text-[9px] ring-2 ring-slate-900 animate-pulse">
+          <span className="absolute top-1 right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-white text-black font-mono font-bold text-[9px]">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
-        <Bell className="h-5 w-5" />
+        <Bell className="h-4 w-4" />
       </button>
 
       {/* Notification Popover Modal */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/80 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-zinc-950 rounded-xl shadow-2xl border border-zinc-800 overflow-hidden z-50 animate-in fade-in duration-100">
           
           {/* Header */}
-          <div className="p-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
+          <div className="p-4 border-b border-zinc-850 bg-black flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-srm-500/20 text-srm-400 border border-srm-500/30">
+              <div className="p-1.5 rounded-lg bg-zinc-900 text-white border border-zinc-800">
                 <Bell className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+                <h3 className="text-xs font-bold text-white tracking-tight flex items-center gap-2">
                   Notifications
                   {unreadCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-white text-black">
                       {unreadCount} new
                     </span>
                   )}
                 </h3>
-                <p className="text-[10px] text-slate-400">SRM Placement &amp; Screening Alerts</p>
+                <p className="text-[10px] text-zinc-500">Placement &amp; Screening Alerts</p>
               </div>
             </div>
 
@@ -202,67 +202,67 @@ export const NotificationCenter: React.FC = () => {
                 <button
                   onClick={markAllAsRead}
                   title="Mark all as read"
-                  className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition-colors text-xs flex items-center gap-1"
+                  className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-md transition-colors text-xs flex items-center gap-1"
                 >
-                  <CheckCheck className="w-4 h-4" />
+                  <CheckCheck className="w-3.5 h-3.5" />
                 </button>
               )}
               {notifications.length > 0 && (
                 <button
                   onClick={clearAllNotifications}
                   title="Clear all notifications"
-                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors text-xs"
+                  className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-md transition-colors text-xs"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-md transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center gap-1 px-3 py-2 bg-slate-950/40 border-b border-slate-800/80 text-[11px] overflow-x-auto">
+          <div className="flex items-center gap-1 px-3 py-2 bg-black border-b border-zinc-850 text-[11px] overflow-x-auto">
             <button
               onClick={() => setFilter('all')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                 filter === 'all'
-                  ? 'bg-srm-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-white text-black font-semibold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
               All ({notifications.length})
             </button>
             <button
               onClick={() => setFilter('unread')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                 filter === 'unread'
-                  ? 'bg-amber-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-white text-black font-semibold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
               Unread ({unreadCount})
             </button>
             <button
               onClick={() => setFilter('drive')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                 filter === 'drive'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-white text-black font-semibold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
               Drives
             </button>
             <button
               onClick={() => setFilter('interview')}
-              className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
                 filter === 'interview'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-white text-black font-semibold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
               Interviews
