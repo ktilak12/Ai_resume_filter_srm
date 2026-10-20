@@ -2,9 +2,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser, UserRole } from '../types';
 import { parseJwt, isJwtExpired, isSRMISTEmail, parseSRMEmailDetails } from '../services/googleAuth';
 import { GOOGLE_CLIENT_ID } from '../config/authConfig';
+import { 
+  loadSecureSession, 
+  saveSecureSession, 
+  clearSecureSession, 
+  isRoleElevationAllowed 
+} from '../services/sessionSecurity';
 
 export interface AuthError {
-  type: 'UNAUTHORIZED_DOMAIN' | 'INVALID_TOKEN' | 'CONFIG_ERROR' | 'UNKNOWN';
+  type: 'UNAUTHORIZED_DOMAIN' | 'INVALID_TOKEN' | 'CONFIG_ERROR' | 'UNAUTHORIZED_ROLE' | 'UNKNOWN';
   message: string;
   attemptedEmail?: string;
 }
@@ -25,8 +31,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_USER_KEY = 'srm_auth_user';
-
 const VALID_ROLES: UserRole[] = [
   'Placement Officer',
   'Faculty Coordinator',
@@ -43,24 +47,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Client ID loaded from in-code config or .env
   const clientId = GOOGLE_CLIENT_ID;
 
-  // Load existing session on initial mount
+  // Load existing session with cryptographic tamper verification
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_USER_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as AuthUser;
-        if (parsed && parsed.email && VALID_ROLES.includes(parsed.role)) {
-          setCurrentUser(parsed);
+    let isMounted = true;
+    loadSecureSession()
+      .then((validatedUser) => {
+        if (!isMounted) return;
+        if (validatedUser && VALID_ROLES.includes(validatedUser.role)) {
+          setCurrentUser(validatedUser);
         } else {
-          localStorage.removeItem(STORAGE_USER_KEY);
+          setCurrentUser(null);
         }
-      }
-    } catch (err) {
-      console.error('[AuthProvider] Failed to recover session:', err);
-      localStorage.removeItem(STORAGE_USER_KEY);
-    } finally {
-      setIsLoading(false);
-    }
+      })
+      .catch((err) => {
+        console.error('[AuthProvider] Failed to recover secure session:', err);
+        clearSecureSession();
+        if (isMounted) setCurrentUser(null);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const loginWithGoogleCredential = async (credentialJwt: string): Promise<boolean> => {
@@ -124,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
 
       setCurrentUser(newUser);
-      localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(newUser));
+      await saveSecureSession(newUser);
       setIsLoading(false);
       return true;
     } catch (err) {
@@ -138,15 +148,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginDirect = (userData: Partial<AuthUser>) => {
+  const loginDirect = async (userData: Partial<AuthUser>) => {
     const email = userData.email || 'placement.director@srmist.edu.in';
     const isSRM = isSRMISTEmail(email);
+
+    // Defense-in-depth: In production, direct login can NEVER self-elevate to Super Admin
+    let requestedRole = userData.role || 'Placement Officer';
+    if (!import.meta.env.DEV && requestedRole === 'Super Admin') {
+      requestedRole = 'Placement Officer';
+    }
     
     const newUser: AuthUser = {
       id: `usr-${Date.now()}`,
       name: userData.name || 'SRM Placement Officer',
       email: email,
-      role: userData.role || 'Placement Officer',
+      role: requestedRole,
       department: userData.department || 'Directorate of Career Centre',
       campus: userData.campus || 'Kattankulathur (Main Campus)',
       regNumber: userData.regNumber || 'SRM-EMP-8941',
@@ -157,10 +173,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setCurrentUser(newUser);
-    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(newUser));
+    await saveSecureSession(newUser);
   };
 
-  const updateProfile = (profile: Partial<AuthUser>) => {
+  const updateProfile = async (profile: Partial<AuthUser>) => {
     if (!currentUser) return;
     const updated: AuthUser = {
       ...currentUser,
@@ -168,15 +184,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isProfileComplete: true
     };
     setCurrentUser(updated);
-    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(updated));
+    await saveSecureSession(updated);
   };
 
   const logout = () => {
     setCurrentUser(null);
     setAuthError(null);
-    localStorage.removeItem(STORAGE_USER_KEY);
+    clearSecureSession();
     try {
-      sessionStorage.clear();
       if ((window as any).google?.accounts?.id?.disableAutoSelect) {
         (window as any).google.accounts.id.disableAutoSelect();
       }
@@ -185,8 +200,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const switchRole = (role: UserRole) => {
+  const switchRole = async (role: UserRole) => {
     if (!VALID_ROLES.includes(role)) return;
+
+    // Strict Role-Based Elevation Prevention
+    if (!isRoleElevationAllowed(currentUser, role)) {
+      console.warn(`[RBAC Security] Unauthorized role switch to "${role}" blocked for:`, currentUser?.email);
+      setAuthError({
+        type: 'UNAUTHORIZED_ROLE',
+        message: `Privilege escalation blocked: Account "${currentUser?.email || 'Unknown'}" lacks authorization for "${role}".`
+      });
+      return;
+    }
+
     const updated: AuthUser = currentUser ? {
       ...currentUser,
       role
@@ -203,7 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastLoginAt: new Date().toISOString()
     };
     setCurrentUser(updated);
-    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(updated));
+    await saveSecureSession(updated);
   };
 
   const clearError = () => {
