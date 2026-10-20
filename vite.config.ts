@@ -39,7 +39,8 @@ function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:5173',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
+    ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : [])
   ]);
 
   const handler = (req: any, res: any, next: any) => {
@@ -52,19 +53,22 @@ function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
       : req.socket?.remoteAddress || '127.0.0.1';
 
     const origin = req.headers.origin;
-    const isOriginAllowed = !origin || allowedOrigins.has(origin);
+    // In dev, permit same-origin, configured origins, or any localhost/127.0.0.1 port
+    const isOriginAllowed = !origin || 
+      allowedOrigins.has(origin) || 
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
     // Apply comprehensive security headers
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    // 'same-origin-allow-popups' is required for Google OAuth Identity Services popup flow
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
 
     if (origin && isOriginAllowed) {
       res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       res.setHeader('Vary', 'Origin');
     }
@@ -100,13 +104,16 @@ function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
         return;
       }
 
-      let bodyStr = '';
+      const chunks: Buffer[] = [];
+      let totalLength = 0;
       let isPayloadTooLarge = false;
 
       req.on('data', (chunk: any) => {
         if (isPayloadTooLarge) return;
-        bodyStr += chunk;
-        if (bodyStr.length > 200 * 1024) {
+        const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        chunks.push(buf);
+        totalLength += buf.length;
+        if (totalLength > 200 * 1024) {
           isPayloadTooLarge = true;
           res.statusCode = 413;
           res.setHeader('Content-Type', 'application/json');
@@ -118,6 +125,7 @@ function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
       req.on('end', async () => {
         if (isPayloadTooLarge) return;
         try {
+          const bodyStr = Buffer.concat(chunks).toString('utf-8');
           const body = JSON.parse(bodyStr || '{}');
           const key = apiKey || process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY || '';
 
@@ -303,11 +311,13 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       open: false,
-      host: true
+      host: true,
+      strictPort: false
     },
     preview: {
       port: 3000,
-      host: true
+      host: true,
+      strictPort: false
     }
   };
 });
