@@ -128,30 +128,39 @@ export const ScreeningView: React.FC<ScreeningViewProps> = ({
   };
 
   const handleExportCSV = () => {
-    const rows = [
-      ['Rank', 'Name', 'Reg Number', 'Department', 'CGPA', 'Eligibility', 'Match Score', 'Verdict', 'Skills Matched', 'Status'],
-      ...sortedResults.map(r => [
-        r.rank,
-        r.candidate.name,
-        r.candidate.reg_number,
-        r.candidate.education.department,
-        r.candidate.education.cgpa,
-        r.eligibility.is_eligible ? 'Eligible' : 'Ineligible',
-        `${r.score.overall_match}%`,
-        r.explainable.verdict,
-        r.candidate.skills.slice(0, 5).join('; '),
-        r.status
-      ])
-    ];
+    const sanitizeCsvCell = (val: any): string => {
+      if (val === null || val === undefined) return '""';
+      let str = String(val);
+      if (/^[=+\-@\t\r]/.test(str.trim())) {
+        str = "'" + str;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const headers = ['Rank', 'Name', 'Reg Number', 'Department', 'CGPA', 'Eligibility', 'Match Score', 'Verdict', 'Skills Matched', 'Status'];
+    const rows = sortedResults.map(r => [
+      r.rank,
+      sanitizeCsvCell(r.candidate.name),
+      sanitizeCsvCell(r.candidate.reg_number),
+      sanitizeCsvCell(r.candidate.education.department),
+      r.candidate.education.cgpa,
+      r.eligibility.is_eligible ? 'Eligible' : 'Ineligible',
+      `${r.score.overall_match}%`,
+      sanitizeCsvCell(r.explainable.verdict),
+      sanitizeCsvCell(r.candidate.skills.slice(0, 5).join('; ')),
+      sanitizeCsvCell(r.status)
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `SRM_Shortlist_${currentJob.title.replace(/\s+/g, '_')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
