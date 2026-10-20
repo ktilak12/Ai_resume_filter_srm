@@ -1,7 +1,11 @@
 import { defineConfig, loadEnv, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
+
+function sanitizeHeader(val: any): string {
+  return String(val || '').replace(/[\r\n\t\x00-\x1F]/g, ' ').trim();
+}
 
 // In-Memory Rate Limiter for Dev/Preview Server (Max 25 requests/min per IP)
 const devRateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -19,26 +23,73 @@ function checkDevRateLimit(ip: string): boolean {
 
   clientData.count += 1;
   devRateLimitMap.set(ip, clientData);
+
+  // Periodically clean stale entries
+  if (devRateLimitMap.size > 1000) {
+    for (const [key, val] of devRateLimitMap.entries()) {
+      if (now > val.resetTime) devRateLimitMap.delete(key);
+    }
+  }
+
   return clientData.count > 25;
 }
 
 function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
+  const allowedOrigins = new Set([
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173'
+  ]);
+
   const handler = (req: any, res: any, next: any) => {
     const rawUrl = req.url || '';
     const urlPath = rawUrl.split('?')[0].replace(/\/+$/, '');
-    const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket?.remoteAddress || '127.0.0.1';
+    
+    // Safely get client IP (only trust x-forwarded-for if explicitly enabled)
+    const clientIp = (process.env.TRUST_PROXY === 'true' && req.headers['x-forwarded-for'])
+      ? String(req.headers['x-forwarded-for']).split(',')[0].trim()
+      : req.socket?.remoteAddress || '127.0.0.1';
+
+    const origin = req.headers.origin;
+    const isOriginAllowed = !origin || allowedOrigins.has(origin);
+
+    // Apply comprehensive security headers
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+
+    if (origin && isOriginAllowed) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Vary', 'Origin');
+    }
 
     // CORS preflight handling
     if (req.method === 'OPTIONS' && (urlPath === '/api/send-email' || urlPath === '/api/test-email')) {
+      if (!isOriginAllowed) {
+        res.statusCode = 403;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ success: false, error: 'Cross-origin request blocked.' }));
+        return;
+      }
       res.statusCode = 204;
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       res.end();
       return;
     }
 
     if (urlPath === '/api/send-email' && req.method === 'POST') {
+      if (!isOriginAllowed) {
+        res.statusCode = 403;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ success: false, error: 'Forbidden cross-origin request.' }));
+        return;
+      }
+
       if (checkDevRateLimit(clientIp)) {
         res.statusCode = 429;
         res.setHeader('Content-Type', 'application/json');
@@ -90,7 +141,11 @@ function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
             return;
           }
 
-          const recipients = (Array.isArray(body.to) ? body.to : [body.to]).map((e: any) => String(e).trim());
+          const rawRecipients = Array.isArray(body.to) ? body.to : [body.to];
+          const recipients = rawRecipients
+            .map((e: any) => sanitizeHeader(e))
+            .filter((e: string) => e.length > 0 && e.length <= 100);
+
           const invalidEmails = recipients.filter((e: string) => !EMAIL_REGEX.test(e));
 
           if (invalidEmails.length > 0 || recipients.length === 0 || recipients.length > 50) {
@@ -98,12 +153,21 @@ function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({
               success: false,
-              error: `Invalid recipient email address(es): ${invalidEmails.join(', ')}`
+              error: `Invalid recipient email address(es): ${invalidEmails.slice(0, 5).join(', ')}`
             }));
             return;
           }
 
-          const fromEmail = body.from || defaultFrom || process.env.RESEND_FROM_EMAIL || 'SRM Placement Directorate <onboarding@resend.dev>';
+          // Strip CRLF from subject to prevent header injection
+          const safeSubject = sanitizeHeader(body.subject).slice(0, 200);
+
+          let fromEmail = defaultFrom || process.env.RESEND_FROM_EMAIL || 'SRM Placement Directorate <onboarding@resend.dev>';
+          if (body.from && typeof body.from === 'string') {
+            const candidateFrom = sanitizeHeader(body.from);
+            if (candidateFrom.length <= 100 && /^[a-zA-Z0-9\s<@.>_-]+$/.test(candidateFrom)) {
+              fromEmail = candidateFrom;
+            }
+          }
 
           const resendRes = await fetch('https://api.resend.com/emails', {
             method: 'POST',
@@ -114,9 +178,9 @@ function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
             body: JSON.stringify({
               from: fromEmail,
               to: recipients,
-              subject: String(body.subject).slice(0, 200),
+              subject: safeSubject,
               html: body.html,
-              text: body.text || body.subject,
+              text: sanitizeHeader(body.text) || safeSubject,
             }),
           });
 
@@ -144,6 +208,13 @@ function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
     }
 
     if (urlPath === '/api/test-email' && req.method === 'POST') {
+      if (!isOriginAllowed) {
+        res.statusCode = 403;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ success: false, error: 'Forbidden cross-origin request.' }));
+        return;
+      }
+
       if (checkDevRateLimit(clientIp)) {
         res.statusCode = 429;
         res.setHeader('Content-Type', 'application/json');

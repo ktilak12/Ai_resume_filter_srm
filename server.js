@@ -1,6 +1,11 @@
 /**
  * SRM ResumeAI - Secure Production Node.js Server
- * Hardened with Rate Limiting, Input Validation, and Backend API Key Isolation.
+ * Hardened with:
+ * - Strict Content Security Policy (CSP) & Defensive HTTP Headers
+ * - Validated Same-Origin / Whitelisted CORS Protection
+ * - CRLF & Email Header Injection Mitigation
+ * - Anti-Spoofing Client IP Extraction & In-Memory Rate Limiting
+ * - Traversal-Resistant Static File Path Resolution
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -30,12 +35,47 @@ if (fs.existsSync(envPath)) {
 }
 
 const PORT = process.env.PORT || 3000;
-const DIST_DIR = path.join(__dirname, 'dist');
+const DIST_DIR = path.resolve(__dirname, 'dist');
 
-// --- Security: In-Memory IP Rate Limiter (Max 20 requests per minute) ---
+// --- 1. Security: Allowed Origins for CORS ---
+const ALLOWED_ORIGINS = new Set([
+  `http://localhost:${PORT}`,
+  `http://127.0.0.1:${PORT}`,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : [])
+]);
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // Same-origin or server-to-server request
+  return ALLOWED_ORIGINS.has(origin);
+}
+
+// --- 2. Security: In-Memory IP Rate Limiter (Max 25 requests per minute) ---
 const rateLimitMap = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 20;
+const MAX_REQUESTS_PER_WINDOW = 25;
+
+// Periodic cleanup of expired rate limiter records every 60s
+const rateLimitPruneInterval = setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of rateLimitMap.entries()) {
+    if (now > val.resetTime) {
+      rateLimitMap.delete(key);
+    }
+  }
+}, RATE_LIMIT_WINDOW_MS);
+rateLimitPruneInterval.unref();
+
+function getClientIp(req) {
+  if (process.env.TRUST_PROXY === 'true' && req.headers['x-forwarded-for']) {
+    const forwarded = String(req.headers['x-forwarded-for']).split(',')[0].trim();
+    if (forwarded) return forwarded;
+  }
+  return req.socket.remoteAddress || '127.0.0.1';
+}
 
 function isRateLimited(ip) {
   const now = Date.now();
@@ -51,23 +91,21 @@ function isRateLimited(ip) {
   clientData.count += 1;
   rateLimitMap.set(ip, clientData);
 
-  // Clean up stale map entries periodically
-  if (rateLimitMap.size > 2000) {
-    for (const [key, val] of rateLimitMap.entries()) {
-      if (now > val.resetTime) rateLimitMap.delete(key);
-    }
-  }
-
   return clientData.count > MAX_REQUESTS_PER_WINDOW;
 }
 
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+// --- 3. Sanitization Helpers ---
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
+
+function sanitizeHeader(val) {
+  return String(val || '').replace(/[\r\n\t\x00-\x1F]/g, ' ').trim();
+}
 
 const MIME_TYPES = {
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml',
@@ -77,15 +115,38 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer(async (req, res) => {
-  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+  const clientIp = getClientIp(req);
+  const origin = req.headers.origin;
 
-  // Security Headers
+  // Comprehensive Hardened Security Headers (Highest Institutional Grade)
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
+  );
+
+  // Validate Origin for CORS
+  if (origin) {
+    if (isAllowedOrigin(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Vary', 'Origin');
+    } else {
+      // Reject unauthorized cross-origin preflights & requests
+      if (req.method === 'OPTIONS' || req.url?.startsWith('/api/')) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: 'Cross-origin request blocked by security policy.' }));
+        return;
+      }
+    }
+  }
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -99,7 +160,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(429, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         success: false,
-        error: 'Too many requests. Rate limit exceeded (Max 20 emails/minute). Please try again shortly.'
+        error: 'Too many requests. Rate limit exceeded (Max 25 emails/minute). Please try again shortly.'
       }));
       return;
     }
@@ -109,7 +170,7 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => {
       if (isPayloadTooLarge) return;
       bodyStr += chunk;
-      // Protect against oversized JSON body attack
+      // Protect against oversized JSON body attack (Max 200KB)
       if (bodyStr.length > 200 * 1024) {
         isPayloadTooLarge = true;
         res.writeHead(413, { 'Content-Type': 'application/json' });
@@ -146,20 +207,35 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const recipients = (Array.isArray(body.to) ? body.to : [body.to]).map(e => String(e).trim());
-        
-        // Validate recipient emails
+        // Sanitize and validate recipients against CRLF and invalid formatting
+        const rawRecipients = Array.isArray(body.to) ? body.to : [body.to];
+        const recipients = rawRecipients
+          .map(e => sanitizeHeader(e))
+          .filter(e => e.length > 0 && e.length <= 100);
+
         const invalidEmails = recipients.filter(e => !EMAIL_REGEX.test(e));
         if (invalidEmails.length > 0 || recipients.length === 0 || recipients.length > 50) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
             success: false,
-            error: `Invalid recipient email address(es): ${invalidEmails.join(', ')}`
+            error: `Invalid recipient email address(es): ${invalidEmails.slice(0, 5).join(', ')}`
           }));
           return;
         }
 
-        const fromEmail = body.from || process.env.RESEND_FROM_EMAIL || 'SRM Placement Directorate <onboarding@resend.dev>';
+        // Sanitize Subject (Strip CRLF to prevent SMTP header injection, max 200 chars)
+        const safeSubject = sanitizeHeader(body.subject).slice(0, 200);
+
+        // Enforce safe From address
+        const configuredFrom = process.env.RESEND_FROM_EMAIL || 'SRM Placement Directorate <onboarding@resend.dev>';
+        let fromEmail = configuredFrom;
+        if (body.from && typeof body.from === 'string') {
+          const candidateFrom = sanitizeHeader(body.from);
+          // Only permit safe alphanumeric/name formatting without control characters
+          if (candidateFrom.length <= 100 && /^[a-zA-Z0-9\s<@.>_-]+$/.test(candidateFrom)) {
+            fromEmail = candidateFrom;
+          }
+        }
 
         const resendRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -170,9 +246,9 @@ const server = http.createServer(async (req, res) => {
           body: JSON.stringify({
             from: fromEmail,
             to: recipients,
-            subject: String(body.subject).slice(0, 200),
+            subject: safeSubject,
             html: body.html,
-            text: body.text || body.subject,
+            text: sanitizeHeader(body.text) || safeSubject,
           }),
         });
 
@@ -254,11 +330,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 3. Static File Serving (for production dist build)
-  const safePath = path.normalize(path.join(DIST_DIR, pathname === '/' ? 'index.html' : pathname));
+  // 3. Static File Serving (with Path Traversal Guard)
+  const normalizedPath = path.normalize(pathname);
+  if (normalizedPath.includes('..') || normalizedPath.startsWith('/.') || normalizedPath.includes('/.')) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Access Denied');
+    return;
+  }
 
-  // Path traversal check
-  if (!safePath.startsWith(DIST_DIR)) {
+  const safePath = path.resolve(DIST_DIR, normalizedPath === '/' ? 'index.html' : normalizedPath.replace(/^\/+/, ''));
+
+  // Ensure resolved path is strictly within DIST_DIR
+  if (safePath !== DIST_DIR && !safePath.startsWith(DIST_DIR + path.sep)) {
     res.writeHead(403, { 'Content-Type': 'text/plain' });
     res.end('Access Denied');
     return;
@@ -288,5 +371,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`[SRM ResumeAI Server] Running securely on http://localhost:${PORT}`);
-  console.log(`[Resend Gateway] Active - API Key secured with Rate Limiting.`);
+  console.log(`[Resend Gateway] Active - API Key secured with Rate Limiting & Origin Validation.`);
 });
