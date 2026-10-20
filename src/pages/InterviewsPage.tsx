@@ -9,13 +9,23 @@ export const InterviewsPage: React.FC = () => {
   const navState = (location.state as { candidate?: CandidateProfile; jobId?: string } | null) || null;
 
   const [interviews, setInterviews] = useState<Interview[]>(() => {
-    const saved = localStorage.getItem('srm_interviews_list');
-    return saved ? JSON.parse(saved) : INITIAL_INTERVIEWS;
+    try {
+      const saved = localStorage.getItem('srm_interviews_list');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('[InterviewsPage] Failed to parse interviews from localStorage:', e);
+    }
+    return INITIAL_INTERVIEWS;
   });
 
   const [jobs, setJobs] = useState<JobRequirement[]>(() => {
-    const saved = localStorage.getItem('srm_jobs_list');
-    return saved ? JSON.parse(saved) : INITIAL_JOBS;
+    try {
+      const saved = localStorage.getItem('srm_jobs_list');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('[InterviewsPage] Failed to parse jobs from localStorage:', e);
+    }
+    return INITIAL_JOBS;
   });
 
   useEffect(() => {
