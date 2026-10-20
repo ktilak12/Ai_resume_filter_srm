@@ -119,19 +119,81 @@ export const ResumeUploadView: React.FC<ResumeUploadViewProps> = ({
     }
   };
 
+  const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'doc', 'txt'];
+  const ALLOWED_MIME_TYPES = [
+    'application/pdf', 
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+    'application/msword', 
+    'text/plain'
+  ];
+  const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB per resume
+  const MAX_BATCH_COUNT = 50; // Cap concurrent batch uploads to prevent browser memory exhaustion
+
+  const validateResumeFile = (file: File): string | null => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return `.${ext} extension is prohibited. Only PDF, DOCX, DOC, and TXT are permitted.`;
+    }
+    if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
+      return `MIME type "${file.type}" not allowed.`;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return `File size exceeds 5MB institutional limit (${(file.size / (1024 * 1024)).toFixed(1)} MB).`;
+    }
+    return null;
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      processUploadedFiles(files);
+    const rawFiles = Array.from(e.dataTransfer.files);
+    if (rawFiles.length === 0) return;
+
+    if (rawFiles.length > MAX_BATCH_COUNT) {
+      alert(`Batch upload exceeds maximum of ${MAX_BATCH_COUNT} files. Processing first ${MAX_BATCH_COUNT} files only.`);
     }
+
+    const eligible = rawFiles.slice(0, MAX_BATCH_COUNT).filter(f => {
+      const err = validateResumeFile(f);
+      if (err) {
+        console.warn(`[Security] Rejected file "${f.name}":`, err);
+        return false;
+      }
+      return true;
+    });
+
+    if (eligible.length === 0) {
+      alert('All uploaded files were rejected by institutional file security policy (PDF/DOCX/TXT under 5MB required).');
+      return;
+    }
+
+    processUploadedFiles(eligible);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files);
-      processUploadedFiles(files);
+      const rawFiles = Array.from(e.target.files);
+      if (rawFiles.length > MAX_BATCH_COUNT) {
+        alert(`Batch upload exceeds maximum of ${MAX_BATCH_COUNT} files. Processing first ${MAX_BATCH_COUNT} files only.`);
+      }
+
+      const eligible = rawFiles.slice(0, MAX_BATCH_COUNT).filter(f => {
+        const err = validateResumeFile(f);
+        if (err) {
+          console.warn(`[Security] Rejected file "${f.name}":`, err);
+          return false;
+        }
+        return true;
+      });
+
+      e.target.value = ''; // Reset input to allow re-upload
+
+      if (eligible.length === 0) {
+        alert('All selected files were rejected by institutional file security policy (PDF/DOCX/TXT under 5MB required).');
+        return;
+      }
+
+      processUploadedFiles(eligible);
     }
   };
 

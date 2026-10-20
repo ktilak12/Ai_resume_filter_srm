@@ -94,18 +94,43 @@ export const ResumeUpload: React.FC = () => {
     else if (e.type === "dragleave") setDragActive(false);
   };
 
+  const ALLOWED_FILE_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain'];
+  const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'doc', 'txt'];
+  const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
+  const validateFile = (file: File): string | null => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return `File type .${ext} is not allowed. Use PDF, DOCX, DOC, or TXT.`;
+    }
+    if (!ALLOWED_FILE_TYPES.includes(file.type) && file.type !== '') {
+      // Some browsers report empty MIME for .txt; allow if extension is valid
+      return `MIME type '${file.type}' is not permitted.`;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return `File exceeds 5MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB).`;
+    }
+    return null;
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFiles([e.dataTransfer.files[0]]);
+      const file = e.dataTransfer.files[0];
+      const err = validateFile(file);
+      if (err) { alert(`Upload rejected: ${err}`); return; }
+      setFiles([file]);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFiles([e.target.files[0]]);
+      const file = e.target.files[0];
+      const err = validateFile(file);
+      if (err) { alert(`Upload rejected: ${err}`); e.target.value = ''; return; }
+      setFiles([file]);
     }
   };
 
@@ -120,10 +145,20 @@ export const ResumeUpload: React.FC = () => {
       let candidateProfile: CandidateProfile;
 
       if (fileObj) {
+        const fileErr = validateFile(fileObj);
+        if (fileErr) {
+          alert(`File validation failed: ${fileErr}`);
+          setIsProcessing(false);
+          return;
+        }
         setProgress(35);
         candidateProfile = await parseResumeFile(fileObj);
         extractedText = candidateProfile.raw_resume_text || '';
       } else {
+        // Enforce safe upper bound (250KB / ~50,000 words) on pasted text to prevent ReDoS/browser hang
+        if (extractedText.length > 250000) {
+          extractedText = extractedText.slice(0, 250000);
+        }
         setProgress(60);
         candidateProfile = extractCandidateEntities(extractedText, 'pasted_resume.txt');
       }
