@@ -196,74 +196,81 @@ export const LoginPage: React.FC = () => {
             </button>
           )}
 
-          {/* Divider */}
-          <div className="relative w-full py-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-zinc-850"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-zinc-950 px-3 text-zinc-500 uppercase font-mono text-[10px] tracking-wider">
-                Direct Sign-In
-              </span>
-            </div>
-          </div>
 
-          {/* Quick Direct Sign-In Form */}
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              loginDirect({
-                name: directName.trim() || 'SRM Officer',
-                email: directEmail.trim() || 'placement@srmist.edu.in',
-                role: directRole,
-                isProfileComplete: false
-              });
-              navigate('/dashboard');
-            }}
-            className="w-full space-y-2.5 text-xs"
-          >
-            <div>
-              <input
-                type="text"
-                placeholder="Full Name (e.g. Tilak K)"
-                value={directName}
-                onChange={(e) => setDirectName(e.target.value)}
-                className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
-              />
-            </div>
-            <div>
-              <input
-                type="email"
-                placeholder="Email (e.g. name@srmist.edu.in)"
-                value={directEmail}
-                onChange={(e) => setDirectEmail(e.target.value)}
-                className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <select
-                value={directRole}
-                onChange={(e) => setDirectRole(e.target.value as any)}
-                className="w-full bg-black border border-zinc-800 rounded-xl px-2.5 py-2 text-white text-[11px] focus:outline-none focus:border-zinc-500"
+          {/* Divider + Direct Sign-In: DEV ONLY — stripped from production builds */}
+          {import.meta.env.DEV && (
+            <>
+              <div className="relative w-full py-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-zinc-850"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-zinc-950 px-3 text-amber-500 uppercase font-mono text-[10px] tracking-wider">
+                    Dev Only · Direct Sign-In
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Direct Sign-In Form — removed in production */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  loginDirect({
+                    name: directName.trim() || 'SRM Officer',
+                    email: directEmail.trim() || 'placement@srmist.edu.in',
+                    role: directRole,
+                    isProfileComplete: false
+                  });
+                  navigate('/dashboard');
+                }}
+                className="w-full space-y-2.5 text-xs"
               >
-                <option value="Placement Officer">Placement Officer</option>
-                <option value="Faculty Coordinator">Faculty Coordinator</option>
-                <option value="Corporate Recruiter">Corporate Recruiter</option>
-                <option value="Super Admin">Super Admin</option>
-                <option value="Student Coordinator">Student Coordinator</option>
-              </select>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Full Name (e.g. Tilak K)"
+                    value={directName}
+                    onChange={(e) => setDirectName(e.target.value)}
+                    className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    placeholder="Email (e.g. name@srmist.edu.in)"
+                    value={directEmail}
+                    onChange={(e) => setDirectEmail(e.target.value)}
+                    className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={directRole}
+                    onChange={(e) => setDirectRole(e.target.value as any)}
+                    className="w-full bg-black border border-zinc-800 rounded-xl px-2.5 py-2 text-white text-[11px] focus:outline-none focus:border-zinc-500"
+                  >
+                    <option value="Placement Officer">Placement Officer</option>
+                    <option value="Faculty Coordinator">Faculty Coordinator</option>
+                    <option value="Corporate Recruiter">Corporate Recruiter</option>
+                    <option value="Super Admin">Super Admin</option>
+                    <option value="Student Coordinator">Student Coordinator</option>
+                  </select>
 
-              <button
-                type="submit"
-                className="w-full py-2 px-3 rounded-xl bg-white text-black hover:bg-zinc-200 font-bold text-xs transition-all flex items-center justify-center gap-1.5"
-              >
-                <span>Enter Portal</span>
-                <LogIn className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </form>
+                  <button
+                    type="submit"
+                    className="w-full py-2 px-3 rounded-xl bg-white text-black hover:bg-zinc-200 font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <span>Enter Portal</span>
+                    <LogIn className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
 
-        </div>
+
+
+        </div>{/* end Google sign-in flex container */}
 
         {/* Domain Badge & Notice */}
         <div className="mt-6 pt-4 border-t border-zinc-850 text-center space-y-1.5">
