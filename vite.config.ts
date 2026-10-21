@@ -192,16 +192,16 @@ function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
             }),
           });
 
-          const data = await resendRes.json();
+          const data: any = await resendRes.json();
           res.statusCode = resendRes.status;
           res.setHeader('Content-Type', 'application/json');
 
           if (resendRes.ok) {
-            res.end(JSON.stringify({ success: true, messageId: data.id }));
+            res.end(JSON.stringify({ success: true, messageId: data?.id }));
           } else {
             res.end(JSON.stringify({
               success: false,
-              error: data.message || data.error || `Resend Error HTTP ${resendRes.status}`
+              error: data?.message || data?.error || `Resend Error HTTP ${resendRes.status}`
             }));
           }
         } catch (err: any) {
@@ -263,16 +263,16 @@ function resendServerPlugin(apiKey?: string, defaultFrom?: string): Plugin {
             }),
           });
 
-          const data = await resendRes.json();
+          const data: any = await resendRes.json();
           res.statusCode = resendRes.status;
           res.setHeader('Content-Type', 'application/json');
 
           if (resendRes.ok) {
-            res.end(JSON.stringify({ success: true, messageId: data.id }));
+            res.end(JSON.stringify({ success: true, messageId: data?.id }));
           } else {
             res.end(JSON.stringify({
               success: false,
-              error: data.message || data.error || 'Resend Authentication failed'
+              error: data?.message || data?.error || 'Resend Authentication failed'
             }));
           }
         } catch (err: any) {
