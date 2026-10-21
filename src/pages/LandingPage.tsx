@@ -64,6 +64,7 @@ export const LandingPage: React.FC = () => {
             <a href="#features" className="hover:text-white transition-colors">Capabilities</a>
             <a href="#drives" className="hover:text-white transition-colors">Active Drives</a>
             <a href="#faqs" className="hover:text-white transition-colors">FAQs</a>
+            <Link to="/privacy" className="hover:text-white transition-colors text-emerald-400">Privacy (DPDP)</Link>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -280,14 +281,20 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-850 px-6 py-8 bg-black text-center text-xs text-zinc-500">
+      <footer className="border-t border-zinc-850 px-6 py-8 bg-black text-xs text-zinc-500">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4 text-zinc-400" />
             <span className="font-semibold text-zinc-300">SRM ResumeAI</span>
             <span>• Directorate of Career Centre, SRMIST</span>
           </div>
-          <div>Season 2026–2027 • Institutional Placement Platform</div>
+          <div className="flex items-center gap-4 text-zinc-400">
+            <Link to="/privacy" className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-700">
+              Privacy Policy (DPDP Act)
+            </Link>
+            <span>•</span>
+            <span>Season 2026–2027 • Institutional Placement Platform</span>
+          </div>
         </div>
       </footer>
 

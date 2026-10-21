@@ -14,6 +14,7 @@ import { ShortlistedPage } from './pages/ShortlistedPage';
 import { InterviewsPage } from './pages/InterviewsPage';
 import { Analytics } from './pages/Analytics';
 import { SettingsPage } from './pages/SettingsPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 
 function App() {
   return (
@@ -25,6 +26,9 @@ function App() {
 
           {/* Public Route 2: Standard Portal Login Page */}
           <Route path="/login" element={<LoginPage />} />
+
+          {/* Public Route 3: DPDP Compliant Privacy Policy */}
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
           {/* Protected Portal Routes: No one can access without logging in */}
           <Route element={

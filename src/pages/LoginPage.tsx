@@ -286,9 +286,14 @@ export const LoginPage: React.FC = () => {
       </div>
 
       {/* Standard Footer */}
-      <div className="max-w-md w-full mx-auto text-center text-xs text-zinc-600 relative z-10">
+      <div className="max-w-md w-full mx-auto text-center text-xs text-zinc-600 relative z-10 space-y-1">
         <p>© 2026 SRM Institute of Science and Technology.</p>
-        <p className="text-[10px] text-zinc-600 mt-0.5">Directorate of Career Centre • Kattankulathur</p>
+        <p className="text-[10px] text-zinc-600">Directorate of Career Centre • Kattankulathur</p>
+        <p className="text-[11px] pt-1">
+          <Link to="/privacy" className="text-zinc-400 hover:text-white underline underline-offset-2">
+            Privacy Policy & DPDP Act Compliance Notice
+          </Link>
+        </p>
       </div>
 
     </div>

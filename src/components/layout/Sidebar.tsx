@@ -135,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
         </nav>
       </div>
       
-      <div className="absolute bottom-0 w-full p-4 border-t border-zinc-850">
+      <div className="absolute bottom-0 w-full p-4 border-t border-zinc-850 space-y-2">
         <div className="bg-black rounded-lg p-3 border border-zinc-850">
           <div className="flex items-center gap-2 mb-0.5">
             <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
@@ -146,6 +146,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
           <p className="text-[10px] text-zinc-500 font-mono truncate">
             {currentUser?.email || 'srmist.edu.in'}
           </p>
+        </div>
+        <div className="px-1 text-center">
+          <Link
+            to="/privacy"
+            className="text-[10px] text-zinc-500 hover:text-zinc-300 font-mono inline-flex items-center gap-1 transition-colors"
+          >
+            <span>🔒 DPDP Privacy Policy</span>
+          </Link>
         </div>
       </div>
     </div>
