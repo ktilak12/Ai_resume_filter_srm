@@ -10,7 +10,8 @@ import {
   FileText,
   UserCheck,
   Calendar,
-  Home
+  Home,
+  GraduationCap
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -29,6 +30,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
       name: 'Dashboard', 
       icon: LayoutDashboard, 
       path: '/dashboard', 
+      roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
+    },
+    { 
+      name: 'Candidate Portal', 
+      icon: GraduationCap, 
+      path: '/student-portal', 
       roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
     },
     { 

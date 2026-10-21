@@ -15,6 +15,7 @@ import { InterviewsPage } from './pages/InterviewsPage';
 import { Analytics } from './pages/Analytics';
 import { SettingsPage } from './pages/SettingsPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { StudentPortalPage } from './pages/StudentPortalPage';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
             </ProtectedRoute>
           }>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/student-portal" element={<StudentPortalPage />} />
             <Route path="/jobs" element={<JobListing />} />
             <Route path="/upload" element={<ResumeUpload />} />
             <Route path="/screening" element={<CandidateRanking />} />

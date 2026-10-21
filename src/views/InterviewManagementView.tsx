@@ -17,6 +17,7 @@ import {
 import { Interview, InterviewRound, ScreeningResult, JobRequirement, CandidateProfile } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
+import { downloadIcsFile } from '../services/calendarService';
 
 interface InterviewManagementViewProps {
   interviews: Interview[];
@@ -263,25 +264,35 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
                 </td>
 
                 <td className="py-3.5 px-3 text-right">
-                  {canUpdateStatus ? (
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => onUpdateInterviewStatus(item.id, 'Cleared')}
-                        className="px-2.5 py-1 rounded bg-white hover:bg-zinc-200 text-black text-[11px] font-semibold transition-colors"
-                        title="Clear & Advance"
-                      >
-                        Clear
-                      </button>
-                      <button
-                        onClick={() => onUpdateInterviewStatus(item.id, 'Completed')}
-                        className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] transition-colors"
-                      >
-                        Done
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-[10px] text-zinc-500 italic">Read-only</span>
-                  )}
+                  <div className="flex items-center justify-end gap-1.5">
+                    <button
+                      onClick={() => downloadIcsFile(item)}
+                      className="px-2 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium transition-colors inline-flex items-center gap-1"
+                      title="Download Calendar (.ics) Invite"
+                    >
+                      <Calendar className="w-3 h-3 text-emerald-400" />
+                      <span>.ICS</span>
+                    </button>
+                    {canUpdateStatus ? (
+                      <>
+                        <button
+                          onClick={() => onUpdateInterviewStatus(item.id, 'Cleared')}
+                          className="px-2.5 py-1 rounded bg-white hover:bg-zinc-200 text-black text-[11px] font-semibold transition-colors"
+                          title="Clear & Advance"
+                        >
+                          Clear
+                        </button>
+                        <button
+                          onClick={() => onUpdateInterviewStatus(item.id, 'Completed')}
+                          className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] transition-colors"
+                        >
+                          Done
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-[10px] text-zinc-500 italic">Read-only</span>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
