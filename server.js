@@ -128,7 +128,7 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://accounts.google.com; frame-src https://accounts.google.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://generativelanguage.googleapis.com; frame-src https://accounts.google.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
   );
 
   // Validate Origin for CORS
@@ -270,7 +270,84 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 2. Test Email API
+  // 2. Cryptographic Google Token Verification Gateway
+  if (req.url === '/api/auth/verify-google-token' && req.method === 'POST') {
+    if (isRateLimited(clientIp)) {
+      res.writeHead(429, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again in 1 minute.' }));
+      return;
+    }
+
+    let bodyStr = '';
+    let isPayloadTooLarge = false;
+    req.on('data', chunk => {
+      if (isPayloadTooLarge) return;
+      bodyStr += chunk;
+      if (bodyStr.length > 32 * 1024) { // ID tokens are ~1-2KB; 32KB max
+        isPayloadTooLarge = true;
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: 'Token payload too large' }));
+        req.destroy();
+      }
+    });
+
+    req.on('end', async () => {
+      if (isPayloadTooLarge) return;
+      try {
+        const body = JSON.parse(bodyStr || '{}');
+        const token = body.token;
+        if (!token || typeof token !== 'string') {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Missing or invalid token string.' }));
+          return;
+        }
+
+        const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(token)}`);
+        const tokenInfo = await googleRes.json();
+
+        if (!googleRes.ok || tokenInfo.error) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: false,
+            error: tokenInfo.error_description || 'Invalid or revoked Google ID token.'
+          }));
+          return;
+        }
+
+        // Validate Audience matches our Client ID if set in environment
+        const expectedClientId = process.env.VITE_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+        if (expectedClientId && tokenInfo.aud !== expectedClientId) {
+          res.writeHead(403, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: false,
+            error: 'Google ID token was not issued for this application.'
+          }));
+          return;
+        }
+
+        // Return verified token claims
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          verified: {
+            sub: tokenInfo.sub,
+            email: tokenInfo.email,
+            email_verified: tokenInfo.email_verified === 'true' || tokenInfo.email_verified === true,
+            name: tokenInfo.name,
+            picture: tokenInfo.picture,
+            exp: Number(tokenInfo.exp),
+            iss: tokenInfo.iss
+          }
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: 'Internal token verification failure.' }));
+      }
+    });
+    return;
+  }
+
+  // 3. Test Email API
   if (req.url === '/api/test-email' && req.method === 'POST') {
     if (isRateLimited(clientIp)) {
       res.writeHead(429, { 'Content-Type': 'application/json' });
