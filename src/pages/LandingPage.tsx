@@ -121,8 +121,15 @@ export const LandingPage: React.FC = () => {
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
+            to="/resume-builder"
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs border border-zinc-700 transition-all flex items-center justify-center gap-2"
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>Build &amp; Score Resume</span>
+          </Link>
+          <Link
             to="/upload"
-            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs border border-zinc-800 transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-zinc-950 hover:bg-zinc-900 text-zinc-300 font-medium text-xs border border-zinc-800 transition-all flex items-center justify-center gap-2"
           >
             <FileText className="w-4 h-4" />
             <span>Upload &amp; Screen Resume</span>
