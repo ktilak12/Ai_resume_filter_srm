@@ -9,7 +9,8 @@ import {
   Sparkles, 
   Check, 
   X,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
@@ -61,7 +62,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     updateProfile({
       name: name.trim(),
       email: email.trim(),
-      role,
       regNumber: regNumber.trim() || undefined,
       campus,
       department,
@@ -152,22 +152,26 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
           </div>
 
-          {/* Role Selection */}
+          {/* Role Display (Locked to Login Session) */}
           <div>
-            <label className="block font-semibold text-zinc-300 mb-1.5">
-              Portal Access Role *
-            </label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as UserRole)}
-              className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-white"
-            >
-              <option value="Placement Officer">Placement Officer (Directorate of Career Centre)</option>
-              <option value="Faculty Coordinator">Faculty Coordinator (Department Placement In-Charge)</option>
-              <option value="Corporate Recruiter">Corporate Recruiter (Hiring Partner)</option>
-              <option value="Super Admin">Super Administrator (Full System Authority)</option>
-              <option value="Student Coordinator">Student Coordinator (Student Representative)</option>
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block font-semibold text-zinc-300 text-xs">
+                Portal Access Role
+              </label>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-900 text-amber-400 border border-zinc-800 flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Locked to Session
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-black border border-zinc-800 text-xs text-white">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span className="font-bold">{role}</span>
+              </div>
+              <span className="text-[10px] text-zinc-500 font-mono">Immutable</span>
+            </div>
+            <p className="text-[10px] text-zinc-500 mt-1">
+              Your role is cryptographically signed and locked for this login session. To switch roles, log out and select another role on the login screen.
+            </p>
           </div>
 
           {/* Reg Number / Staff ID & Phone */}
