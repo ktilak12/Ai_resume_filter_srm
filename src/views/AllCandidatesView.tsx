@@ -13,6 +13,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { CandidateProfile } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { canAccessUnmaskedPII, maskRegNumber } from '../services/privacyGuard';
+import { ShieldCheck } from 'lucide-react';
 
 interface AllCandidatesViewProps {
   candidates: CandidateProfile[];
@@ -23,6 +26,8 @@ export const AllCandidatesView: React.FC<AllCandidatesViewProps> = ({
   candidates,
   onSelectCandidate
 }) => {
+  const { currentUser } = useAuth();
+  const canViewPII = canAccessUnmaskedPII(currentUser?.role, false);
   const [search, setSearch] = useState('');
   const [selectedDept, setSelectedDept] = useState('all');
 
@@ -115,8 +120,13 @@ export const AllCandidatesView: React.FC<AllCandidatesViewProps> = ({
                     <h3 className="font-bold text-sm text-white">
                       {cand.name}
                     </h3>
-                    <div className="text-[11px] text-zinc-400 font-mono">
-                      {cand.reg_number}
+                    <div className="text-[11px] text-zinc-400 font-mono flex items-center gap-1">
+                      <span>{canViewPII ? cand.reg_number : maskRegNumber(cand.reg_number)}</span>
+                      {!canViewPII && (
+                        <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-1 py-0.2 rounded" title="Student PII Protected (DPDP Act)">
+                          Protected
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
