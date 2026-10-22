@@ -16,7 +16,8 @@ import {
   ChevronRight,
   TrendingUp,
   Award,
-  Layers
+  Layers,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { INITIAL_JOBS, INITIAL_CANDIDATES, INITIAL_INTERVIEWS } from '../data/srmDataset';
@@ -24,10 +25,11 @@ import { parseResumeFile } from '../services/resumeParser';
 import { screenCandidate } from '../services/aiScreeningEngine';
 import { CandidateProfile, ScreeningResult, JobRequirement, Interview } from '../types';
 import { downloadIcsFile } from '../services/calendarService';
+import { ResumeBuilder } from '../components/student/ResumeBuilder';
 
 export const StudentPortalPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<'eligibility' | 'checker' | 'interviews'>('eligibility');
+  const [activeTab, setActiveTab] = useState<'eligibility' | 'builder' | 'checker' | 'interviews'>('builder');
 
   // Candidate data & drives from state/storage
   const [jobs] = useState<JobRequirement[]>(() => {
@@ -70,6 +72,7 @@ export const StudentPortalPage: React.FC = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [selectedDriveId, setSelectedDriveId] = useState<string>(jobs[0]?.id || '');
   const [evalResult, setEvalResult] = useState<ScreeningResult | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -77,6 +80,7 @@ export const StudentPortalPage: React.FC = () => {
     setUploadedFile(file);
     setIsEvaluating(true);
     setEvalResult(null);
+    setUploadError(null);
 
     try {
       const parsedCandidate = await parseResumeFile(file);
@@ -87,8 +91,9 @@ export const StudentPortalPage: React.FC = () => {
       const targetJob = jobs.find(j => j.id === selectedDriveId) || jobs[0];
       const result = screenCandidate(parsedCandidate, targetJob);
       setEvalResult(result);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error evaluating student resume:', err);
+      setUploadError(err.message || 'Error parsing resume file. Please ensure it is a valid PDF, DOCX, or TXT file under 10MB.');
     } finally {
       setIsEvaluating(false);
     }
@@ -131,10 +136,25 @@ export const StudentPortalPage: React.FC = () => {
       </div>
 
       {/* Navigation Pills */}
-      <div className="flex items-center gap-2 border-b border-zinc-850 pb-3">
+      <div className="flex items-center gap-2 border-b border-zinc-850 pb-3 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('builder')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+            activeTab === 'builder'
+              ? 'bg-white text-black'
+              : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <span>AI Resume Builder & Tailor</span>
+          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            Live
+          </span>
+        </button>
+
         <button
           onClick={() => setActiveTab('eligibility')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
             activeTab === 'eligibility'
               ? 'bg-white text-black'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
@@ -146,7 +166,7 @@ export const StudentPortalPage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('checker')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
             activeTab === 'checker'
               ? 'bg-white text-black'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
@@ -158,7 +178,7 @@ export const StudentPortalPage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('interviews')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
             activeTab === 'interviews'
               ? 'bg-white text-black'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
@@ -168,6 +188,15 @@ export const StudentPortalPage: React.FC = () => {
           <span>My Interview Passes ({studentInterviews.length})</span>
         </button>
       </div>
+
+      {/* TAB 0: AI RESUME BUILDER & TAILOR */}
+      {activeTab === 'builder' && (
+        <ResumeBuilder
+          initialJobId={selectedDriveId}
+          jobs={jobs}
+          onNavigateToDrives={() => setActiveTab('eligibility')}
+        />
+      )}
 
       {/* TAB 1: ELIGIBILITY & DRIVES */}
       {activeTab === 'eligibility' && (
@@ -222,26 +251,39 @@ export const StudentPortalPage: React.FC = () => {
                     {isEligible ? (
                       <span className="text-emerald-400 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Eligible to Apply</span>
+                        <span>Eligible</span>
                       </span>
                     ) : (
                       <span className="text-red-400 flex items-center gap-1">
                         <XCircle className="w-3.5 h-3.5" />
-                        <span>Criteria Not Met</span>
+                        <span>Not Met</span>
                       </span>
                     )}
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setSelectedDriveId(job.id);
-                      setActiveTab('checker');
-                    }}
-                    className="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition-colors"
-                  >
-                    <span>Test Resume</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        setSelectedDriveId(job.id);
+                        setActiveTab('builder');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-white text-black hover:bg-zinc-200 text-xs font-semibold flex items-center gap-1 transition-all"
+                      title="Build and tailor resume specifically for this drive"
+                    >
+                      <Sparkles className="w-3 h-3 text-black" />
+                      <span>Build Resume</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedDriveId(job.id);
+                        setActiveTab('checker');
+                      }}
+                      className="text-xs text-zinc-400 hover:text-white flex items-center gap-0.5 transition-colors px-1.5 py-1"
+                    >
+                      <span>Test File</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -291,6 +333,13 @@ export const StudentPortalPage: React.FC = () => {
                 </div>
                 <p className="text-[10px] text-zinc-500 mt-1">Instant Explainable ATS Scoring</p>
               </div>
+
+              {uploadError && (
+                <div className="p-3 rounded-xl bg-red-950/40 border border-red-900/60 text-xs text-red-300 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <span>{uploadError}</span>
+                </div>
+              )}
 
               {isEvaluating && (
                 <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 text-center animate-pulse">
@@ -390,6 +439,22 @@ export const StudentPortalPage: React.FC = () => {
                         </div>
                       </div>
                     )}
+
+                    <div className="pt-3 border-t border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-semibold text-white block">Ready to boost this ATS score?</span>
+                        <span className="text-[11px] text-zinc-400">Open the AI Resume Builder tailored specifically for this drive's keywords.</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setActiveTab('builder');
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-semibold flex items-center gap-1.5 transition-all self-start sm:self-auto"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-black" />
+                        <span>Build Tailored Resume</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
