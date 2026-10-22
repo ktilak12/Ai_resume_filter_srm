@@ -170,11 +170,6 @@ export function clearSecureSession(): void {
 export function isRoleElevationAllowed(currentUser: AuthUser | null, targetRole: UserRole): boolean {
   if (!currentUser) return false;
 
-  // Development environment permits role switching for test coverage
-  if (import.meta.env.DEV) {
-    return true;
-  }
-
   const email = (currentUser.email || '').toLowerCase().trim();
   const isInstitutional = isSRMISTEmail(email);
   const details = parseSRMEmailDetails(email);
@@ -189,11 +184,15 @@ export function isRoleElevationAllowed(currentUser: AuthUser | null, targetRole:
     return targetRole === 'Student Coordinator';
   }
 
-  // 3. Super Admin role requires explicit administrative email verification
+  // 3. Super Admin role requires explicit administrative email authorization
   if (targetRole === 'Super Admin') {
-    return email.includes('admin') || email.includes('director') || email.includes('dean');
+    return email.includes('admin') || 
+           email.includes('director') || 
+           email.includes('dean') || 
+           email.includes('vc@') || 
+           email.includes('placement.head');
   }
 
-  // 4. Institutional staff can assume Placement Officer or Faculty Coordinator
+  // 4. Institutional staff can assume Placement Officer, Faculty Coordinator, or Student Coordinator
   return ['Placement Officer', 'Faculty Coordinator', 'Student Coordinator'].includes(targetRole);
 }
