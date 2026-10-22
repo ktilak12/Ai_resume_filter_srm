@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthUser, UserRole } from '../types';
-import { parseJwt, isJwtExpired, isSRMISTEmail, parseSRMEmailDetails } from '../services/googleAuth';
+import { parseJwt, isJwtExpired, isSRMISTEmail, parseSRMEmailDetails, verifyGoogleIdTokenCryptographically } from '../services/googleAuth';
 import { GOOGLE_CLIENT_ID } from '../config/authConfig';
 import { 
   loadSecureSession, 
@@ -21,7 +21,7 @@ interface AuthContextType {
   isLoading: boolean;
   authError: AuthError | null;
   clientId: string;
-  loginWithGoogleCredential: (credentialJwt: string) => Promise<boolean>;
+  loginWithGoogleCredential: (credentialJwt: string, chosenRole?: UserRole) => Promise<boolean>;
   loginDirect: (user: Partial<AuthUser>) => void;
   updateProfile: (profile: Partial<AuthUser>) => void;
   logout: () => void;
@@ -73,31 +73,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const loginWithGoogleCredential = async (credentialJwt: string): Promise<boolean> => {
+  const loginWithGoogleCredential = async (credentialJwt: string, chosenRole?: UserRole): Promise<boolean> => {
     setIsLoading(true);
     setAuthError(null);
 
     try {
-      const payload = parseJwt(credentialJwt);
+      // Cryptographically verify ID token against Google OAuth servers
+      const verification = await verifyGoogleIdTokenCryptographically(credentialJwt);
 
-      if (!payload || !payload.email) {
+      if (!verification.valid || !verification.payload || !verification.payload.email) {
         setAuthError({
           type: 'INVALID_TOKEN',
-          message: 'Unable to parse Google authentication token. Please try again.'
+          message: verification.error || 'Google cryptographic authentication failed. Please sign in again.'
         });
         setIsLoading(false);
         return false;
       }
 
-      if (isJwtExpired(payload)) {
-        setAuthError({
-          type: 'INVALID_TOKEN',
-          message: 'Google authentication token has expired. Please sign in again.'
-        });
-        setIsLoading(false);
-        return false;
-      }
-
+      const payload = verification.payload;
       const email = payload.email.trim().toLowerCase();
       const isSRM = isSRMISTEmail(email);
 
@@ -119,11 +112,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         detectedRole = 'Corporate Recruiter';
       }
 
+      // Validate chosen role against institutional RBAC policy; fallback to detectedRole if unauthorized
+      let finalRole: UserRole = detectedRole;
+      if (chosenRole) {
+        const candidateUser: AuthUser = {
+          id: payload.sub,
+          name: payload.name || email.split('@')[0],
+          email: email,
+          role: detectedRole,
+          department: isSRM ? srmDetails.department : 'Corporate Relations',
+          campus: isSRM ? 'Kattankulathur (Main Campus)' : 'Corporate Partner Office',
+          isInstitutionalVerified: isSRM,
+          isProfileComplete: true,
+          lastLoginAt: new Date().toISOString()
+        };
+
+        if (isRoleElevationAllowed(candidateUser, chosenRole)) {
+          finalRole = chosenRole;
+        } else {
+          console.warn(`[RBAC Security] Role '${chosenRole}' unauthorized for email ${email}. Reverting to verified role '${detectedRole}'.`);
+        }
+      }
+
       const newUser: AuthUser = {
         id: payload.sub,
         name: payload.name || email.split('@')[0],
         email: email,
-        role: detectedRole,
+        role: finalRole,
         department: isSRM ? srmDetails.department : 'Computer Science & Engineering',
         campus: isSRM ? 'Kattankulathur (Main Campus)' : 'Corporate Partner Office',
         regNumber: isSRM ? srmDetails.regNumber : undefined,
@@ -152,10 +167,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const email = userData.email || 'placement.director@srmist.edu.in';
     const isSRM = isSRMISTEmail(email);
 
-    // Defense-in-depth: In production, direct login can NEVER self-elevate to Super Admin
+    // Defense-in-depth: Validate requested role against institutional RBAC rules
     let requestedRole = userData.role || 'Placement Officer';
-    if (!import.meta.env.DEV && requestedRole === 'Super Admin') {
-      requestedRole = 'Placement Officer';
+    const tempUser: AuthUser = {
+      id: 'tmp-auth',
+      name: userData.name || '',
+      email: email,
+      role: 'Student Coordinator',
+      isInstitutionalVerified: isSRM,
+      isProfileComplete: true,
+      lastLoginAt: new Date().toISOString()
+    };
+    if (!isRoleElevationAllowed(tempUser, requestedRole)) {
+      console.warn(`[RBAC Security] Direct login requested unauthorized role '${requestedRole}' for '${email}'. Reverting to safe role.`);
+      requestedRole = isSRM ? (parseSRMEmailDetails(email).isStudent ? 'Student Coordinator' : 'Placement Officer') : 'Corporate Recruiter';
     }
     
     const newUser: AuthUser = {
@@ -178,9 +203,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = async (profile: Partial<AuthUser>) => {
     if (!currentUser) return;
+    // Roles are strictly immutable post-login under institutional RBAC
+    const { role: _ignoredRole, ...allowedUpdates } = profile;
     const updated: AuthUser = {
       ...currentUser,
-      ...profile,
+      ...allowedUpdates,
+      role: currentUser.role, // role remains strictly locked
       isProfileComplete: true
     };
     setCurrentUser(updated);
@@ -200,36 +228,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const switchRole = async (role: UserRole) => {
-    if (!VALID_ROLES.includes(role)) return;
-
-    // Strict Role-Based Elevation Prevention
-    if (!isRoleElevationAllowed(currentUser, role)) {
-      console.warn(`[RBAC Security] Unauthorized role switch to "${role}" blocked for:`, currentUser?.email);
-      setAuthError({
-        type: 'UNAUTHORIZED_ROLE',
-        message: `Privilege escalation blocked: Account "${currentUser?.email || 'Unknown'}" lacks authorization for "${role}".`
-      });
-      return;
-    }
-
-    const updated: AuthUser = currentUser ? {
-      ...currentUser,
-      role
-    } : {
-      id: `usr-${Date.now()}`,
-      name: 'SRM User',
-      email: 'placement@srmist.edu.in',
-      role,
-      department: 'Directorate of Career Centre',
-      campus: 'Kattankulathur (Main Campus)',
-      regNumber: 'SRM-EMP-8941',
-      isInstitutionalVerified: true,
-      isProfileComplete: true,
-      lastLoginAt: new Date().toISOString()
-    };
-    setCurrentUser(updated);
-    await saveSecureSession(updated);
+  const switchRole = async (_role: UserRole) => {
+    console.warn('[RBAC Security] Role modification blocked: Active role cannot be altered during a session.');
+    setAuthError({
+      type: 'UNAUTHORIZED_ROLE',
+      message: 'Access role is locked to this session. To change your role, please log out and choose a role at login.'
+    });
   };
 
   const clearError = () => {
