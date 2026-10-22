@@ -17,15 +17,19 @@ import {
   AlertCircle, 
   ChevronRight, 
   BarChart,
-  Mail,
-  Loader2,
   CheckCircle2,
   XCircle,
-  Calendar
+  Calendar,
+  ShieldCheck,
+  Lock,
+  Phone,
+  Mail,
+  Loader2
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
+import { canAccessUnmaskedPII, maskEmail, maskPhone, maskRegNumber } from '../services/privacyGuard';
 
 export const CandidateDetail: React.FC = () => {
   const { currentUser } = useAuth();
@@ -66,6 +70,8 @@ export const CandidateDetail: React.FC = () => {
       raw_resume_text: ''
     };
   }, [id]);
+
+  const canViewPII = canAccessUnmaskedPII(currentUser?.role, candidate.status === 'Shortlisted');
 
   const jobsList: JobRequirement[] = useMemo(() => {
     const savedJobs = localStorage.getItem('srm_jobs_list');
@@ -124,8 +130,17 @@ export const CandidateDetail: React.FC = () => {
                 {explainable.verdict}
               </span>
             </h1>
-            <p className="text-zinc-400 mt-0.5 text-xs font-mono">
-              {candidate.reg_number} • {candidate.education.department} • CGPA {candidate.education.cgpa.toFixed(2)}
+            <p className="text-zinc-400 mt-0.5 text-xs font-mono flex items-center gap-1.5 flex-wrap">
+              <span>{canViewPII ? candidate.reg_number : maskRegNumber(candidate.reg_number)}</span>
+              {!canViewPII && (
+                <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-1 py-0.2 rounded" title="Student PII Protected (DPDP Act)">
+                  Protected
+                </span>
+              )}
+              <span>•</span>
+              <span>{candidate.education.department}</span>
+              <span>•</span>
+              <span>CGPA {candidate.education.cgpa.toFixed(2)}</span>
             </p>
           </div>
         </div>
@@ -349,6 +364,47 @@ export const CandidateDetail: React.FC = () => {
               <h2 className="text-sm font-bold text-white font-mono">Candidate Profile</h2>
             </div>
             <div className="p-5 space-y-5 text-xs font-mono">
+              <div className="pb-4 border-b border-zinc-850">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider flex items-center">
+                    <Mail className="mr-1.5 h-3.5 w-3.5 text-white" /> Contact Credentials
+                  </h3>
+                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono border ${
+                    canViewPII 
+                      ? 'bg-zinc-900 text-emerald-400 border-zinc-800' 
+                      : 'bg-black text-amber-400 border-amber-950/60'
+                  }`}>
+                    {canViewPII ? <ShieldCheck className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
+                    {canViewPII ? 'Verified PII' : 'DPDP Masked'}
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500 text-[11px]">Email:</span>
+                    <span className="text-white font-mono text-[11px]">
+                      {canViewPII ? candidate.email : maskEmail(candidate.email)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500 text-[11px]">Phone:</span>
+                    <span className="text-white font-mono text-[11px]">
+                      {canViewPII ? candidate.phone : maskPhone(candidate.phone)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500 text-[11px]">Register No:</span>
+                    <span className="text-white font-mono text-[11px]">
+                      {canViewPII ? candidate.reg_number : maskRegNumber(candidate.reg_number)}
+                    </span>
+                  </div>
+                </div>
+                {!canViewPII && (
+                  <p className="mt-2 text-[10px] text-zinc-500 italic border-t border-zinc-900 pt-1.5">
+                    Protected under DPDP Act 2023. Unlocks upon Shortlist confirmation.
+                  </p>
+                )}
+              </div>
+
               <div>
                 <h3 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2 flex items-center">
                   <GraduationCap className="mr-1.5 h-3.5 w-3.5 text-white" /> Education
