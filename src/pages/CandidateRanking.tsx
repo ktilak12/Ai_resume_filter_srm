@@ -24,10 +24,12 @@ import { sendShortlistNotification } from '../services/emailService';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
+import { canAccessUnmaskedPII, maskRegNumber } from '../services/privacyGuard';
 import { AllCandidatesView } from '../views/AllCandidatesView';
 
 export const CandidateRanking: React.FC = () => {
   const { currentUser } = useAuth();
+  const canViewPII = canAccessUnmaskedPII(currentUser?.role, false);
   const location = useLocation();
   const navigate = useNavigate();
   const navState = (location.state as { selectedJobId?: string; searchTerm?: string } | null) || null;
@@ -619,7 +621,16 @@ export const CandidateRanking: React.FC = () => {
                           </div>
                           <div className="ml-3">
                             <div className="text-xs font-semibold text-white">{candidate.name}</div>
-                            <div className="text-[11px] text-zinc-400 font-mono">{candidate.reg_number} • {candidate.education.department}</div>
+                            <div className="text-[11px] text-zinc-400 font-mono flex items-center gap-1">
+                              <span>{canViewPII ? candidate.reg_number : maskRegNumber(candidate.reg_number)}</span>
+                              {!canViewPII && (
+                                <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-1 py-0.2 rounded" title="Student PII Protected (DPDP Act)">
+                                  Protected
+                                </span>
+                              )}
+                              <span>•</span>
+                              <span>{candidate.education.department}</span>
+                            </div>
                           </div>
                         </div>
                       </td>
