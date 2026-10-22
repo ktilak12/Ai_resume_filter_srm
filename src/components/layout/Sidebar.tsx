@@ -11,7 +11,8 @@ import {
   UserCheck,
   Calendar,
   Home,
-  GraduationCap
+  GraduationCap,
+  Sparkles
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -36,6 +37,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
       name: 'Candidate Portal', 
       icon: GraduationCap, 
       path: '/student-portal', 
+      roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
+    },
+    { 
+      name: 'AI Resume Builder', 
+      icon: Sparkles, 
+      path: '/resume-builder', 
       roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
     },
     { 
