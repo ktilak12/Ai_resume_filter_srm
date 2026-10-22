@@ -13,6 +13,8 @@ import {
   Briefcase
 } from 'lucide-react';
 import { ScreeningResult, JobRequirement, Interview } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { canAccessUnmaskedPII, maskRegNumber, sanitizeCsvField } from '../services/privacyGuard';
 
 interface ShortlistedViewProps {
   shortlistedResults: ScreeningResult[];
@@ -29,6 +31,8 @@ export const ShortlistedView: React.FC<ShortlistedViewProps> = ({
   onScheduleInterview,
   onRemoveFromShortlist
 }) => {
+  const { currentUser } = useAuth();
+  const canViewPII = canAccessUnmaskedPII(currentUser?.role, true);
   const [selectedJobFilter, setSelectedJobFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -46,27 +50,19 @@ export const ShortlistedView: React.FC<ShortlistedViewProps> = ({
   });
 
   const handleExport = () => {
-    const sanitizeCsvCell = (val: any): string => {
-      if (val === null || val === undefined) return '""';
-      let str = String(val);
-      if (/^[=+\-@\t\r]/.test(str.trim())) {
-        str = "'" + str;
-      }
-      return `"${str.replace(/"/g, '""')}"`;
-    };
-
     const headers = ['Rank', 'Name', 'Reg Number', 'Department', 'CGPA', 'Job Title', 'Match Score', 'Status'];
     const rows = filtered.map(r => {
       const job = jobs.find(j => j.id === r.job_id);
+      const regNo = canViewPII ? r.candidate.reg_number : maskRegNumber(r.candidate.reg_number);
       return [
         r.rank,
-        sanitizeCsvCell(r.candidate.name),
-        sanitizeCsvCell(r.candidate.reg_number),
-        sanitizeCsvCell(r.candidate.education.department),
+        sanitizeCsvField(r.candidate.name),
+        sanitizeCsvField(regNo),
+        sanitizeCsvField(r.candidate.education.department),
         r.candidate.education.cgpa,
-        sanitizeCsvCell(job?.title || 'Drive'),
+        sanitizeCsvField(job?.title || 'Drive'),
         `${r.score.overall_match}%`,
-        sanitizeCsvCell(r.status)
+        sanitizeCsvField(r.status)
       ];
     });
 
@@ -178,7 +174,7 @@ export const ShortlistedView: React.FC<ShortlistedViewProps> = ({
                           {candidate.name}
                         </div>
                         <div className="text-[11px] text-zinc-400">
-                          {candidate.reg_number} • {candidate.education.degree} ({candidate.education.department}) • <span className="text-zinc-300 font-medium">CGPA: {candidate.education.cgpa}</span>
+                          {canViewPII ? candidate.reg_number : maskRegNumber(candidate.reg_number)} • {candidate.education.degree} ({candidate.education.department}) • <span className="text-zinc-300 font-medium">CGPA: {candidate.education.cgpa}</span>
                         </div>
                       </div>
                     </td>
