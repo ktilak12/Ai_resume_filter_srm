@@ -11,17 +11,18 @@ import {
 } from '../types';
 
 // Default AI settings
+// Default AI settings calibrated for realistic, genuine placement screening
 export const DEFAULT_AI_SETTINGS: AISettings = {
   weights: {
-    skills: 0.40,
-    experience: 0.25,
-    education: 0.20,
-    projects: 0.10,
+    skills: 0.55,
+    experience: 0.18,
+    education: 0.10,
+    projects: 0.17,
     certifications: 0.05
   },
   thresholds: {
-    strong_match: 85,
-    needs_review: 65
+    strong_match: 80,
+    needs_review: 55
   }
 };
 
@@ -41,39 +42,39 @@ export function getStoredAiSettings(): AISettings {
   return DEFAULT_AI_SETTINGS;
 }
 
-// Comprehensive Technical Skill Synonyms and Knowledge Graph
+// Strict Technical Skill Synonyms and Knowledge Graph (Without cross-technology contamination)
 export const SKILL_SYNONYMS: Record<string, string[]> = {
-  'python': ['python3', 'py', 'django', 'flask', 'fastapi', 'pandas', 'numpy', 'scipy', 'pytest', 'celery'],
-  'machine learning': ['ml', 'scikit-learn', 'sklearn', 'predictive modeling', 'data science', 'random forest', 'xgboost', 'regression', 'clustering', 'neural networks', 'model evaluation', 'supervised learning'],
-  'deep learning': ['dl', 'tensorflow', 'pytorch', 'keras', 'cnn', 'rnn', 'lstm', 'transformer', 'transformers', 'bert', 'llm', 'nlp', 'large language models', 'huggingface'],
-  'tensorflow': ['tf', 'keras', 'deep learning'],
-  'pytorch': ['torch', 'deep learning', 'transformers', 'torchvision'],
-  'sql': ['mysql', 'postgresql', 'postgres', 'pl/sql', 'oracle', 'sqlite', 'rdbms', 'sql server', 't-sql', 'relational database', 'mariadb'],
-  'power bi': ['powerbi', 'dax', 'power query', 'bi reporting', 'business intelligence', 'dashboards', 'data modeling'],
-  'tableau': ['tableau desktop', 'tableau server', 'data visualization', 'dashboards'],
-  'excel': ['advanced excel', 'vlookup', 'xlookup', 'pivot tables', 'macros', 'vba', 'spreadsheets'],
-  'react': ['reactjs', 'react.js', 'next.js', 'nextjs', 'redux', 'frontend', 'javascript', 'typescript', 'jsx', 'tsx'],
-  'node.js': ['nodejs', 'node', 'express', 'express.js', 'nest.js', 'backend', 'koa'],
-  'javascript': ['js', 'es6', 'esnext', 'typescript', 'ts', 'vanilla js'],
-  'typescript': ['ts', 'typed javascript', 'react typescript'],
-  'aws': ['amazon web services', 'ec2', 's3', 'lambda', 'cloudformation', 'rds', 'dynamodb', 'iam', 'cloudwatch', 'ecs', 'eks', 'sqs', 'sns', 'cloud computing'],
-  'azure': ['microsoft azure', 'azure devops', 'blob storage', 'azure functions', 'aks', 'cosmos db', 'cloud computing'],
-  'gcp': ['google cloud', 'google cloud platform', 'bigquery', 'gke', 'cloud storage', 'cloud run'],
-  'docker': ['containerization', 'containers', 'docker compose', 'dockerfile', 'docker daemon'],
-  'kubernetes': ['k8s', 'kube', 'kubectl', 'helm', 'container orchestration', 'cloud native'],
-  'git': ['github', 'gitlab', 'version control', 'bitbucket', 'git cli', 'git workflow'],
-  'java': ['java 8', 'java 11', 'java 17', 'java 21', 'spring', 'spring boot', 'hibernate', 'jvm', 'j2ee', 'maven', 'gradle'],
-  'c++': ['cpp', 'c/c++', 'stl', 'standard template library', 'object oriented programming', 'oop'],
-  'c#': ['csharp', 'c#.net', '.net', '.net core', 'asp.net'],
-  'statistics': ['statistical analysis', 'hypothesis testing', 'probability', 'inferential statistics', 'a/b testing', 'bayesian'],
-  'data structures': ['dsa', 'data structures and algorithms', 'algorithms', 'leetcode', 'competitive programming', 'trees', 'graphs', 'dynamic programming'],
-  'algorithms': ['algorithm design', 'dsa', 'graph algorithms', 'sorting', 'searching', 'greedy', 'complexity analysis'],
-  'system design': ['high level design', 'low level design', 'hld', 'lld', 'distributed systems', 'scalability', 'microservices architecture', 'caching', 'load balancing'],
-  'distributed systems': ['microservices', 'kafka', 'rabbitmq', 'event driven', 'distributed computing', 'redis', 'caching'],
-  'rest apis': ['restful', 'rest api', 'api design', 'fastapi', 'express', 'api integration', 'postman', 'swagger'],
-  'nosql': ['mongodb', 'cassandra', 'dynamodb', 'documentdb', 'couchdb', 'redis'],
-  'linux': ['unix', 'bash', 'shell scripting', 'ubuntu', 'debian', 'linux cli', 'operating systems'],
-  'ci/cd': ['continuous integration', 'jenkins', 'github actions', 'gitlab ci', 'circleci', 'automated pipelines', 'devops']
+  'python': ['python3', 'py3', 'cpython'],
+  'machine learning': ['ml', 'scikit-learn', 'sklearn', 'predictive modeling', 'statistical learning', 'supervised learning'],
+  'deep learning': ['dl', 'tensorflow', 'pytorch', 'keras', 'neural networks', 'transformers', 'llm', 'computer vision'],
+  'tensorflow': ['tf', 'keras'],
+  'pytorch': ['torch', 'torchvision'],
+  'sql': ['mysql', 'postgresql', 'postgres', 'sqlite', 'oracle sql', 'pl/sql', 't-sql', 'mariadb'],
+  'power bi': ['powerbi', 'dax', 'power query'],
+  'tableau': ['tableau desktop', 'tableau server'],
+  'excel': ['advanced excel', 'vlookup', 'pivot tables', 'spreadsheets'],
+  'react': ['reactjs', 'react.js'],
+  'node.js': ['nodejs', 'node.js', 'node js'],
+  'javascript': ['js', 'es6', 'ecmascript'],
+  'typescript': ['ts'],
+  'aws': ['amazon web services', 'ec2', 's3', 'lambda', 'cloudformation', 'dynamodb', 'ecs', 'eks'],
+  'azure': ['microsoft azure', 'azure devops', 'blob storage', 'azure functions', 'aks'],
+  'gcp': ['google cloud', 'google cloud platform', 'bigquery', 'gke', 'cloud storage'],
+  'docker': ['containerization', 'docker compose', 'dockerfile'],
+  'kubernetes': ['k8s', 'kubectl'],
+  'git': ['github', 'gitlab', 'version control', 'git workflow'],
+  'java': ['java 8', 'java 11', 'java 17', 'java 21', 'core java'],
+  'c++': ['cpp', 'c/c++'],
+  'c#': ['csharp', '.net', '.net core'],
+  'statistics': ['statistical analysis', 'probability', 'inferential statistics', 'hypothesis testing'],
+  'data structures': ['dsa', 'data structures and algorithms'],
+  'algorithms': ['algorithm design', 'graph algorithms', 'dynamic programming'],
+  'system design': ['high level design', 'low level design', 'hld', 'lld'],
+  'distributed systems': ['microservices architecture', 'distributed computing'],
+  'rest apis': ['restful apis', 'restful api', 'rest api', 'api design'],
+  'nosql': ['mongodb', 'cassandra', 'dynamodb', 'couchdb', 'redis'],
+  'linux': ['unix', 'bash', 'shell scripting', 'ubuntu'],
+  'ci/cd': ['continuous integration', 'jenkins', 'github actions', 'gitlab ci']
 };
 
 /**
@@ -97,6 +98,50 @@ export const DEPT_SYNONYMS: Record<string, string[]> = {
 };
 
 /**
+ * Helper to test if a term exists as a strict token/word in a text block
+ * Prevents single letters or short abbreviations from matching random English words
+ */
+export function matchesTokenInText(text: string, term: string): boolean {
+  if (!text || !term) return false;
+  const cleanTerm = term.trim();
+  if (!cleanTerm) return false;
+
+  const escaped = cleanTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const hasSymbol = /[^a-z0-9\s]/i.test(cleanTerm);
+  const pattern = hasSymbol 
+    ? `(?:^|[\\s,;./()\\-])${escaped}(?:$|[\\s,;./()\\-])`
+    : `\\b${escaped}\\b`;
+  
+  const regex = new RegExp(pattern, 'i');
+  return regex.test(text);
+}
+
+/**
+ * Determines if two skill tokens match exactly or via recognized synonyms
+ * Prevents cross-language collisions (e.g. C vs C++, Java vs JavaScript, SQL vs NoSQL)
+ */
+function skillTokensEqual(candSkill: string, reqTerm: string): boolean {
+  const c = normalize(candSkill);
+  const r = normalize(reqTerm);
+  if (c === r) return true;
+
+  // Explicit distinct collisions to reject
+  const distinctPairs = [
+    ['c', 'c++'], ['c', 'c#'], ['java', 'javascript'], ['sql', 'nosql'], 
+    ['r', 'react'], ['go', 'django'], ['c', 'cloud computing'], ['git', 'digital signal processing']
+  ];
+  for (const [p1, p2] of distinctPairs) {
+    if ((c === p1 && r === p2) || (c === p2 && r === p1)) return false;
+  }
+
+  // Only allow substring matching if both are at least 5 chars long AND one starts with the other
+  if (c.length >= 5 && r.length >= 5) {
+    if (c.startsWith(r) || r.startsWith(c)) return true;
+  }
+  return false;
+}
+
+/**
  * Determines if a candidate skill matches a required skill using token exactness, knowledge graph, and contextual proof
  */
 export function checkSkillMatch(
@@ -106,68 +151,53 @@ export function checkSkillMatch(
   resumeText: string
 ): { matches: boolean; evidence: string; confidence: number } {
   const normReq = normalize(requiredSkill);
-  const synonyms = SKILL_SYNONYMS[normReq] || [];
+  const synonyms = (SKILL_SYNONYMS[normReq] || []).map(s => normalize(s));
   const searchTerms = [normReq, ...synonyms];
 
-  // 1. Check if demonstrated in practical work experience or internships
-  for (const exp of candidate.experience) {
-    const expText = `${exp.company} ${exp.position} ${exp.responsibilities.join(' ')} ${exp.description || ''}`.toLowerCase();
+  // 1. Direct match in candidate's declared technical skills list
+  for (const candidateSkill of candidateSkills) {
     for (const term of searchTerms) {
-      if (expText.includes(term)) {
+      if (skillTokensEqual(candidateSkill, term)) {
         return { 
           matches: true, 
-          evidence: `Verified in practical experience at ${exp.company} ("${term}")`,
+          evidence: `Declared in skills section: "${candidateSkill}"`,
           confidence: 1.0 
         };
       }
     }
   }
 
-  // 2. Check if implemented in project portfolio
-  for (const proj of candidate.projects) {
-    const projText = `${proj.name} ${proj.technologies.join(' ')} ${proj.description}`.toLowerCase();
+  // 2. Check if demonstrated in practical work experience or internships (strict token boundary)
+  for (const exp of candidate.experience) {
+    const expText = `${exp.company} ${exp.position} ${exp.responsibilities.join(' ')} ${exp.description || ''}`;
     for (const term of searchTerms) {
-      if (projText.includes(term)) {
+      if (matchesTokenInText(expText, term)) {
         return { 
           matches: true, 
-          evidence: `Built in project "${proj.name}" using ${term}`,
+          evidence: `Verified in practical experience at ${exp.company} ("${term}")`,
           confidence: 0.95 
         };
       }
     }
   }
 
-  // 3. Direct match in candidate's parsed skills list
-  for (const candidateSkill of candidateSkills) {
-    const normCand = normalize(candidateSkill);
-    if (normCand === normReq || normCand.includes(normReq) || normReq.includes(normCand)) {
-      return { 
-        matches: true, 
-        evidence: `Listed in technical skills: "${candidateSkill}"`,
-        confidence: 0.90 
-      };
-    }
-    for (const syn of synonyms) {
-      if (normCand === syn || normCand.includes(syn) || syn.includes(normCand)) {
+  // 3. Check if implemented in project portfolio (strict token boundary)
+  for (const proj of candidate.projects) {
+    const projText = `${proj.name} ${proj.technologies.join(' ')} ${proj.description}`;
+    for (const term of searchTerms) {
+      if (matchesTokenInText(projText, term)) {
         return { 
           matches: true, 
-          evidence: `Related technology verified: "${candidateSkill}" (${requiredSkill})`,
-          confidence: 0.85 
+          evidence: `Demonstrated in project "${proj.name}" ("${term}")`,
+          confidence: 0.90 
         };
       }
     }
   }
 
-  // 4. Semantic lookup across full raw resume text
-  const normText = normalize(resumeText);
+  // 4. Semantic lookup across full raw resume text (strict token boundary)
   for (const term of searchTerms) {
-    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const hasSymbol = /[^a-z0-9\s]/i.test(term);
-    const pattern = hasSymbol 
-      ? `(?:^|\\s|[.,/()\\-])${escaped}(?:$|\\s|[.,/()\\-])`
-      : `\\b${escaped}\\b`;
-    const regex = new RegExp(pattern, 'i');
-    if (regex.test(normText)) {
+    if (matchesTokenInText(resumeText, term)) {
       return { 
         matches: true, 
         evidence: `Mentioned in resume profile: "${term}"`,
@@ -178,7 +208,7 @@ export function checkSkillMatch(
 
   return { 
     matches: false, 
-    evidence: 'Not detected in profile, projects, or work history',
+    evidence: `Missing mandatory keyword: "${requiredSkill}"`,
     confidence: 0 
   };
 }
@@ -493,10 +523,10 @@ export function calculateMatchScore(
   const reqScore = reqCount > 0 ? (weightedSkillPoints / (reqCount * 100)) * 100 : 100;
   const prefScore = prefCount > 0 ? (preferredMatchedCount / prefCount) * 100 : 100;
 
-  // Composite Keyword Score
+  // Composite Keyword Score heavily weights mandatory requirements (85% required + 15% preferred)
   let keywordScore: number;
   if (prefCount > 0) {
-    keywordScore = Math.round(reqScore * 0.80 + prefScore * 0.20);
+    keywordScore = Math.round(reqScore * 0.85 + prefScore * 0.15);
   } else {
     keywordScore = Math.round(reqScore);
   }
@@ -508,30 +538,30 @@ export function calculateMatchScore(
   }
 
   if (preferredMatchedCount > 0) {
-    positive_factors.push(`Bonus Keywords: Matches ${preferredMatchedCount} preferred domain competencies`);
+    positive_factors.push(`Bonus Keywords: Matches ${preferredMatchedCount}/${prefCount} preferred domain competencies`);
   }
 
   if (missing_skills.length > 0) {
-    penalty_factors.push(`Missing mandatory keywords: ${missing_skills.slice(0, 4).join(', ')}`);
+    penalty_factors.push(`Missing mandatory keywords: ${missing_skills.join(', ')}`);
   }
 
   // --- PILLAR 2: REQUIREMENT & QUALIFICATIONS FIT ---
   // Education & CGPA
   const cgpa = candidate.education.cgpa;
-  let eduScore = 75;
+  let eduScore = 70;
   const minCgpa = job.academic_eligibility.min_cgpa;
 
   if (cgpa >= 9.0) {
-    eduScore = 98;
+    eduScore = 95;
     positive_factors.push(`Academics: High distinction CGPA ${cgpa.toFixed(2)} / 10`);
   } else if (cgpa >= minCgpa + 0.5) {
-    eduScore = 90;
+    eduScore = 85;
     positive_factors.push(`Academics: Strong CGPA ${cgpa.toFixed(2)} (comfortably above cutoff ${minCgpa})`);
   } else if (cgpa >= minCgpa) {
-    eduScore = 80;
+    eduScore = 72;
     positive_factors.push(`Academics: Meets required CGPA cutoff (${cgpa.toFixed(2)} >= ${minCgpa})`);
   } else {
-    eduScore = Math.max(35, Math.round((cgpa / (minCgpa || 7.0)) * 70));
+    eduScore = Math.max(20, Math.round((cgpa / (minCgpa || 7.0)) * 50));
     penalty_factors.push(`Academics: CGPA ${cgpa.toFixed(2)} is below drive requirement ${minCgpa}`);
   }
 
@@ -543,67 +573,90 @@ export function calculateMatchScore(
 
   // Experience fit
   let totalMonthsExp = candidate.experience.reduce((sum, exp) => sum + exp.duration_months, 0);
-  let expScore = 70;
+  let expScore = 45;
 
   if (job.freshers_accepted) {
-    const hasInternships = candidate.experience.some(e => e.is_internship || e.duration_months >= 2);
-    if (hasInternships) {
-      expScore = 95;
-      positive_factors.push(`Experience: Completed ${candidate.experience.length} relevant industry internship(s)`);
+    // Check if candidate has internships that actually match the role's skills
+    let relevantInternship = false;
+    let anyInternship = false;
+    for (const exp of candidate.experience) {
+      if (exp.is_internship || exp.duration_months >= 2) {
+        anyInternship = true;
+        const expText = `${exp.position} ${exp.company} ${exp.responsibilities.join(' ')} ${exp.description || ''}`;
+        const matchesRole = job.required_skills.some(skill => matchesTokenInText(expText, skill));
+        if (matchesRole) {
+          relevantInternship = true;
+          break;
+        }
+      }
+    }
+
+    if (relevantInternship) {
+      expScore = 90;
+      positive_factors.push(`Experience: Relevant industry internship demonstrating target tech stack`);
+    } else if (anyInternship) {
+      expScore = 65;
+      positive_factors.push(`Experience: Completed general internship (${candidate.experience.length} internship)`);
     } else if (candidate.projects.length >= 2) {
-      expScore = 85;
-      positive_factors.push(`Experience: Strong practical skills demonstrated via project portfolio`);
+      expScore = 55;
     } else {
-      expScore = 75;
+      expScore = 40;
+      penalty_factors.push('Experience: No relevant industry internship or work experience recorded');
     }
   } else {
     const requiredMonths = job.min_experience_years * 12;
     if (totalMonthsExp >= requiredMonths) {
-      expScore = Math.min(100, Math.round((totalMonthsExp / requiredMonths) * 90) + 10);
+      expScore = Math.min(100, Math.round((totalMonthsExp / requiredMonths) * 75) + 25);
       positive_factors.push(`Experience: Meets ${job.min_experience_years}+ years experience requirement`);
     } else {
-      expScore = Math.max(30, Math.round((totalMonthsExp / (requiredMonths || 12)) * 80));
-      penalty_factors.push(`Experience: Below preferred ${job.min_experience_years} years`);
+      expScore = Math.max(15, Math.round((totalMonthsExp / (requiredMonths || 12)) * 60));
+      penalty_factors.push(`Experience: Below required ${job.min_experience_years} years`);
     }
   }
 
-  // Projects relevance
-  let projectScore = 60;
-  let relevantProjectsCount = 0;
+  // Projects relevance (Measures how many of THIS JOB's required skills appear in projects)
+  let projectScore = 30;
+  let demonstratedSkillsInProjects = 0;
 
-  candidate.projects.forEach(project => {
-    const projText = `${project.name} ${project.technologies.join(' ')} ${project.description}`.toLowerCase();
-    const hasSkill = job.required_skills.some(skill => projText.includes(normalize(skill)));
-    if (hasSkill) relevantProjectsCount++;
+  job.required_skills.forEach(skill => {
+    const hasInProject = candidate.projects.some(proj => {
+      const projText = `${proj.name} ${proj.technologies.join(' ')} ${proj.description}`;
+      return matchesTokenInText(projText, skill);
+    });
+    if (hasInProject) demonstratedSkillsInProjects++;
   });
 
-  if (relevantProjectsCount >= 2) {
-    projectScore = 95;
-    positive_factors.push(`Projects: Built ${relevantProjectsCount} projects utilizing role's target tech stack`);
-  } else if (relevantProjectsCount === 1) {
-    projectScore = 85;
-    positive_factors.push(`Projects: Practical project directly aligning with role focus`);
-  } else if (candidate.projects.length > 0) {
-    projectScore = 75;
+  if (candidate.projects.length === 0) {
+    projectScore = 15;
+    penalty_factors.push('Projects: No software or engineering projects listed');
   } else {
-    projectScore = 40;
-    penalty_factors.push(`Projects: No practical software or research projects listed`);
+    const projectSkillRatio = reqCount > 0 ? demonstratedSkillsInProjects / reqCount : 0.5;
+    if (projectSkillRatio >= 0.6) {
+      projectScore = Math.min(100, Math.round(75 + projectSkillRatio * 25));
+      positive_factors.push(`Projects: High relevance portfolio demonstrating ${demonstratedSkillsInProjects}/${reqCount} role technologies`);
+    } else if (demonstratedSkillsInProjects > 0) {
+      projectScore = Math.round(45 + projectSkillRatio * 40);
+      positive_factors.push(`Projects: Demonstrated ${demonstratedSkillsInProjects} role competencies in project portfolio`);
+    } else {
+      projectScore = 35;
+      penalty_factors.push(`Projects: Existing projects do not utilize role's required tech stack (${job.required_skills.slice(0, 3).join(', ')})`);
+    }
   }
 
   // Certifications
-  let certScore = 60;
+  let certScore = 40;
   if (candidate.certifications.length >= 2) {
-    certScore = 95;
+    certScore = 90;
     positive_factors.push(`Certifications: Multiple verified technical credentials`);
   } else if (candidate.certifications.length === 1) {
-    certScore = 80;
+    certScore = 70;
     positive_factors.push(`Certifications: Certified in ${candidate.certifications[0]}`);
   } else {
-    certScore = 50;
+    certScore = 30;
   }
 
   // Composite Requirement Score
-  const requirementScore = Math.round(eduScore * 0.40 + expScore * 0.35 + projectScore * 0.25);
+  const requirementScore = Math.round(eduScore * 0.35 + expScore * 0.35 + projectScore * 0.30);
 
   // --- PILLAR 3: RESUME LAYOUT & ATS PARSEABILITY ---
   const formatting = evaluateAtsFormatting(resumeText, candidate);
@@ -615,13 +668,30 @@ export function calculateMatchScore(
     penalty_factors.push(`Layout: Formatting improvements needed for maximum ATS indexation`);
   }
 
-  // --- OVERALL ATS SCORE (Tri-Pillar Balance) ---
-  // 40% Keyword Relevance + 35% Requirement Fit + 25% Layout Parseability
-  const overall_match = Math.round(
-    keywordScore * 0.40 +
-    requirementScore * 0.35 +
-    formattingScore * 0.25
+  // --- OVERALL ATS SCORE (Genuine Multidimensional ATS Engine) ---
+  // Skill Relevance is 55%, Projects 18%, Experience 17%, Academics 10%
+  let rawMatch = Math.round(
+    keywordScore * 0.55 +
+    projectScore * 0.18 +
+    expScore * 0.17 +
+    eduScore * 0.10
   );
+
+  // Formatting acts as a hygiene adjustment (+/- 5 points), NOT 25 free points
+  const formattingModifier = Math.round(((formattingScore - 70) / 30) * 5);
+  let overall_match = Math.max(10, Math.min(100, rawMatch + formattingModifier));
+
+  // Hard ATS Eligibility Gate: If candidate is missing more than half the mandatory skills,
+  // ATS algorithms reject or cap at Low Match / Needs Review
+  const mandatorySkillRatio = reqCount > 0 ? requiredMatchedCount / reqCount : 1;
+  if (mandatorySkillRatio < 0.4) {
+    overall_match = Math.min(48, overall_match);
+    penalty_factors.unshift(`Critical Skill Gap: Candidate matches only ${requiredMatchedCount}/${reqCount} mandatory skills (${missing_skills.join(', ')})`);
+  } else if (mandatorySkillRatio < 0.65) {
+    overall_match = Math.min(68, overall_match);
+  } else if (mandatorySkillRatio < 0.85) {
+    overall_match = Math.min(82, overall_match);
+  }
 
   // Verdict Classification
   const { thresholds } = settings;
