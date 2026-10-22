@@ -17,6 +17,8 @@ import {
   AlertCircle 
 } from 'lucide-react';
 import { ScreeningResult, JobRequirement } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { canAccessUnmaskedPII, maskRegNumber } from '../services/privacyGuard';
 
 interface CandidateDetailModalProps {
   result: ScreeningResult | null;
@@ -33,12 +35,14 @@ export const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({
   onShortlist,
   onScheduleInterview
 }) => {
+  const { currentUser } = useAuth();
   if (!result) return null;
 
   const { candidate, eligibility, score, explainable, rank } = result;
   const [activeTab, setActiveTab] = useState<'explainable' | 'skills' | 'experience' | 'projects' | 'raw'>('explainable');
 
   const isShortlisted = result.status === 'Shortlisted' || result.status === 'Interview Scheduled' || result.status === 'Interviewed' || result.status === 'Selected';
+  const canViewPII = canAccessUnmaskedPII(currentUser?.role, isShortlisted);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -62,7 +66,7 @@ export const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({
                   {candidate.name}
                 </h2>
                 <span className="text-xs text-zinc-400 font-mono">
-                  ({candidate.reg_number})
+                  ({canViewPII ? candidate.reg_number : maskRegNumber(candidate.reg_number)})
                 </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-zinc-900 border border-zinc-800 text-white">
                   {explainable.verdict}
