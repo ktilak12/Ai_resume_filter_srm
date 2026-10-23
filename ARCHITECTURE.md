@@ -70,3 +70,27 @@ $$\text{Overall ATS Match} = \sum (W_i \times S_i)$$
 2. **First-Time Profile Verification**: Automatically prompts institutional credentials (Register Number, Campus, Department, Designation) on first sign-in.
 3. **Server Rate Limiting**: Gateway protection on `/api/send-email` (25 requests/min per IP with 200KB payload limit).
 4. **Formula Injection Sanitization**: All CSV/Excel exports sanitize formula prefixes (`=`, `+`, `-`, `@`) to prevent CSV injection vulnerabilities.
+
+---
+
+## Directory Structure
+
+```text
+src/
+├── components/          # Reusable domain-scoped UI components
+│   ├── analytics/       # Institutional placement intelligence & reporting charts
+│   ├── auth/            # Protected route guards and session gatekeepers
+│   ├── candidates/      # Student talent directory & shortlisted rosters
+│   ├── common/          # Reusable SEO meta tags & structured data injectors
+│   ├── interviews/      # Corporate interview scheduling & round management
+│   ├── layout/          # Layout frame, Top Navbar, NotificationCenter, Sidebar
+│   ├── modals/          # Profile onboarding & placement drive creation modals
+│   ├── settings/        # Algorithmic weights & AI governance controls
+│   └── student/         # Interactive ATS resume builder & preview engine
+├── config/              # Google OAuth & institutional environment configurations
+├── context/             # Global React AuthContext and session state
+├── data/                # Institutional seed schemas and placement data structures
+├── pages/               # Top-level routed application views (1:1 mapped to routes)
+├── services/            # Business logic, ATS parser, AI screening, RBAC & security
+└── types/               # TypeScript definitions, interfaces, and domain types
+```
