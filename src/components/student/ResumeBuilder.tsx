@@ -26,11 +26,17 @@ import {
   Sliders,
   ChevronRight,
   SplitSquareVertical,
-  Maximize2
+  Maximize2,
+  UploadCloud,
+  FileCheck,
+  X,
+  FileUp,
+  ClipboardPaste
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { JobRequirement, CandidateProfile, ScreeningResult } from '../../types';
 import { screenCandidate, evaluateAtsFormatting, AtsFormattingCheck } from '../../services/aiScreeningEngine';
+import { parseResumeFile, extractCandidateEntities } from '../../services/resumeParser';
 import { 
   ROLE_PRESETS, 
   RolePreset, 
@@ -72,6 +78,26 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
   const [activeEditorTab, setActiveEditorTab] = useState<'basics' | 'summary' | 'skills' | 'projects' | 'experience' | 'certifications'>('skills');
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<TemplateTier>('baseline');
+
+  // Template Source Mode: 'default' (SRM Default) | 'custom' (Student's Own Resume) | 'preset' (Benchmark Presets)
+  const [templateSourceMode, setTemplateSourceMode] = useState<'default' | 'custom' | 'preset'>(() => {
+    const saved = localStorage.getItem('srm_builder_template_mode');
+    if (saved === 'custom' || saved === 'preset') return saved;
+    return 'default';
+  });
+
+  // Custom Resume Template State
+  const [showImportPanel, setShowImportPanel] = useState<boolean>(false);
+  const [customImportTab, setCustomImportTab] = useState<'upload' | 'paste'>('upload');
+  const [isParsingResume, setIsParsingResume] = useState<boolean>(false);
+  const [importedFileName, setImportedFileName] = useState<string | null>(() => {
+    return localStorage.getItem('srm_builder_imported_file') || null;
+  });
+  const [pastedResumeText, setPastedResumeText] = useState<string>('');
+  const [importFeedback, setImportFeedback] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState<boolean>(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Candidate Profile State (with migration away from old bloated profiles)
   const [candidate, setCandidate] = useState<CandidateProfile>(() => {
@@ -169,6 +195,9 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
   // Load a specific role template
   const handleSelectRolePreset = (presetId: string, tier: TemplateTier = selectedTier) => {
     setActivePresetId(presetId);
+    setTemplateSourceMode('preset');
+    setShowImportPanel(false);
+    localStorage.setItem('srm_builder_template_mode', 'preset');
     const presetProfile = getProfileFromPreset(presetId, currentUser, tier);
     setCandidate(presetProfile);
     const presetSummary = generateRoleSummary(selectedJob?.title || presetProfile.skills.slice(0, 3).join(', '), presetProfile, selectedJob);
@@ -181,14 +210,155 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
     handleSelectRolePreset(targetPresetId, tier);
   };
 
-  // Reset to default authentic SRM fresher profile
-  const handleResetProfile = () => {
+  // Switch to Default SRM Institutional Template
+  const handleSelectDefaultTemplate = () => {
     setActivePresetId(null);
+    setTemplateSourceMode('default');
+    setShowImportPanel(false);
+    setImportError(null);
+    setImportFeedback('Switched to Default SRM Fresher Placement Template.');
+    setTimeout(() => setImportFeedback(null), 3500);
+    localStorage.setItem('srm_builder_template_mode', 'default');
+    localStorage.removeItem('srm_builder_imported_file');
     localStorage.removeItem('srm_student_builder_profile');
     localStorage.removeItem('srm_student_builder_summary');
+    setImportedFileName(null);
     const initial = getInitialCandidateProfile(currentUser);
     setCandidate(initial);
     setSummary(generateRoleSummary(selectedJob?.title || 'Software Development Engineer', initial, selectedJob));
+  };
+
+  // Reset to default authentic SRM fresher profile
+  const handleResetProfile = () => {
+    handleSelectDefaultTemplate();
+  };
+
+  // Switch to Custom / Student's Own Resume Mode
+  const handleSelectCustomMode = () => {
+    setTemplateSourceMode('custom');
+    setActivePresetId(null);
+    setShowImportPanel(true);
+    localStorage.setItem('srm_builder_template_mode', 'custom');
+  };
+
+  // Validate custom file before parsing
+  const validateCustomFile = (file: File): string | null => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const allowed = ['pdf', 'docx', 'doc', 'txt'];
+    if (!allowed.includes(ext)) {
+      return `File type ".${ext}" is not supported. Please upload a PDF, DOCX, or TXT file.`;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return `File exceeds 10MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB).`;
+    }
+    return null;
+  };
+
+  // Handle Uploading a Resume File
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    const err = validateCustomFile(file);
+    if (err) {
+      setImportError(err);
+      return;
+    }
+
+    setIsParsingResume(true);
+    setImportError(null);
+    setImportFeedback(null);
+
+    try {
+      const parsed = await parseResumeFile(file);
+      const fullProfile: CandidateProfile = {
+        ...parsed,
+        name: parsed.name && parsed.name.length > 2 ? parsed.name : (currentUser?.name || 'SRM Candidate'),
+        email: parsed.email || currentUser?.email || 'student@srmist.edu.in',
+        reg_number: parsed.reg_number || (currentUser as any)?.reg_number || 'RA2211003010001'
+      };
+
+      setCandidate(fullProfile);
+      setTemplateSourceMode('custom');
+      setImportedFileName(file.name);
+      setActivePresetId(null);
+
+      const newSummary = generateRoleSummary(selectedJob?.title || 'Software Development Engineer', fullProfile, selectedJob);
+      setSummary(newSummary);
+
+      localStorage.setItem('srm_student_builder_profile', JSON.stringify(fullProfile));
+      localStorage.setItem('srm_student_builder_summary', newSummary);
+      localStorage.setItem('srm_builder_template_mode', 'custom');
+      localStorage.setItem('srm_builder_imported_file', file.name);
+
+      setImportFeedback(`Successfully loaded "${file.name}" into Resume Builder! Extracted ${fullProfile.skills.length} skills, ${fullProfile.projects.length} projects, and ${fullProfile.experience.length} experiences.`);
+      setShowImportPanel(false);
+    } catch (parseErr: any) {
+      console.error('Resume parse error in builder:', parseErr);
+      setImportError(parseErr.message || 'Failed to extract text from resume. Please ensure it is a text-based PDF/Word file, or paste your resume text directly.');
+    } finally {
+      setIsParsingResume(false);
+    }
+  };
+
+  // Handle Drag & Drop
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
+    else if (e.type === "dragleave") setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  // Handle Pasting Resume Text
+  const handlePasteSubmit = () => {
+    const trimmed = pastedResumeText.trim();
+    if (!trimmed || trimmed.length < 50) {
+      setImportError('Please paste sufficient resume text (at least 50 characters) including your education, skills, or projects.');
+      return;
+    }
+
+    setIsParsingResume(true);
+    setImportError(null);
+    setImportFeedback(null);
+
+    try {
+      const parsed = extractCandidateEntities(trimmed, 'custom_pasted_resume.txt');
+      const fullProfile: CandidateProfile = {
+        ...parsed,
+        name: parsed.name && parsed.name.length > 2 ? parsed.name : (currentUser?.name || 'SRM Candidate'),
+        email: parsed.email || currentUser?.email || 'student@srmist.edu.in',
+        reg_number: parsed.reg_number || (currentUser as any)?.reg_number || 'RA2211003010001'
+      };
+
+      setCandidate(fullProfile);
+      setTemplateSourceMode('custom');
+      setImportedFileName('Custom Pasted Resume');
+      setActivePresetId(null);
+
+      const newSummary = generateRoleSummary(selectedJob?.title || 'Software Development Engineer', fullProfile, selectedJob);
+      setSummary(newSummary);
+
+      localStorage.setItem('srm_student_builder_profile', JSON.stringify(fullProfile));
+      localStorage.setItem('srm_student_builder_summary', newSummary);
+      localStorage.setItem('srm_builder_template_mode', 'custom');
+      localStorage.setItem('srm_builder_imported_file', 'Custom Pasted Resume');
+
+      setImportFeedback(`Successfully imported pasted resume text! Extracted ${fullProfile.skills.length} skills, ${fullProfile.projects.length} projects, and ${fullProfile.experience.length} experiences.`);
+      setShowImportPanel(false);
+      setPastedResumeText('');
+    } catch (pasteErr: any) {
+      console.error('Paste parse error in builder:', pasteErr);
+      setImportError(pasteErr.message || 'Failed to process pasted resume text.');
+    } finally {
+      setIsParsingResume(false);
+    }
   };
 
   // Add Skill
@@ -394,12 +564,25 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
             </button>
 
             <button
-              onClick={handleResetProfile}
+              onClick={handleSelectCustomMode}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                templateSourceMode === 'custom'
+                  ? 'bg-amber-400 text-black border-amber-400'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-amber-300'
+              }`}
+              title="Give or upload your own resume template"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>{importedFileName ? 'My Resume' : 'Import My Resume'}</span>
+            </button>
+
+            <button
+              onClick={handleSelectDefaultTemplate}
               className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-300 flex items-center gap-1.5 transition-all"
-              title="Reset to default SRM profile"
+              title="Reset to default SRM fresher template"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Reset</span>
+              <span>Default Template</span>
             </button>
 
             <button
@@ -465,90 +648,368 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
           </div>
         </div>
 
-        {/* Role Template Presets Selection Bar */}
-        <div className="pt-3 border-t border-zinc-850 space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <Layers className="w-3 h-3 text-zinc-400" />
-              <span>Role-Specific Templates & Benchmarks (Select to evaluate authentic role ATS scores)</span>
-            </span>
+        {/* TEMPLATE ORIGIN: Default SRM Template vs Student's Own Resume vs Role Benchmark Presets */}
+        <div className="pt-4 border-t border-zinc-850 space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Resume Template Origin</span>
+              </span>
+              <p className="text-[11px] text-zinc-400 mt-0.5">
+                Use your own resume template, start with the default SRM institutional format, or test role benchmark presets.
+              </p>
+            </div>
 
-            {/* Authentic Template Tier Selector */}
-            <div className="flex items-center gap-1.5 p-1 bg-black/80 border border-zinc-800 rounded-xl">
-              <span className="text-[10px] text-zinc-500 font-mono px-1.5">Tier:</span>
+            {/* Template Source Selector */}
+            <div className="flex items-center gap-1 p-1 bg-black/80 border border-zinc-800 rounded-xl">
               <button
                 type="button"
-                onClick={() => handleSelectTier('baseline')}
-                className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all ${
-                  selectedTier === 'baseline'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                onClick={handleSelectDefaultTemplate}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                  templateSourceMode === 'default'
+                    ? 'bg-white text-black font-semibold shadow-sm'
                     : 'text-zinc-400 hover:text-white'
                 }`}
-                title="Fresher Starter Profile (~45-55% ATS score with skill gaps to build)"
+                title="SRM Institutional Default Template"
               >
-                Fresher Baseline (~48%)
+                <FileText className="w-3.5 h-3.5" />
+                <span>Default Template</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => handleSelectTier('intermediate')}
-                className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all ${
-                  selectedTier === 'intermediate'
-                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                onClick={handleSelectCustomMode}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                  templateSourceMode === 'custom'
+                    ? 'bg-amber-400 text-black font-semibold shadow-sm'
                     : 'text-zinc-400 hover:text-white'
                 }`}
-                title="Intermediate Candidate (~70-76% ATS score meeting core requirements)"
+                title="Upload or paste your own resume to auto-populate builder"
               >
-                Intermediate (~73%)
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>My Own Resume {importedFileName ? '(Active)' : ''}</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => handleSelectTier('optimized')}
-                className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all ${
-                  selectedTier === 'optimized'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                onClick={() => {
+                  setTemplateSourceMode('preset');
+                  setShowImportPanel(false);
+                  if (!activePresetId) {
+                    handleSelectRolePreset(ROLE_PRESETS[0].id);
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                  templateSourceMode === 'preset'
+                    ? 'bg-white text-black font-semibold shadow-sm'
                     : 'text-zinc-400 hover:text-white'
                 }`}
-                title="Placement-Ready Benchmark (~88-93% ATS score with verified internship)"
+                title="Role-specific benchmark templates and tiers"
               >
-                Placement Target (~91%)
+                <Layers className="w-3.5 h-3.5" />
+                <span>Role Presets</span>
               </button>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {ROLE_PRESETS.map((preset) => {
-              const isSelected = activePresetId === preset.id;
-              return (
+          {/* Mode 1: Default Institutional SRM Template Info Card */}
+          {templateSourceMode === 'default' && (
+            <div className="p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" />
+                <div>
+                  <div className="text-white font-medium">SRM Institutional Placement Template (Active)</div>
+                  <div className="text-zinc-400 text-[11px]">
+                    Using standard fresher format with university education, projects, skills, and single-column layout. Ready for live editing in the tabs below.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleSelectCustomMode}
+                className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-amber-300 font-medium text-[11px] flex items-center gap-1.5 shrink-0 transition-all border border-amber-500/20"
+              >
+                <UploadCloud className="w-3.5 h-3.5 text-amber-400" />
+                <span>Upload Your Own Resume Instead</span>
+              </button>
+            </div>
+          )}
+
+          {/* Mode 2: Student's Own Resume Template */}
+          {templateSourceMode === 'custom' && (
+            <div className="space-y-3">
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5">
+                  <FileCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div>
+                    <div className="text-amber-200 font-medium">
+                      {importedFileName ? `Active Resume: ${importedFileName}` : 'Student Custom Resume Template'}
+                    </div>
+                    <div className="text-zinc-400 text-[11px]">
+                      {importedFileName 
+                        ? `Extracted ${candidate.skills.length} skills, ${candidate.projects.length} projects, and ${candidate.experience.length} experiences into builder tabs.`
+                        : 'Upload your resume (.pdf, .docx, .txt) or paste text to auto-populate all builder tabs and calculate your real ATS score.'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowImportPanel(prev => !prev)}
+                    className="px-3 py-1.5 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 font-medium text-[11px] flex items-center gap-1.5 transition-all border border-amber-400/30"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    <span>{showImportPanel ? 'Close Upload Box' : (importedFileName ? 'Change / Re-upload File' : 'Upload Resume')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSelectDefaultTemplate}
+                    className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] transition-all"
+                  >
+                    Switch to Default Template
+                  </button>
+                </div>
+              </div>
+
+              {/* Upload Dropzone / Paste Area */}
+              {(showImportPanel || !importedFileName) && (
+                <div className="p-4 rounded-xl bg-black/90 border border-zinc-800 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-zinc-850">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCustomImportTab('upload')}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                          customImportTab === 'upload' ? 'bg-zinc-800 text-white font-semibold' : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        <UploadCloud className="w-3.5 h-3.5 inline mr-1" />
+                        Upload Document (.pdf, .docx, .txt)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomImportTab('paste')}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                          customImportTab === 'paste' ? 'bg-zinc-800 text-white font-semibold' : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        <ClipboardPaste className="w-3.5 h-3.5 inline mr-1" />
+                        Paste Resume Text
+                      </button>
+                    </div>
+
+                    {importedFileName && (
+                      <button
+                        type="button"
+                        onClick={() => setShowImportPanel(false)}
+                        className="text-zinc-400 hover:text-white text-xs p-1"
+                        title="Close"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {customImportTab === 'upload' ? (
+                    <div
+                      onDragEnter={handleDrag}
+                      onDragOver={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDrop={handleDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`cursor-pointer border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                        dragActive 
+                          ? 'border-amber-400 bg-amber-500/10' 
+                          : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950 hover:bg-zinc-900/50'
+                      }`}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.docx,.doc,.txt"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleFileUpload(e.target.files[0]);
+                            e.target.value = '';
+                          }
+                        }}
+                      />
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-amber-400">
+                          {isParsingResume ? (
+                            <RefreshCw className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <FileUp className="w-5 h-5" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-white">
+                            {isParsingResume ? 'Parsing and extracting entities from resume...' : 'Drop your resume file here or click to browse'}
+                          </p>
+                          <p className="text-[11px] text-zinc-500 mt-0.5">
+                            Supports text-based PDF, DOCX, or TXT up to 10MB
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <textarea
+                        value={pastedResumeText}
+                        onChange={(e) => setPastedResumeText(e.target.value)}
+                        placeholder="Paste your raw resume text here (education, skills, projects, experience, contact details)..."
+                        className="w-full h-36 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-white placeholder-zinc-500 font-mono focus:outline-none focus:border-zinc-600 resize-y"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPastedResumeText('')}
+                          className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-white"
+                        >
+                          Clear
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handlePasteSubmit}
+                          disabled={isParsingResume || pastedResumeText.trim().length < 50}
+                          className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-black font-semibold text-xs transition-all flex items-center gap-1.5"
+                        >
+                          {isParsingResume ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Parsing...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FileCheck className="w-3.5 h-3.5" />
+                              <span>Import Pasted Text</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Mode 3: Role Benchmark Presets */}
+          {templateSourceMode === 'preset' && (
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                  <Layers className="w-3 h-3 text-zinc-400" />
+                  <span>Select Benchmark Preset Role:</span>
+                </span>
+
+                {/* Authentic Template Tier Selector */}
+                <div className="flex items-center gap-1.5 p-1 bg-black/80 border border-zinc-800 rounded-xl">
+                  <span className="text-[10px] text-zinc-500 font-mono px-1.5">Tier:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectTier('baseline')}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all ${
+                      selectedTier === 'baseline'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                    title="Fresher Starter Profile (~45-55% ATS score with skill gaps to build)"
+                  >
+                    Fresher Baseline (~48%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectTier('intermediate')}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all ${
+                      selectedTier === 'intermediate'
+                        ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                    title="Intermediate Candidate (~70-76% ATS score meeting core requirements)"
+                  >
+                    Intermediate (~73%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectTier('optimized')}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all ${
+                      selectedTier === 'optimized'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                    title="Placement-Ready Benchmark (~88-93% ATS score with verified internship)"
+                  >
+                    Placement Target (~91%)
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {ROLE_PRESETS.map((preset) => {
+                  const isSelected = activePresetId === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() => handleSelectRolePreset(preset.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 border ${
+                        isSelected
+                          ? 'bg-white text-black border-white shadow-sm'
+                          : 'bg-zinc-900/90 text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white'
+                      }`}
+                    >
+                      <span>{preset.title}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-zinc-200 text-black' : 'bg-zinc-800 text-zinc-400'}`}>
+                        {preset.category}
+                      </span>
+                    </button>
+                  );
+                })}
                 <button
-                  key={preset.id}
-                  onClick={() => handleSelectRolePreset(preset.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 border ${
-                    isSelected
-                      ? 'bg-white text-black border-white shadow-sm'
-                      : 'bg-zinc-900/90 text-zinc-300 border-zinc-800 hover:bg-zinc-850 hover:text-white'
-                  }`}
+                  onClick={handleSelectDefaultTemplate}
+                  className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 border bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200"
+                  title="Reset to default SRM template"
                 >
-                  <span>{preset.title}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-zinc-200 text-black' : 'bg-zinc-800 text-zinc-400'}`}>
-                    {preset.category}
-                  </span>
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Default Template</span>
                 </button>
-              );
-            })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* FEEDBACK & ERROR NOTIFICATIONS */}
+        {importFeedback && (
+          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>{importFeedback}</span>
+            </div>
             <button
-              onClick={handleResetProfile}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 border ${
-                activePresetId === null
-                  ? 'bg-zinc-800 text-zinc-200 border-zinc-700'
-                  : 'bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200'
-              }`}
-              title="Reset to your custom editable profile"
+              onClick={() => setImportFeedback(null)}
+              className="text-emerald-400 hover:text-white"
             >
-              <RefreshCw className="w-3 h-3" />
-              <span>Reset Profile</span>
+              <X className="w-4 h-4" />
             </button>
           </div>
-        </div>
+        )}
+
+        {importError && (
+          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+              <span>{importError}</span>
+            </div>
+            <button
+              onClick={() => setImportError(null)}
+              className="text-red-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* LIVE REAL-TIME ATS SCORE COCKPIT */}
         <div className="p-5 rounded-2xl bg-zinc-900/70 border border-zinc-800 space-y-4">
