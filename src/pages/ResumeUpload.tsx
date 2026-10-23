@@ -196,8 +196,8 @@ export const ResumeUpload: React.FC = () => {
       window.dispatchEvent(new CustomEvent('srm_candidate_added', { detail: candidateProfile }));
 
       setSavedSuccessMsg(`Candidate profile for "${candidateProfile.name}" saved to recruitment pool!`);
-    } catch (err) {
-      alert('Error parsing resume. Please ensure file contains valid text content.');
+    } catch (err: any) {
+      alert(err?.message || 'Error parsing resume. Please ensure file contains valid text content.');
     } finally {
       setIsProcessing(false);
     }
