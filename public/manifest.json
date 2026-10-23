@@ -1,0 +1,19 @@
+{
+  "name": "SRM ResumeAI — Institutional Placement & ATS Screening Portal",
+  "short_name": "SRM ResumeAI",
+  "description": "Official AI-driven recruitment, ATS resume scoring, and campus placement portal for SRM Institute of Science and Technology (SRMIST).",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "orientation": "portrait-primary",
+  "categories": ["education", "business", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

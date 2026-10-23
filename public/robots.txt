@@ -1,15 +1,33 @@
+# robots.txt for SRM ResumeAI Platform
+# Directorate of Career Centre, SRM Institute of Science and Technology
+
+User-agent: Googlebot
+Allow: /
+Allow: /resume-builder
+Allow: /jobs
+Allow: /upload
+Allow: /student-portal
+Allow: /privacy
+Allow: /login
+Allow: /assets/
+Allow: /favicon.svg
+Allow: /manifest.json
+Disallow: /api/
+Disallow: /settings
+Disallow: /analytics
+
 User-agent: *
 Allow: /
+Allow: /resume-builder
+Allow: /jobs
+Allow: /upload
+Allow: /student-portal
 Allow: /privacy
-Disallow: /dashboard
-Disallow: /upload
-Disallow: /screening
-Disallow: /candidates
-Disallow: /shortlisted
-Disallow: /interviews
-Disallow: /jobs
-Disallow: /analytics
-Disallow: /settings
+Allow: /login
+Allow: /assets/
 Disallow: /api/
+Disallow: /settings
+Disallow: /analytics
 
+# Sitemaps
 Sitemap: https://srm-resume-ai.srmist.edu.in/sitemap.xml
