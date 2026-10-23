@@ -30,6 +30,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
 import { canAccessUnmaskedPII, maskEmail, maskPhone, maskRegNumber } from '../services/privacyGuard';
+import { SEO } from '../components/common/SEO';
 
 export const CandidateDetail: React.FC = () => {
   const { currentUser } = useAuth();
@@ -117,6 +118,12 @@ export const CandidateDetail: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
+      <SEO
+        title="Candidate Assessment & Verification Dossier | SRM ResumeAI"
+        description="Comprehensive candidate AI evaluation, ATS score breakdown, institutional verification details, and academic eligibility report."
+        canonical="/candidates"
+        noIndex={true}
+      />
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="flex items-center space-x-4">

@@ -3,6 +3,7 @@ import { ShortlistedView } from '../views/ShortlistedView';
 import { screenCandidate, rankScreeningResults } from '../services/aiScreeningEngine';
 import { ScreeningResult, JobRequirement, CandidateProfile } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '../components/common/SEO';
 
 import { INITIAL_JOBS, INITIAL_CANDIDATES } from '../data/srmDataset';
 
@@ -74,12 +75,20 @@ export const ShortlistedPage: React.FC = () => {
   };
 
   return (
-    <ShortlistedView
-      shortlistedResults={shortlistedList}
-      jobs={jobs.length > 0 ? jobs : [DEFAULT_FALLBACK_JOB]}
-      onOpenCandidateDetail={handleOpenCandidateDetail}
-      onScheduleInterview={handleScheduleInterview}
-      onRemoveFromShortlist={handleRemoveFromShortlist}
-    />
+    <>
+      <SEO
+        title="Shortlisted Candidates & Corporate Interview Roster | SRM ResumeAI"
+        description="Review drive-wise shortlisted SRM engineering candidates, schedule corporate rounds, and export interview rosters."
+        canonical="/shortlisted"
+        noIndex={true}
+      />
+      <ShortlistedView
+        shortlistedResults={shortlistedList}
+        jobs={jobs.length > 0 ? jobs : [DEFAULT_FALLBACK_JOB]}
+        onOpenCandidateDetail={handleOpenCandidateDetail}
+        onScheduleInterview={handleScheduleInterview}
+        onRemoveFromShortlist={handleRemoveFromShortlist}
+      />
+    </>
   );
 };

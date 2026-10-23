@@ -26,6 +26,7 @@ import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
 import { canAccessUnmaskedPII, maskRegNumber } from '../services/privacyGuard';
 import { AllCandidatesView } from '../views/AllCandidatesView';
+import { SEO } from '../components/common/SEO';
 
 export const CandidateRanking: React.FC = () => {
   const { currentUser } = useAuth();
@@ -224,6 +225,12 @@ export const CandidateRanking: React.FC = () => {
   if (viewMode === 'directory') {
     return (
       <div className="space-y-6 pb-12">
+        <SEO
+          title="SRM Verified Student Talent Directory | SRM ResumeAI"
+          description="Search and filter through verified student engineering profiles, department-wise talent pools, and CGPA metrics at SRM Institute of Science and Technology."
+          canonical="/candidates"
+          noIndex={true}
+        />
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 p-1 rounded-xl">
             <button
@@ -257,6 +264,12 @@ export const CandidateRanking: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
+      <SEO
+        title="AI Candidate Screening & Merit Ranking | SRM ResumeAI"
+        description="Automated AI resume evaluation, semantic skill matching, and merit tier calculation for campus placement drives at SRM."
+        canonical="/screening"
+        noIndex={true}
+      />
       <div className="flex items-center gap-1.5 bg-zinc-950 border border-zinc-800 p-1 rounded-xl w-fit">
         <button
           onClick={() => { setViewMode('screening'); navigate('/screening'); }}
