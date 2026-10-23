@@ -12,9 +12,9 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
-import { CandidateProfile } from '../types';
-import { useAuth } from '../context/AuthContext';
-import { canAccessUnmaskedPII, maskRegNumber } from '../services/privacyGuard';
+import { CandidateProfile } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { canAccessUnmaskedPII, maskRegNumber } from '../../services/privacyGuard';
 import { ShieldCheck } from 'lucide-react';
 
 interface AllCandidatesViewProps {

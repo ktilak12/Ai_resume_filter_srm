@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShortlistedView } from '../views/ShortlistedView';
+import { ShortlistedView } from '../components/candidates/ShortlistedView';
 import { screenCandidate, rankScreeningResults } from '../services/aiScreeningEngine';
 import { ScreeningResult, JobRequirement, CandidateProfile } from '../types';
 import { useNavigate } from 'react-router-dom';

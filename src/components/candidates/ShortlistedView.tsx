@@ -12,9 +12,9 @@ import {
   ChevronRight,
   Briefcase
 } from 'lucide-react';
-import { ScreeningResult, JobRequirement, Interview } from '../types';
-import { useAuth } from '../context/AuthContext';
-import { canAccessUnmaskedPII, maskRegNumber, sanitizeCsvField } from '../services/privacyGuard';
+import { ScreeningResult, JobRequirement, Interview } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { canAccessUnmaskedPII, maskRegNumber, sanitizeCsvField } from '../../services/privacyGuard';
 
 interface ShortlistedViewProps {
   shortlistedResults: ScreeningResult[];

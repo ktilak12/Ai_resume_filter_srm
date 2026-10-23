@@ -25,7 +25,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
 import { canAccessUnmaskedPII, maskRegNumber } from '../services/privacyGuard';
-import { AllCandidatesView } from '../views/AllCandidatesView';
+import { AllCandidatesView } from '../components/candidates/AllCandidatesView';
 import { SEO } from '../components/common/SEO';
 
 export const CandidateRanking: React.FC = () => {
