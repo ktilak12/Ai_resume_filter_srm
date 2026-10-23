@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SettingsView } from '../views/SettingsView';
+import { SettingsView } from '../components/settings/SettingsView';
 import { AISettings } from '../types';
 import { DEFAULT_AI_SETTINGS } from '../services/aiScreeningEngine';
 import { useAuth } from '../context/AuthContext';

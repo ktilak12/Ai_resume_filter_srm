@@ -15,14 +15,14 @@ import {
   CheckCircle2,
   XCircle
 } from 'lucide-react';
-import { AISettings, UserRole } from '../types';
-import { DEFAULT_AI_SETTINGS } from '../services/aiScreeningEngine';
-import { checkPermission, ROLE_DETAILS } from '../services/rbac';
+import { AISettings, UserRole } from '../../types';
+import { DEFAULT_AI_SETTINGS } from '../../services/aiScreeningEngine';
+import { checkPermission, ROLE_DETAILS } from '../../services/rbac';
 import { 
   getResendFromEmail, 
   setResendFromEmail, 
   testResendConnection 
-} from '../services/emailService';
+} from '../../services/emailService';
 
 interface SettingsViewProps {
   settings: AISettings;
