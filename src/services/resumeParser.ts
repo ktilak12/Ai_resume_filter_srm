@@ -87,49 +87,257 @@ export async function parseResumeFile(file: File): Promise<CandidateProfile> {
 }
 
 /**
- * Reads text content or extracts text streams from PDF and document files
+ * Decompresses raw deflate bytes (RFC 1951) using browser native DecompressionStream
  */
-async function extractTextFromDoc(file: File): Promise<string> {
+async function decompressDeflateRaw(bytes: Uint8Array): Promise<string> {
+  if (typeof DecompressionStream === 'undefined') return '';
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    const decoder = new TextDecoder('utf-8', { fatal: false });
-    const rawString = decoder.decode(bytes);
+    const ds = new DecompressionStream('deflate-raw');
+    const writer = ds.writable.getWriter();
+    writer.write(bytes);
+    writer.close();
+    const buffer = await new Response(ds.readable).arrayBuffer();
+    return new TextDecoder('utf-8').decode(buffer);
+  } catch {
+    return '';
+  }
+}
 
-    // If file is plain text without heavy binary, return directly
-    if (rawString && !rawString.includes('\x00') && rawString.trim().length > 80) {
-      return rawString;
+/**
+ * Decompresses zlib-wrapped deflate bytes (RFC 1950) or raw deflate using DecompressionStream
+ */
+async function decompressZlib(bytes: Uint8Array): Promise<string> {
+  if (typeof DecompressionStream === 'undefined') return '';
+  try {
+    const ds = new DecompressionStream('deflate');
+    const writer = ds.writable.getWriter();
+    writer.write(bytes);
+    writer.close();
+    const buffer = await new Response(ds.readable).arrayBuffer();
+    return new TextDecoder('utf-8').decode(buffer);
+  } catch {
+    // If standard zlib fails (e.g. non-standard headers), try raw deflate on the inner payload
+    try {
+      const skip = bytes.length > 2 && bytes[0] === 0x78 ? 2 : 0;
+      const rawSlice = bytes.subarray(skip);
+      return await decompressDeflateRaw(rawSlice);
+    } catch {
+      return '';
     }
+  }
+}
 
-    // For PDF files: extract textual streams between BT and ET, or parentheses Tj / TJ
-    if (file.name.toLowerCase().endsWith('.pdf')) {
-      const textMatches: string[] = [];
-      const regexTj = /\(([^)\\]{2,})\)\s*Tj/g;
-      let match;
-      while ((match = regexTj.exec(rawString)) !== null) {
-        if (match[1] && match[1].trim().length > 1) {
-          textMatches.push(match[1]);
+/**
+ * Extracts plain text from Microsoft Word .docx files by inspecting the ZIP package
+ * and decompressing the primary 'word/document.xml' text payload
+ */
+async function extractTextFromDocx(bytes: Uint8Array): Promise<string> {
+  try {
+    // A .docx file is a ZIP archive. Search for PK\x03\x04 headers
+    let offset = 0;
+    while (offset + 30 < bytes.length) {
+      if (
+        bytes[offset] === 0x50 &&
+        bytes[offset + 1] === 0x4b &&
+        bytes[offset + 2] === 0x03 &&
+        bytes[offset + 3] === 0x04
+      ) {
+        const compression = bytes[offset + 8] | (bytes[offset + 9] << 8);
+        const compressedSize =
+          bytes[offset + 18] |
+          (bytes[offset + 19] << 8) |
+          (bytes[offset + 20] << 16) |
+          (bytes[offset + 21] << 24);
+        const fileNameLen = bytes[offset + 26] | (bytes[offset + 27] << 8);
+        const extraFieldLen = bytes[offset + 28] | (bytes[offset + 29] << 8);
+
+        const fileNameStart = offset + 30;
+        const fileName = new TextDecoder('utf-8').decode(
+          bytes.subarray(fileNameStart, fileNameStart + fileNameLen)
+        );
+        const dataStart = fileNameStart + fileNameLen + extraFieldLen;
+
+        if (fileName === 'word/document.xml' || fileName.endsWith('/document.xml')) {
+          let xmlText = '';
+          if (compression === 0) {
+            xmlText = new TextDecoder('utf-8').decode(
+              bytes.subarray(dataStart, dataStart + (compressedSize || bytes.length - dataStart))
+            );
+          } else if (compression === 8) {
+            // Find end of compressed stream if compressedSize is 0 in local header
+            let end = dataStart + compressedSize;
+            if (compressedSize <= 0) {
+              // Locate next PK header
+              end = bytes.length;
+              for (let i = dataStart + 4; i < bytes.length - 4; i++) {
+                if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b) {
+                  end = i;
+                  break;
+                }
+              }
+            }
+            xmlText = await decompressDeflateRaw(bytes.subarray(dataStart, end));
+          }
+
+          if (xmlText && xmlText.length > 20) {
+            return xmlText
+              .replace(/<\/w:p>/gi, '\n')
+              .replace(/<w:br[^>]*>/gi, '\n')
+              .replace(/<w:tab[^>]*>/gi, '\t')
+              .replace(/<[^>]+>/g, ' ')
+              .replace(/&amp;/g, '&')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/&quot;/g, '"')
+              .replace(/&apos;/g, "'")
+              .replace(/[ \t]+/g, ' ')
+              .trim();
+          }
         }
-      }
 
-      const regexTJ = /\[(.*?)\]\s*TJ/g;
-      while ((match = regexTJ.exec(rawString)) !== null) {
-        const inner = match[1].replace(/-\d+/g, ' ');
-        const parts = inner.match(/\(([^)\\]+)\)/g);
-        if (parts) {
-          textMatches.push(parts.map(p => p.slice(1, -1)).join(' '));
+        offset = dataStart + (compressedSize > 0 ? compressedSize : 1);
+      } else {
+        offset++;
+      }
+    }
+  } catch (err) {
+    console.warn('DOCX XML parsing error:', err);
+  }
+  return '';
+}
+
+/**
+ * Decodes standard PDF escape sequences inside string literals
+ */
+function decodePdfLiteralString(str: string): string {
+  return str
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\b/g, '')
+    .replace(/\\f/g, '')
+    .replace(/\\\(/g, '(')
+    .replace(/\\\)/g, ')')
+    .replace(/\\\\/g, '\\')
+    .replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+}
+
+/**
+ * Decodes PDF hex strings: <48656c6c6f> -> "Hello"
+ */
+function decodePdfHexString(hex: string): string {
+  const clean = hex.replace(/\s+/g, '');
+  if (!clean) return '';
+  let res = '';
+  // Check if UTF-16BE (starts with FEFF or 00xx)
+  if (clean.length >= 4 && clean.startsWith('feff')) {
+    for (let i = 4; i < clean.length; i += 4) {
+      const code = parseInt(clean.substring(i, i + 4), 16);
+      if (!isNaN(code) && code > 0) res += String.fromCharCode(code);
+    }
+  } else if (clean.length % 2 === 0) {
+    for (let i = 0; i < clean.length; i += 2) {
+      const code = parseInt(clean.substring(i, i + 2), 16);
+      if (!isNaN(code) && code >= 32 && code <= 126) res += String.fromCharCode(code);
+      else if (code === 10 || code === 13 || code === 9) res += ' ';
+    }
+  }
+  return res;
+}
+
+/**
+ * Parses PDF text operators (BT...ET, Tj, TJ, hex) from a stream content string
+ */
+function parsePdfStreamContent(streamText: string): string[] {
+  const textMatches: string[] = [];
+
+  // Match parenthesized text: (text) Tj
+  const regexTj = new RegExp('\\(([^)\\\\]*(?:\\\\.[^)\\\\]*)*)\\)\\s*Tj', 'g');
+  let match;
+  while ((match = regexTj.exec(streamText)) !== null) {
+    const decoded = decodePdfLiteralString(match[1]);
+    if (decoded && decoded.trim().length > 0) {
+      textMatches.push(decoded.trim());
+    }
+  }
+
+  // Match TJ arrays: [(text) -120 (more text)] TJ
+  const regexTJ = /\[(.*?)\]\s*TJ/g;
+  const partRegex = new RegExp('\\(([^)\\\\]*(?:\\\\.[^)\\\\]*)*)\\)|(-?\\d+(?:\\.\\d+)?)|<([0-9a-fA-F]+)>', 'g');
+
+  while ((match = regexTJ.exec(streamText)) !== null) {
+    const inner = match[1];
+    partRegex.lastIndex = 0;
+    let pm;
+    let currentLine = '';
+    while ((pm = partRegex.exec(inner)) !== null) {
+      if (pm[1] !== undefined) {
+        currentLine += decodePdfLiteralString(pm[1]);
+      } else if (pm[2] !== undefined) {
+        const offset = parseFloat(pm[2]);
+        if (offset < -110) {
+          currentLine += ' ';
         }
+      } else if (pm[3] !== undefined) {
+        currentLine += decodePdfHexString(pm[3]);
       }
+    }
+    if (currentLine.trim().length > 0) {
+      textMatches.push(currentLine.trim());
+    }
+  }
 
-      if (textMatches.length >= 8) {
-        const reconstructed = textMatches.join(' ');
-        if (reconstructed.trim().length > 100) {
-          return reconstructed;
+  // Match standalone hex strings: <48656c6c6f> Tj
+  const regexHexTj = /<([0-9a-fA-F\s]+)>\s*Tj/g;
+  while ((match = regexHexTj.exec(streamText)) !== null) {
+    const decoded = decodePdfHexString(match[1]);
+    if (decoded && decoded.trim().length > 0) {
+      textMatches.push(decoded.trim());
+    }
+  }
+
+  return textMatches;
+}
+
+/**
+ * Extracts plain text from PDF bytes by decompressing FlateDecode streams
+ * and extracting text operators across all PDF pages
+ */
+async function extractTextFromPdf(bytes: Uint8Array): Promise<string> {
+  const allExtractedWords: string[] = [];
+  const rawString = new TextDecoder('latin1').decode(bytes);
+
+  // 1. Direct text extraction from uncompressed streams or bodies
+  const directMatches = parsePdfStreamContent(rawString);
+  allExtractedWords.push(...directMatches);
+
+  // 2. Locate and decompress all FlateDecode streams in the PDF
+  const streamRegex = /stream\r?\n/g;
+  let streamMatch;
+
+  while ((streamMatch = streamRegex.exec(rawString)) !== null) {
+    const streamStart = streamMatch.index + streamMatch[0].length;
+    const endPos = rawString.indexOf('endstream', streamStart);
+    if (endPos === -1) continue;
+
+    // Check if the preceding dictionary specifies /FlateDecode
+    const dictSlice = rawString.substring(Math.max(0, streamMatch.index - 300), streamMatch.index);
+    const isFlate = /Filter\s*(?:\[\s*)?\/FlateDecode/i.test(dictSlice);
+
+    if (isFlate) {
+      const streamBytes = bytes.subarray(streamStart, endPos);
+      if (streamBytes.length > 4) {
+        const decompressed = await decompressZlib(streamBytes);
+        if (decompressed && decompressed.length > 10) {
+          const streamWords = parsePdfStreamContent(decompressed);
+          allExtractedWords.push(...streamWords);
         }
       }
     }
+  }
 
-    // Generic printable character extraction for binary documents
+  // 3. Fallback: Search for printable alphanumeric blocks if structured parsing yielded sparse words
+  if (allExtractedWords.length < 8) {
     const printableBlocks = rawString.match(/[a-zA-Z0-9\s.,@:;/\-+_()#&]{4,}/g);
     if (printableBlocks && printableBlocks.length > 20) {
       const candidateString = printableBlocks.join(' ');
@@ -137,35 +345,51 @@ async function extractTextFromDoc(file: File): Promise<string> {
         return candidateString;
       }
     }
-  } catch (e) {
-    console.warn('Document binary text extraction fallback triggered:', e);
   }
 
-  // If extraction completely fails on binary file, return minimal diagnostic representation without fabricating skills
-  const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-  return `
-${cleanName}
-Email: ${cleanName.toLowerCase().replace(/\s+/g, '.')}@srmist.edu.in | Phone: +91 98401 23456
-SRM Institute of Science and Technology, Kattankulathur, Chennai
-Register Number: RA2311003010142
+  if (allExtractedWords.length > 0) {
+    return allExtractedWords.join(' ');
+  }
 
-EDUCATION
-B.Tech in Computer Science and Engineering
-SRM Institute of Science and Technology, Chennai
-CGPA: 7.80 / 10 | Batch: 2022 - 2026 | Active Backlogs: 0
+  return '';
+}
 
-TECHNICAL SKILLS
-Languages: Python, SQL
-Technologies: Git, Linux
+/**
+ * Reads text content or extracts text streams from PDF, DOCX, and document files
+ */
+async function extractTextFromDoc(file: File): Promise<string> {
+  const safeName = file.name.toLowerCase();
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
 
-EXPERIENCE & INTERNSHIPS
-No prior internship experience recorded.
+  // DOCX handling
+  if (safeName.endsWith('.docx')) {
+    const docxText = await extractTextFromDocx(bytes);
+    if (docxText && docxText.length > 30) {
+      return docxText;
+    }
+  }
 
-PROJECTS
-Academic Mini Project
-Technologies: Python, SQL
-Developed basic student records database with command-line interface.
-`;
+  // PDF handling
+  if (safeName.endsWith('.pdf')) {
+    const pdfText = await extractTextFromPdf(bytes);
+    if (pdfText && pdfText.length > 30) {
+      return pdfText;
+    }
+  }
+
+  // Plain text fallback (e.g. for .txt, .md, or uncompressed documents)
+  const decoder = new TextDecoder('utf-8', { fatal: false });
+  const rawString = decoder.decode(bytes);
+  if (rawString && !rawString.includes('\x00') && rawString.trim().length > 30) {
+    return rawString;
+  }
+
+  // If extraction completely fails on binary file, throw an explicit, descriptive error
+  // Never silently fabricate a fake candidate profile with preloaded Python/SQL skills!
+  throw new Error(
+    `Unable to extract readable text from "${file.name}". The file appears to be a scanned image or protected document without selectable text. Please upload a text-based PDF/Word document, or paste your resume text directly into the "Paste Resume Text" box.`
+  );
 }
 
 /**
@@ -331,8 +555,8 @@ export function extractCandidateEntities(rawText: string, fileName?: string): Ca
 
       projects.push({
         name: cleanTitle,
-        technologies: projSkills.length > 0 ? projSkills : ['Python', 'SQL'],
-        description: `Implemented ${cleanTitle} focusing on robust architecture and reliable functional implementation.`
+        technologies: projSkills,
+        description: `Implemented ${cleanTitle} focusing on robust architecture and functional implementation.`
       });
     });
   } else if (/project/i.test(rawText)) {
@@ -340,8 +564,8 @@ export function extractCandidateEntities(rawText: string, fileName?: string): Ca
     const matchedProjSkills = skills.slice(0, 3);
     projects.push({
       name: 'Academic Software Engineering Project',
-      technologies: matchedProjSkills.length > 0 ? matchedProjSkills : ['Python', 'SQL'],
-      description: 'Engineered student academic project implementing core domain concepts and data handling.'
+      technologies: matchedProjSkills,
+      description: 'Academic engineering project implementing domain concepts and software implementation.'
     });
   }
 
