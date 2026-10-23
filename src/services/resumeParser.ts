@@ -291,54 +291,142 @@ function decodePdfHexString(hex: string): string {
 }
 
 /**
+ * Safely extracts literal strings within parentheses without catastrophic ReDoS backtracking
+ */
+function extractParenthesizedString(text: string, startIndex: number): { value: string; nextIndex: number } | null {
+  if (text[startIndex] !== '(') return null;
+  let depth = 1;
+  let result = '';
+  let i = startIndex + 1;
+  const n = text.length;
+
+  while (i < n && depth > 0) {
+    const ch = text[i];
+    if (ch === '\\' && i + 1 < n) {
+      result += ch + text[i + 1];
+      i += 2;
+      continue;
+    }
+    if (ch === '(') {
+      depth++;
+      result += ch;
+    } else if (ch === ')') {
+      depth--;
+      if (depth === 0) {
+        return { value: result, nextIndex: i + 1 };
+      }
+      result += ch;
+    } else {
+      result += ch;
+    }
+    i++;
+  }
+  return null;
+}
+
+/**
  * Parses PDF text operators (BT...ET, Tj, TJ, hex) from a stream content string
+ * Using strictly linear O(N) scanning to eliminate ReDoS vulnerabilities
  */
 function parsePdfStreamContent(streamText: string): string[] {
   const textMatches: string[] = [];
+  const n = Math.min(streamText.length, 500000); // safety clamp
+  let i = 0;
 
-  // Match parenthesized text: (text) Tj
-  const regexTj = new RegExp('\\(([^)\\\\]*(?:\\\\.[^)\\\\]*)*)\\)\\s*Tj', 'g');
-  let match;
-  while ((match = regexTj.exec(streamText)) !== null) {
-    const decoded = decodePdfLiteralString(match[1]);
-    if (decoded && decoded.trim().length > 0) {
-      textMatches.push(decoded.trim());
-    }
-  }
+  while (i < n) {
+    const ch = streamText[i];
 
-  // Match TJ arrays: [(text) -120 (more text)] TJ
-  const regexTJ = /\[(.*?)\]\s*TJ/g;
-  const partRegex = new RegExp('\\(([^)\\\\]*(?:\\\\.[^)\\\\]*)*)\\)|(-?\\d+(?:\\.\\d+)?)|<([0-9a-fA-F]+)>', 'g');
-
-  while ((match = regexTJ.exec(streamText)) !== null) {
-    const inner = match[1];
-    partRegex.lastIndex = 0;
-    let pm;
-    let currentLine = '';
-    while ((pm = partRegex.exec(inner)) !== null) {
-      if (pm[1] !== undefined) {
-        currentLine += decodePdfLiteralString(pm[1]);
-      } else if (pm[2] !== undefined) {
-        const offset = parseFloat(pm[2]);
-        if (offset < -110) {
-          currentLine += ' ';
+    // 1. Check for string literal (...) Tj
+    if (ch === '(') {
+      const extracted = extractParenthesizedString(streamText, i);
+      if (extracted) {
+        let p = extracted.nextIndex;
+        while (p < n && (streamText[p] === ' ' || streamText[p] === '\t' || streamText[p] === '\r' || streamText[p] === '\n')) {
+          p++;
         }
-      } else if (pm[3] !== undefined) {
-        currentLine += decodePdfHexString(pm[3]);
+        if (p + 1 < n && streamText[p] === 'T' && streamText[p + 1] === 'j') {
+          const decoded = decodePdfLiteralString(extracted.value).trim();
+          if (decoded.length > 0) {
+            textMatches.push(decoded);
+          }
+          i = p + 2;
+          continue;
+        }
       }
     }
-    if (currentLine.trim().length > 0) {
-      textMatches.push(currentLine.trim());
-    }
-  }
 
-  // Match standalone hex strings: <48656c6c6f> Tj
-  const regexHexTj = /<([0-9a-fA-F\s]+)>\s*Tj/g;
-  while ((match = regexHexTj.exec(streamText)) !== null) {
-    const decoded = decodePdfHexString(match[1]);
-    if (decoded && decoded.trim().length > 0) {
-      textMatches.push(decoded.trim());
+    // 2. Check for TJ array: [...] TJ
+    if (ch === '[') {
+      const arrayEnd = streamText.indexOf(']', i + 1);
+      if (arrayEnd !== -1 && arrayEnd - i < 10000) {
+        let p = arrayEnd + 1;
+        while (p < n && (streamText[p] === ' ' || streamText[p] === '\t' || streamText[p] === '\r' || streamText[p] === '\n')) {
+          p++;
+        }
+        if (p + 1 < n && streamText[p] === 'T' && streamText[p + 1] === 'J') {
+          const inner = streamText.substring(i + 1, arrayEnd);
+          let subIdx = 0;
+          let currentLine = '';
+
+          while (subIdx < inner.length) {
+            if (inner[subIdx] === '(') {
+              const subExt = extractParenthesizedString(inner, subIdx);
+              if (subExt) {
+                currentLine += decodePdfLiteralString(subExt.value);
+                subIdx = subExt.nextIndex;
+                continue;
+              }
+            } else if (inner[subIdx] === '<') {
+              const hexEnd = inner.indexOf('>', subIdx + 1);
+              if (hexEnd !== -1) {
+                currentLine += decodePdfHexString(inner.substring(subIdx + 1, hexEnd));
+                subIdx = hexEnd + 1;
+                continue;
+              }
+            } else if (inner[subIdx] === '-' || (inner[subIdx] >= '0' && inner[subIdx] <= '9')) {
+              let numEnd = subIdx;
+              while (numEnd < inner.length && /[-0-9.]/.test(inner[numEnd])) {
+                numEnd++;
+              }
+              const offset = parseFloat(inner.substring(subIdx, numEnd));
+              if (offset < -110) {
+                currentLine += ' ';
+              }
+              subIdx = numEnd;
+              continue;
+            }
+            subIdx++;
+          }
+
+          if (currentLine.trim().length > 0) {
+            textMatches.push(currentLine.trim());
+          }
+          i = p + 2;
+          continue;
+        }
+      }
     }
+
+    // 3. Match standalone hex strings: <48656c6c6f> Tj
+    if (ch === '<' && i + 1 < n && streamText[i + 1] !== '<') {
+      const hexEnd = streamText.indexOf('>', i + 1);
+      if (hexEnd !== -1 && hexEnd - i < 1000) {
+        let p = hexEnd + 1;
+        while (p < n && (streamText[p] === ' ' || streamText[p] === '\t' || streamText[p] === '\r' || streamText[p] === '\n')) {
+          p++;
+        }
+        if (p + 1 < n && streamText[p] === 'T' && streamText[p + 1] === 'j') {
+          const decoded = decodePdfHexString(streamText.substring(i + 1, hexEnd)).trim();
+          if (decoded.length > 0) {
+            textMatches.push(decoded);
+          }
+          i = p + 2;
+          continue;
+        }
+      }
+    }
+
+    i++;
   }
 
   return textMatches;
@@ -356,11 +444,14 @@ async function extractTextFromPdf(bytes: Uint8Array): Promise<string> {
   const directMatches = parsePdfStreamContent(rawString);
   allExtractedWords.push(...directMatches);
 
-  // 2. Locate and decompress all FlateDecode streams in the PDF
+  // 2. Locate and decompress all FlateDecode streams in the PDF (bounded to 150 streams)
   const streamRegex = /stream\r?\n/g;
   let streamMatch;
+  let streamCount = 0;
+  const MAX_PDF_STREAMS = 150;
 
-  while ((streamMatch = streamRegex.exec(rawString)) !== null) {
+  while ((streamMatch = streamRegex.exec(rawString)) !== null && streamCount < MAX_PDF_STREAMS) {
+    streamCount++;
     const streamStart = streamMatch.index + streamMatch[0].length;
     const endPos = rawString.indexOf('endstream', streamStart);
     if (endPos === -1) continue;
