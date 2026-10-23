@@ -459,11 +459,17 @@ export function calculateMatchScore(
   job: JobRequirement,
   settings: AISettings = DEFAULT_AI_SETTINGS
 ): { score: ScoreBreakdown; explainable: ExplainableAI } {
+  // Strip out artificial target role headers or target position labels to prevent circular keyword matching
+  const cleanRawText = (candidate.raw_resume_text || '')
+    .split('\n')
+    .filter(line => !/^(?:target role|applying for|applied role|role:)/i.test(line.trim()))
+    .join('\n');
+
   const resumeText = `${candidate.name} ${candidate.education.degree} ${candidate.education.department} ${candidate.skills.join(' ')} ` +
     candidate.experience.map(e => `${e.position} ${e.company} ${e.responsibilities.join(' ')} ${e.description || ''}`).join(' ') + ' ' +
     candidate.projects.map(p => `${p.name} ${p.technologies.join(' ')} ${p.description}`).join(' ') + ' ' +
     candidate.certifications.join(' ') + ' ' +
-    (candidate.raw_resume_text || '');
+    cleanRawText;
 
   const positive_factors: string[] = [];
   const penalty_factors: string[] = [];
