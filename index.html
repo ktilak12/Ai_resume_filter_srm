@@ -1,32 +1,56 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SRM ResumeAI | AI-Powered Institutional Resume Screening & Placement Platform</title>
     
-    <!-- Core SEO Meta Tags -->
-    <meta name="description" content="Official AI-driven recruitment and ATS resume screening portal for SRM Institute of Science and Technology (SRMIST). Features explainable AI scoring, academic eligibility verification, and automated shortlisting." />
-    <meta name="keywords" content="SRM ResumeAI, SRMIST Placements, AI Resume Screening, Explainable ATS, Directorate of Career Centre, SRM Institute of Science and Technology, Campus Placements 2026, ATS Checker" />
+    <!-- Primary Page Title & Meta Tags -->
+    <title>SRM ResumeAI | AI ATS Resume Screening & Campus Placements | SRMIST</title>
+    <meta name="title" content="SRM ResumeAI | AI ATS Resume Screening & Campus Placements | SRMIST" />
+    <meta name="description" content="Official SRMIST Directorate of Career Centre placement portal. AI-powered ATS resume screening, live resume builder, eligibility verification, and campus recruitment management for SRM Institute of Science and Technology." />
+    <meta name="keywords" content="SRM ResumeAI, SRMIST Placements, AI Resume Screening, ATS Checker, Resume Builder, Campus Placement 2026, Directorate of Career Centre, SRM Institute of Science and Technology, Kattankulathur, Engineering Recruitment" />
     <meta name="author" content="Directorate of Career Centre, SRM Institute of Science and Technology" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <link rel="canonical" href="https://srm-resume-ai.srmist.edu.in/" />
     
+    <!-- PWA & Mobile Web App Meta Tags -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SRM ResumeAI" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Geographic & Institutional Regional Meta Tags -->
+    <meta name="geo.region" content="IN-TN" />
+    <meta name="geo.placename" content="Kattankulathur, Chengalpattu, Chennai" />
+    <meta name="geo.position" content="12.8230;80.0444" />
+    <meta name="ICBM" content="12.8230, 80.0444" />
+
     <!-- Open Graph / Facebook / LinkedIn Meta Tags -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://srm-resume-ai.srmist.edu.in/" />
     <meta property="og:site_name" content="SRM ResumeAI" />
-    <meta property="og:title" content="SRM ResumeAI — Institutional Placement & AI Resume Screening Portal" />
-    <meta property="og:description" content="AI-driven candidate screening, explainable ATS evaluation, and campus placement management platform for SRMIST." />
+    <meta property="og:title" content="SRM ResumeAI | Institutional AI Resume Screening & Placement Platform" />
+    <meta property="og:description" content="Official AI ATS resume screening, real-time resume builder, and campus placement management platform for SRM Institute of Science and Technology (SRMIST)." />
+    <meta property="og:image" content="https://srm-resume-ai.srmist.edu.in/favicon.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="SRM ResumeAI Institutional Placement and ATS Screening Engine" />
     <meta property="og:locale" content="en_IN" />
 
-    <!-- Twitter Card Meta Tags -->
+    <!-- Twitter / X Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="SRM ResumeAI — Institutional Placement & AI Resume Screening Portal" />
-    <meta name="twitter:description" content="AI-driven candidate screening, explainable ATS evaluation, and campus placement management platform for SRMIST." />
+    <meta name="twitter:site" content="@SRM_Univ" />
+    <meta name="twitter:creator" content="@SRM_Univ" />
+    <meta name="twitter:title" content="SRM ResumeAI | Institutional AI Resume Screening & Placement Platform" />
+    <meta name="twitter:description" content="AI-driven ATS evaluation, resume builder, and campus placement intelligence for SRMIST students and recruiters." />
+    <meta name="twitter:image" content="https://srm-resume-ai.srmist.edu.in/favicon.svg" />
+    <meta name="twitter:image:alt" content="SRM ResumeAI ATS Placement Portal" />
     
-    <!-- Structured Data (JSON-LD) for Google Search Rich Results -->
+    <!-- Comprehensive Google Search Structured Data (JSON-LD) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -37,7 +61,12 @@
           "name": "SRM Institute of Science and Technology",
           "alternateName": "SRMIST",
           "url": "https://www.srmist.edu.in",
-          "logo": "https://srm-resume-ai.srmist.edu.in/logo.png",
+          "logo": "https://srm-resume-ai.srmist.edu.in/favicon.svg",
+          "sameAs": [
+            "https://twitter.com/SRM_Univ",
+            "https://www.linkedin.com/school/srm-university/",
+            "https://www.facebook.com/SRMUniversityOfficial/"
+          ],
           "address": {
             "@type": "PostalAddress",
             "streetAddress": "SRM Nagar, Kattankulathur",
@@ -45,24 +74,44 @@
             "addressRegion": "Tamil Nadu",
             "postalCode": "603203",
             "addressCountry": "IN"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "Career Services & Placement Office",
+            "telephone": "+91-44-27417000",
+            "email": "careers@srmist.edu.in"
           }
         },
         {
-          "@type": "WebApplication",
-          "@id": "https://srm-resume-ai.srmist.edu.in/#webapp",
-          "name": "SRM ResumeAI Placement Platform",
+          "@type": "WebSite",
+          "@id": "https://srm-resume-ai.srmist.edu.in/#website",
           "url": "https://srm-resume-ai.srmist.edu.in",
-          "applicationCategory": "BusinessApplication, EducationalApplication",
-          "operatingSystem": "All modern browsers",
-          "description": "Institutional AI Resume Screening, ATS keyword matching, and placement drive management portal for SRMIST Career Centre.",
-          "provider": {
+          "name": "SRM ResumeAI Placement & ATS Platform",
+          "description": "Institutional AI Resume Screening, ATS Score Evaluator, and Campus Recruitment Management for SRMIST.",
+          "publisher": {
             "@id": "https://www.srmist.edu.in/#organization"
-          }
+          },
+          "inLanguage": "en-IN"
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://srm-resume-ai.srmist.edu.in/#software",
+          "name": "SRM ResumeAI",
+          "applicationCategory": "EducationalApplication, BusinessApplication",
+          "operatingSystem": "All modern web browsers",
+          "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "INR"
+          },
+          "description": "Comprehensive institutional application featuring automated ATS resume screening, live multi-tier resume builder, and explainable AI placement qualification for students and hiring coordinators."
         }
       ]
     }
     </script>
 
+    <!-- Font Optimization & Preconnections -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
