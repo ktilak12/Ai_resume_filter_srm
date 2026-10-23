@@ -90,13 +90,10 @@ export async function parseResumeFile(file: File): Promise<CandidateProfile> {
  * Decompresses raw deflate bytes (RFC 1951) using browser native DecompressionStream
  */
 async function decompressDeflateRaw(bytes: Uint8Array): Promise<string> {
-  if (typeof DecompressionStream === 'undefined') return '';
+  if (typeof DecompressionStream === 'undefined' || bytes.length === 0) return '';
   try {
-    const ds = new DecompressionStream('deflate-raw');
-    const writer = ds.writable.getWriter();
-    writer.write(bytes);
-    writer.close();
-    const buffer = await new Response(ds.readable).arrayBuffer();
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    const buffer = await new Response(stream).arrayBuffer();
     return new TextDecoder('utf-8').decode(buffer);
   } catch {
     return '';
@@ -107,20 +104,20 @@ async function decompressDeflateRaw(bytes: Uint8Array): Promise<string> {
  * Decompresses zlib-wrapped deflate bytes (RFC 1950) or raw deflate using DecompressionStream
  */
 async function decompressZlib(bytes: Uint8Array): Promise<string> {
-  if (typeof DecompressionStream === 'undefined') return '';
+  if (typeof DecompressionStream === 'undefined' || bytes.length === 0) return '';
   try {
-    const ds = new DecompressionStream('deflate');
-    const writer = ds.writable.getWriter();
-    writer.write(bytes);
-    writer.close();
-    const buffer = await new Response(ds.readable).arrayBuffer();
-    return new TextDecoder('utf-8').decode(buffer);
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
+    const buffer = await new Response(stream).arrayBuffer();
+    return new TextDecoder('latin1').decode(buffer);
   } catch {
-    // If standard zlib fails (e.g. non-standard headers), try raw deflate on the inner payload
+    // If standard zlib fails (e.g. non-standard headers or trailing footer), try raw deflate on the inner payload
     try {
       const skip = bytes.length > 2 && bytes[0] === 0x78 ? 2 : 0;
-      const rawSlice = bytes.subarray(skip);
-      return await decompressDeflateRaw(rawSlice);
+      const end = bytes.length > 6 ? bytes.length - 4 : bytes.length;
+      const rawSlice = bytes.subarray(skip, end > skip ? end : bytes.length);
+      const stream = new Blob([rawSlice]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      const buffer = await new Response(stream).arrayBuffer();
+      return new TextDecoder('latin1').decode(buffer);
     } catch {
       return '';
     }
@@ -325,7 +322,12 @@ async function extractTextFromPdf(bytes: Uint8Array): Promise<string> {
     const isFlate = /Filter\s*(?:\[\s*)?\/FlateDecode/i.test(dictSlice);
 
     if (isFlate) {
-      const streamBytes = bytes.subarray(streamStart, endPos);
+      // Trim trailing CR / LF right before endstream so zlib adler32 checksum passes
+      let actualEnd = endPos;
+      while (actualEnd > streamStart && (bytes[actualEnd - 1] === 0x0a || bytes[actualEnd - 1] === 0x0d)) {
+        actualEnd--;
+      }
+      const streamBytes = bytes.subarray(streamStart, actualEnd);
       if (streamBytes.length > 4) {
         const decompressed = await decompressZlib(streamBytes);
         if (decompressed && decompressed.length > 10) {
