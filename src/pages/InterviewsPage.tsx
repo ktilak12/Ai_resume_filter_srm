@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { InterviewManagementView } from '../views/InterviewManagementView';
+import { InterviewManagementView } from '../components/interviews/InterviewManagementView';
 import { Interview, JobRequirement, CandidateProfile } from '../types';
 import { INITIAL_INTERVIEWS, INITIAL_JOBS } from '../data/srmDataset';
 import { SEO } from '../components/common/SEO';

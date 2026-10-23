@@ -14,10 +14,10 @@ import {
   ChevronRight,
   Award
 } from 'lucide-react';
-import { Interview, InterviewRound, ScreeningResult, JobRequirement, CandidateProfile } from '../types';
-import { useAuth } from '../context/AuthContext';
-import { checkPermission } from '../services/rbac';
-import { downloadIcsFile } from '../services/calendarService';
+import { Interview, InterviewRound, ScreeningResult, JobRequirement, CandidateProfile } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { checkPermission } from '../../services/rbac';
+import { downloadIcsFile } from '../../services/calendarService';
 
 interface InterviewManagementViewProps {
   interviews: Interview[];
