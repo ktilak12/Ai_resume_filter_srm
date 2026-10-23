@@ -174,17 +174,17 @@ export const POWER_ACTION_VERBS = [
  * AI-assisted summary generator tailored to candidate profile and target job role
  */
 export function generateRoleSummary(
-  targetRole: string,
+  _targetRole: string,
   candidate: CandidateProfile,
   job?: JobRequirement
 ): string {
   const dept = candidate.education.department || 'Computer Science and Engineering';
   const degree = candidate.education.degree || 'B.Tech';
-  const cgpa = candidate.education.cgpa || 8.85;
-  const topSkills = candidate.skills.slice(0, 5).join(', ');
+  const cgpa = candidate.education.cgpa || 8.20;
+  const topSkills = candidate.skills.length > 0 ? candidate.skills.slice(0, 5).join(', ') : 'software engineering principles';
   const companyTarget = job?.company ? ` targeting opportunities at ${job.company}` : '';
 
-  return `Proactive ${degree} graduate in ${dept} from SRM Institute of Science and Technology (CGPA ${cgpa.toFixed(2)}/10)${companyTarget}. Strong technical foundation in ${topSkills}, with proven expertise in building high-performance systems and applying modern software engineering best practices. Committed to delivering scalable, secure solutions aligned with ${targetRole} requirements.`;
+  return `Proactive ${degree} graduate in ${dept} from SRM Institute of Science and Technology (CGPA ${cgpa.toFixed(2)}/10)${companyTarget}. Strong technical foundation in ${topSkills}, with proven expertise in building high-performance systems and applying modern software engineering best practices. Committed to delivering scalable, secure solutions following institutional engineering standards.`;
 }
 
 /**
@@ -244,10 +244,7 @@ export function generateFormattedResumeText(
   lines.push(contactParts.join(' | '));
   lines.push('');
 
-  // Target Role & Objective
-  if (targetRoleTitle) {
-    lines.push(`TARGET ROLE: ${targetRoleTitle.toUpperCase()}`);
-  }
+  // Professional Summary
   if (summary) {
     lines.push('PROFESSIONAL SUMMARY');
     lines.push(summary);
@@ -345,15 +342,96 @@ export function getInitialCandidateProfile(currentUser?: any): CandidateProfile 
   };
 }
 
+export type TemplateTier = 'baseline' | 'intermediate' | 'optimized';
+
 /**
- * Builds an authentic candidate profile tailored for a specific role preset
- * Shows realistic, genuine ATS scores across different target placements
+ * Builds an authentic candidate profile tailored for a specific role preset across 3 realistic tiers:
+ * - 'baseline' (~45-55% ATS score): Genuine fresher starter with skill gaps
+ * - 'intermediate' (~70-76% ATS score): Solid candidate meeting core requirements
+ * - 'optimized' (~88-93% ATS score): Placement-ready benchmark with internship & metrics
  */
-export function getProfileFromPreset(presetId: string, currentUser?: any): CandidateProfile {
+export function getProfileFromPreset(
+  presetId: string, 
+  currentUser?: any, 
+  tier: TemplateTier = 'baseline'
+): CandidateProfile {
   const preset = ROLE_PRESETS.find(p => p.id === presetId) || ROLE_PRESETS[0];
 
-  const candidate: CandidateProfile = {
-    id: `template-${preset.id}`,
+  // Tier 1: Baseline Fresher Profile (~45-55% score)
+  if (tier === 'baseline') {
+    return {
+      id: `template-${preset.id}-baseline`,
+      reg_number: currentUser?.regNumber || 'RA2311003010142',
+      name: currentUser?.name || 'Tilak K',
+      email: currentUser?.email || 'tilak.k@srmist.edu.in',
+      phone: '+91 98765 43210',
+      location: 'Chennai, Tamil Nadu, India',
+      linkedin: 'https://linkedin.com/in/tilak-srm',
+      github: 'https://github.com/tilak-srm',
+      education: {
+        degree: 'B.Tech',
+        department: currentUser?.department || 'Computer Science and Engineering',
+        college: 'SRM Institute of Science and Technology, Kattankulathur',
+        cgpa: 7.75,
+        graduation_year: 2026,
+        active_backlogs: 0
+      },
+      // Only has 2 foundational skills, leaving mandatory gaps for the student to build
+      skills: [preset.requiredSkills[0] || 'Python', 'Git', 'SQL'],
+      experience: [],
+      projects: [
+        {
+          name: `${preset.title} Academic Lab Project`,
+          technologies: [preset.requiredSkills[0] || 'Python', 'SQL'],
+          description: `Built academic lab system implementing core ${preset.category.toLowerCase()} concepts and basic database interactions.`,
+          github_link: 'https://github.com/tilak-srm/lab-project'
+        }
+      ],
+      certifications: []
+    };
+  }
+
+  // Tier 2: Intermediate Developing Profile (~70-76% score)
+  if (tier === 'intermediate') {
+    const coreSkillsCount = Math.max(3, Math.ceil(preset.requiredSkills.length * 0.65));
+    const coreSkills = preset.requiredSkills.slice(0, coreSkillsCount);
+
+    return {
+      id: `template-${preset.id}-intermediate`,
+      reg_number: currentUser?.regNumber || 'RA2311003010142',
+      name: currentUser?.name || 'Tilak K',
+      email: currentUser?.email || 'tilak.k@srmist.edu.in',
+      phone: '+91 98765 43210',
+      location: 'Chennai, Tamil Nadu, India',
+      linkedin: 'https://linkedin.com/in/tilak-srm',
+      github: 'https://github.com/tilak-srm',
+      education: {
+        degree: 'B.Tech',
+        department: currentUser?.department || 'Computer Science and Engineering',
+        college: 'SRM Institute of Science and Technology, Kattankulathur',
+        cgpa: 8.35,
+        graduation_year: 2026,
+        active_backlogs: 0
+      },
+      skills: [...coreSkills, 'Git'],
+      experience: [],
+      projects: preset.recommendedProjects.slice(0, 2).map((p, idx) => ({
+        name: p.name,
+        technologies: p.technologies.slice(0, 3),
+        description: idx === 0 
+          ? p.bullets[0] || p.description 
+          : 'Designed modular backend service focusing on clean structure and API test coverage.',
+        github_link: `https://github.com/tilak-srm/${p.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`
+      })),
+      certifications: [
+        `${preset.category} Technical Proficiency Certificate`
+      ]
+    };
+  }
+
+  // Tier 3: Placement-Ready Reference Profile (~88-93% score)
+  return {
+    id: `template-${preset.id}-optimized`,
     reg_number: currentUser?.regNumber || 'RA2311003010142',
     name: currentUser?.name || 'Tilak K',
     email: currentUser?.email || 'tilak.k@srmist.edu.in',
@@ -365,7 +443,7 @@ export function getProfileFromPreset(presetId: string, currentUser?: any): Candi
       degree: 'B.Tech',
       department: currentUser?.department || 'Computer Science and Engineering',
       college: 'SRM Institute of Science and Technology, Kattankulathur',
-      cgpa: preset.minCgpa >= 8.5 ? 9.12 : 8.65,
+      cgpa: preset.minCgpa >= 8.5 ? 9.12 : 8.75,
       graduation_year: 2026,
       active_backlogs: 0
     },
@@ -396,18 +474,20 @@ export function getProfileFromPreset(presetId: string, currentUser?: any): Candi
       'SRMIST Academic Merit Award'
     ]
   };
-
-  return candidate;
 }
 
 /**
  * Builds a role-aligned candidate profile tailored for any specific job requirement
  */
-export function getTopScoringTemplate(job: JobRequirement, baseUser?: any): CandidateProfile {
+export function getTopScoringTemplate(
+  job: JobRequirement, 
+  baseUser?: any, 
+  tier: TemplateTier = 'optimized'
+): CandidateProfile {
   const preset = ROLE_PRESETS.find(p => 
     p.title.toLowerCase().includes(job.title.toLowerCase()) ||
     job.title.toLowerCase().includes(p.title.toLowerCase())
   ) || ROLE_PRESETS[0];
 
-  return getProfileFromPreset(preset.id, baseUser);
+  return getProfileFromPreset(preset.id, baseUser, tier);
 }
