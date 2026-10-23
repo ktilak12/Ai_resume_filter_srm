@@ -135,7 +135,7 @@ async function readStreamWithLimit(
 async function decompressDeflateRaw(bytes: Uint8Array): Promise<string> {
   if (typeof DecompressionStream === 'undefined' || bytes.length === 0) return '';
   try {
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    const stream = new Blob([bytes as unknown as BlobPart]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
     const safeBuffer = await readStreamWithLimit(stream);
     return new TextDecoder('utf-8').decode(safeBuffer);
   } catch {
@@ -149,7 +149,7 @@ async function decompressDeflateRaw(bytes: Uint8Array): Promise<string> {
 async function decompressZlib(bytes: Uint8Array): Promise<string> {
   if (typeof DecompressionStream === 'undefined' || bytes.length === 0) return '';
   try {
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
+    const stream = new Blob([bytes as unknown as BlobPart]).stream().pipeThrough(new DecompressionStream('deflate'));
     const safeBuffer = await readStreamWithLimit(stream);
     return new TextDecoder('latin1').decode(safeBuffer);
   } catch {
@@ -158,7 +158,7 @@ async function decompressZlib(bytes: Uint8Array): Promise<string> {
       const skip = bytes.length > 2 && bytes[0] === 0x78 ? 2 : 0;
       const end = bytes.length > 6 ? bytes.length - 4 : bytes.length;
       const rawSlice = bytes.subarray(skip, end > skip ? end : bytes.length);
-      const stream = new Blob([rawSlice]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      const stream = new Blob([rawSlice as unknown as BlobPart]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
       const safeBuffer = await readStreamWithLimit(stream);
       return new TextDecoder('latin1').decode(safeBuffer);
     } catch {
