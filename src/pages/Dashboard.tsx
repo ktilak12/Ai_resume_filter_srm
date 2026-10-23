@@ -16,7 +16,7 @@ import { useOutletContext, useNavigate } from 'react-router-dom';
 import { UserRole, CandidateProfile, JobRequirement, Interview } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { INITIAL_JOBS, INITIAL_CANDIDATES, INITIAL_INTERVIEWS } from '../data/srmDataset';
-import { JobCreationModal } from '../views/JobCreationModal';
+import { JobCreationModal } from '../components/modals/JobCreationModal';
 import { SEO } from '../components/common/SEO';
 
 const Dashboard: React.FC = () => {

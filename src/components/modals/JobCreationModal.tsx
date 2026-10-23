@@ -10,7 +10,7 @@ import {
   Building2, 
   Sparkles
 } from 'lucide-react';
-import { JobRequirement } from '../types';
+import { JobRequirement } from '../../types';
 
 interface JobCreationModalProps {
   isOpen: boolean;

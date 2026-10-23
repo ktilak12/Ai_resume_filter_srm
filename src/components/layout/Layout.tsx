@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { UserProfileModal } from '../UserProfileModal';
+import { UserProfileModal } from '../modals/UserProfileModal';
 
 const Layout: React.FC = () => {
   const { currentUser } = useAuth();

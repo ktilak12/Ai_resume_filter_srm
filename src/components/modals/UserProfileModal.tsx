@@ -12,8 +12,8 @@ import {
   AlertCircle,
   Lock
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { UserRole } from '../types';
+import { useAuth } from '../../context/AuthContext';
+import { UserRole } from '../../types';
 
 interface UserProfileModalProps {
   isOpen: boolean;

@@ -16,7 +16,7 @@ import {
 import { JobRequirement, UserRole } from '../types';
 import { INITIAL_JOBS } from '../data/srmDataset';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { JobCreationModal } from '../views/JobCreationModal';
+import { JobCreationModal } from '../components/modals/JobCreationModal';
 import { SEO } from '../components/common/SEO';
 
 export const JobListing: React.FC = () => {

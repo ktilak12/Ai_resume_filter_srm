@@ -13,7 +13,7 @@ import {
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationCenter } from '../NotificationCenter';
-import { UserProfileModal } from '../UserProfileModal';
+import { UserProfileModal } from '../modals/UserProfileModal';
 
 interface NavbarProps {
   userRole: UserRole;
