@@ -34,6 +34,7 @@ import { screenCandidate, evaluateAtsFormatting, AtsFormattingCheck } from '../.
 import { 
   ROLE_PRESETS, 
   RolePreset, 
+  TemplateTier,
   generateRoleSummary, 
   enhanceBulletPoint, 
   generateFormattedResumeText, 
@@ -70,6 +71,7 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
   const [viewMode, setViewMode] = useState<'split' | 'editor' | 'preview'>('split');
   const [activeEditorTab, setActiveEditorTab] = useState<'basics' | 'summary' | 'skills' | 'projects' | 'experience' | 'certifications'>('skills');
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [selectedTier, setSelectedTier] = useState<TemplateTier>('baseline');
 
   // Candidate Profile State (with migration away from old bloated profiles)
   const [candidate, setCandidate] = useState<CandidateProfile>(() => {
@@ -165,12 +167,18 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
   };
 
   // Load a specific role template
-  const handleSelectRolePreset = (presetId: string) => {
+  const handleSelectRolePreset = (presetId: string, tier: TemplateTier = selectedTier) => {
     setActivePresetId(presetId);
-    const presetProfile = getProfileFromPreset(presetId, currentUser);
+    const presetProfile = getProfileFromPreset(presetId, currentUser, tier);
     setCandidate(presetProfile);
     const presetSummary = generateRoleSummary(selectedJob?.title || presetProfile.skills.slice(0, 3).join(', '), presetProfile, selectedJob);
     setSummary(presetSummary);
+  };
+
+  const handleSelectTier = (tier: TemplateTier) => {
+    setSelectedTier(tier);
+    const targetPresetId = activePresetId || ROLE_PRESETS[0].id;
+    handleSelectRolePreset(targetPresetId, tier);
   };
 
   // Reset to default authentic SRM fresher profile
@@ -458,16 +466,55 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
         </div>
 
         {/* Role Template Presets Selection Bar */}
-        <div className="pt-3 border-t border-zinc-850 space-y-2">
-          <div className="flex items-center justify-between">
+        <div className="pt-3 border-t border-zinc-850 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
               <Layers className="w-3 h-3 text-zinc-400" />
               <span>Role-Specific Templates & Benchmarks (Select to evaluate authentic role ATS scores)</span>
             </span>
-            <span className="text-[10px] text-zinc-500 font-mono">
-              Live ATS scoring updates automatically per template
-            </span>
+
+            {/* Authentic Template Tier Selector */}
+            <div className="flex items-center gap-1.5 p-1 bg-black/80 border border-zinc-800 rounded-xl">
+              <span className="text-[10px] text-zinc-500 font-mono px-1.5">Tier:</span>
+              <button
+                type="button"
+                onClick={() => handleSelectTier('baseline')}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all ${
+                  selectedTier === 'baseline'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+                title="Fresher Starter Profile (~45-55% ATS score with skill gaps to build)"
+              >
+                Fresher Baseline (~48%)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectTier('intermediate')}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all ${
+                  selectedTier === 'intermediate'
+                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+                title="Intermediate Candidate (~70-76% ATS score meeting core requirements)"
+              >
+                Intermediate (~73%)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectTier('optimized')}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all ${
+                  selectedTier === 'optimized'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+                title="Placement-Ready Benchmark (~88-93% ATS score with verified internship)"
+              >
+                Placement Target (~91%)
+              </button>
+            </div>
           </div>
+
           <div className="flex flex-wrap items-center gap-2">
             {ROLE_PRESETS.map((preset) => {
               const isSelected = activePresetId === preset.id;
@@ -495,10 +542,10 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({
                   ? 'bg-zinc-800 text-zinc-200 border-zinc-700'
                   : 'bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200'
               }`}
-              title="Reset to un-optimized fresher base profile"
+              title="Reset to your custom editable profile"
             >
               <RefreshCw className="w-3 h-3" />
-              <span>Fresher Base Profile</span>
+              <span>Reset Profile</span>
             </button>
           </div>
         </div>
