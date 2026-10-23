@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { AnalyticsView } from '../views/AnalyticsView';
+import { AnalyticsView } from '../components/analytics/AnalyticsView';
 import { CandidateProfile, JobRequirement, ScreeningResult } from '../types';
 import { INITIAL_CANDIDATES, INITIAL_JOBS } from '../data/srmDataset';
 import { screenCandidate, rankScreeningResults } from '../services/aiScreeningEngine';

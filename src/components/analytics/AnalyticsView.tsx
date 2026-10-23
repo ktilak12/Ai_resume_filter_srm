@@ -13,8 +13,8 @@ import {
   GraduationCap,
   Code
 } from 'lucide-react';
-import { SRM_DEPARTMENT_STATS, SRM_SKILL_DEMAND_STATS } from '../data/srmDataset';
-import { JobRequirement, ScreeningResult } from '../types';
+import { SRM_DEPARTMENT_STATS, SRM_SKILL_DEMAND_STATS } from '../../data/srmDataset';
+import { JobRequirement, ScreeningResult } from '../../types';
 
 interface AnalyticsViewProps {
   jobs: JobRequirement[];
