@@ -86,6 +86,49 @@ export async function parseResumeFile(file: File): Promise<CandidateProfile> {
   return extractCandidateEntities(clampedText, safeFileName);
 }
 
+const MAX_DECOMPRESSED_BYTES = 5 * 1024 * 1024; // 5 MB institutional limit against decompression bombs
+
+/**
+ * Reads a decompressed stream with a strict byte threshold to defuse Zip/Deflate bombs
+ */
+async function readStreamWithLimit(
+  stream: ReadableStream<Uint8Array>,
+  maxBytes: number = MAX_DECOMPRESSED_BYTES
+): Promise<Uint8Array> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        totalBytes += value.length;
+        if (totalBytes > maxBytes) {
+          const allowed = maxBytes - (totalBytes - value.length);
+          if (allowed > 0) {
+            chunks.push(value.subarray(0, allowed));
+          }
+          await reader.cancel('Decompressed size exceeded institutional limit');
+          break;
+        }
+        chunks.push(value);
+      }
+    }
+  } catch {
+    // If canceled or aborted, safely continue with gathered chunks
+  }
+
+  const combined = new Uint8Array(Math.min(totalBytes, maxBytes));
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return combined;
+}
+
 /**
  * Decompresses raw deflate bytes (RFC 1951) using browser native DecompressionStream
  */
@@ -93,8 +136,8 @@ async function decompressDeflateRaw(bytes: Uint8Array): Promise<string> {
   if (typeof DecompressionStream === 'undefined' || bytes.length === 0) return '';
   try {
     const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-    const buffer = await new Response(stream).arrayBuffer();
-    return new TextDecoder('utf-8').decode(buffer);
+    const safeBuffer = await readStreamWithLimit(stream);
+    return new TextDecoder('utf-8').decode(safeBuffer);
   } catch {
     return '';
   }
@@ -107,8 +150,8 @@ async function decompressZlib(bytes: Uint8Array): Promise<string> {
   if (typeof DecompressionStream === 'undefined' || bytes.length === 0) return '';
   try {
     const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
-    const buffer = await new Response(stream).arrayBuffer();
-    return new TextDecoder('latin1').decode(buffer);
+    const safeBuffer = await readStreamWithLimit(stream);
+    return new TextDecoder('latin1').decode(safeBuffer);
   } catch {
     // If standard zlib fails (e.g. non-standard headers or trailing footer), try raw deflate on the inner payload
     try {
@@ -116,8 +159,8 @@ async function decompressZlib(bytes: Uint8Array): Promise<string> {
       const end = bytes.length > 6 ? bytes.length - 4 : bytes.length;
       const rawSlice = bytes.subarray(skip, end > skip ? end : bytes.length);
       const stream = new Blob([rawSlice]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-      const buffer = await new Response(stream).arrayBuffer();
-      return new TextDecoder('latin1').decode(buffer);
+      const safeBuffer = await readStreamWithLimit(stream);
+      return new TextDecoder('latin1').decode(safeBuffer);
     } catch {
       return '';
     }
@@ -130,9 +173,13 @@ async function decompressZlib(bytes: Uint8Array): Promise<string> {
  */
 async function extractTextFromDocx(bytes: Uint8Array): Promise<string> {
   try {
-    // A .docx file is a ZIP archive. Search for PK\x03\x04 headers
+    // A .docx file is a ZIP archive. Search for PK\x03\x04 headers with strict iteration limits
     let offset = 0;
-    while (offset + 30 < bytes.length) {
+    let iterations = 0;
+    const MAX_ZIP_ENTRIES = 500;
+
+    while (offset + 30 < bytes.length && iterations < MAX_ZIP_ENTRIES) {
+      iterations++;
       if (
         bytes[offset] === 0x50 &&
         bytes[offset + 1] === 0x4b &&
@@ -149,22 +196,22 @@ async function extractTextFromDocx(bytes: Uint8Array): Promise<string> {
         const extraFieldLen = bytes[offset + 28] | (bytes[offset + 29] << 8);
 
         const fileNameStart = offset + 30;
+        if (fileNameStart + fileNameLen > bytes.length) break;
         const fileName = new TextDecoder('utf-8').decode(
           bytes.subarray(fileNameStart, fileNameStart + fileNameLen)
         );
         const dataStart = fileNameStart + fileNameLen + extraFieldLen;
+        if (dataStart > bytes.length) break;
 
         if (fileName === 'word/document.xml' || fileName.endsWith('/document.xml')) {
           let xmlText = '';
           if (compression === 0) {
-            xmlText = new TextDecoder('utf-8').decode(
-              bytes.subarray(dataStart, dataStart + (compressedSize || bytes.length - dataStart))
-            );
+            const dataEnd = Math.min(bytes.length, dataStart + (compressedSize > 0 ? compressedSize : bytes.length - dataStart));
+            xmlText = new TextDecoder('utf-8').decode(bytes.subarray(dataStart, dataEnd));
           } else if (compression === 8) {
             // Find end of compressed stream if compressedSize is 0 in local header
             let end = dataStart + compressedSize;
-            if (compressedSize <= 0) {
-              // Locate next PK header
+            if (compressedSize <= 0 || end > bytes.length) {
               end = bytes.length;
               for (let i = dataStart + 4; i < bytes.length - 4; i++) {
                 if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b) {
@@ -192,7 +239,8 @@ async function extractTextFromDocx(bytes: Uint8Array): Promise<string> {
           }
         }
 
-        offset = dataStart + (compressedSize > 0 ? compressedSize : 1);
+        const advance = dataStart + (compressedSize > 0 ? compressedSize : 1);
+        offset = advance > offset ? advance : offset + 1;
       } else {
         offset++;
       }
