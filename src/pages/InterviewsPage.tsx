@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { InterviewManagementView } from '../views/InterviewManagementView';
 import { Interview, JobRequirement, CandidateProfile } from '../types';
 import { INITIAL_INTERVIEWS, INITIAL_JOBS } from '../data/srmDataset';
+import { SEO } from '../components/common/SEO';
 
 export const InterviewsPage: React.FC = () => {
   const location = useLocation();
@@ -54,13 +55,21 @@ export const InterviewsPage: React.FC = () => {
   };
 
   return (
-    <InterviewManagementView
-      interviews={interviews}
-      jobs={jobs}
-      onUpdateInterviewStatus={handleUpdateStatus}
-      onAddInterview={handleAddInterview}
-      initialCandidate={navState?.candidate}
-      initialJobId={navState?.jobId}
-    />
+    <>
+      <SEO
+        title="Campus Interview Coordination & Scheduling | SRM ResumeAI"
+        description="Schedule corporate interview rounds, sync Google/Outlook calendar passes, and log candidate evaluations."
+        canonical="/interviews"
+        noIndex={true}
+      />
+      <InterviewManagementView
+        interviews={interviews}
+        jobs={jobs}
+        onUpdateInterviewStatus={handleUpdateStatus}
+        onAddInterview={handleAddInterview}
+        initialCandidate={navState?.candidate}
+        initialJobId={navState?.jobId}
+      />
+    </>
   );
 };

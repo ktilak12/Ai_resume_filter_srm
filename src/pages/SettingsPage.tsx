@@ -4,6 +4,7 @@ import { AISettings } from '../types';
 import { DEFAULT_AI_SETTINGS } from '../services/aiScreeningEngine';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, UserCheck } from 'lucide-react';
+import { SEO } from '../components/common/SEO';
 
 export const SettingsPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -19,6 +20,12 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEO
+        title="Institutional Settings & AI Governance | SRM ResumeAI"
+        description="Configure SRM placement screening weights, tier thresholds, and algorithmic fairness parameters."
+        canonical="/settings"
+        noIndex={true}
+      />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight font-display">
