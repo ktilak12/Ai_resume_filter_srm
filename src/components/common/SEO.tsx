@@ -8,6 +8,7 @@ export interface SEOProps {
   ogType?: 'website' | 'article';
   ogImage?: string;
   noindex?: boolean;
+  noIndex?: boolean;
   structuredData?: object | object[];
 }
 
@@ -25,9 +26,11 @@ export const SEO: React.FC<SEOProps> = ({
   canonical,
   ogType = 'website',
   ogImage = DEFAULT_IMAGE,
-  noindex = false,
+  noindex,
+  noIndex,
   structuredData
 }) => {
+  const isNoIndex = Boolean(noindex ?? noIndex ?? false);
   useEffect(() => {
     // 1. Set document title
     const formattedTitle = title.includes('SRM ResumeAI')
@@ -59,7 +62,7 @@ export const SEO: React.FC<SEOProps> = ({
     setMetaTag(
       'meta[name="robots"]',
       'content',
-      noindex
+      isNoIndex
         ? 'noindex, nofollow'
         : 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
     );
@@ -105,7 +108,7 @@ export const SEO: React.FC<SEOProps> = ({
         document.head.removeChild(jsonLdScript);
       }
     };
-  }, [title, description, keywords, canonical, ogType, ogImage, noindex, structuredData]);
+  }, [title, description, keywords, canonical, ogType, ogImage, isNoIndex, structuredData]);
 
   return null;
 };

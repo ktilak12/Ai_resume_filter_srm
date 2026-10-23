@@ -17,6 +17,7 @@ import { JobRequirement, UserRole } from '../types';
 import { INITIAL_JOBS } from '../data/srmDataset';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { JobCreationModal } from '../views/JobCreationModal';
+import { SEO } from '../components/common/SEO';
 
 export const JobListing: React.FC = () => {
   const { userRole } = useOutletContext<{ userRole: UserRole }>();
@@ -133,8 +134,53 @@ export const JobListing: React.FC = () => {
     });
   }, [jobs, searchTerm, selectedDept, selectedStatus, selectedType, minCgpaFilter]);
 
+  // Google Jobs JobPosting structured data for active placement drives
+  const jobPostingSchema = useMemo(() => {
+    const activeDrives = jobs.filter(j => j.status === 'Active').slice(0, 6);
+    return {
+      "@context": "https://schema.org",
+      "@graph": activeDrives.map(job => ({
+        "@type": "JobPosting",
+        "title": job.title,
+        "description": job.job_description || `${job.title} campus placement drive at SRM Institute of Science and Technology for ${job.company}. Minimum CGPA: ${job.academic_eligibility?.min_cgpa || 7.0}. Allowed departments: ${(job.academic_eligibility?.allowed_departments || []).join(', ')}.`,
+        "identifier": {
+          "@type": "PropertyValue",
+          "name": job.company,
+          "value": job.id
+        },
+        "datePosted": job.created_at || "2026-08-01",
+        "validThrough": job.application_deadline ? `${job.application_deadline}T23:59:59+05:30` : "2026-12-31T23:59:59+05:30",
+        "employmentType": job.job_type === 'Internship' ? "INTERN" : "FULL_TIME",
+        "hiringOrganization": {
+          "@type": "Organization",
+          "name": job.company,
+          "sameAs": "https://www.srmist.edu.in"
+        },
+        "jobLocation": {
+          "@type": "Place",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "SRM Nagar, Kattankulathur",
+            "addressLocality": "Chengalpattu",
+            "addressRegion": "Tamil Nadu",
+            "postalCode": "603203",
+            "addressCountry": "IN"
+          }
+        },
+        "skills": (job.required_skills || []).join(', ')
+      }))
+    };
+  }, [jobs]);
+
   return (
     <div className="space-y-6 pb-12">
+      <SEO
+        title="Campus Placement Drives & Engineering Recruitment 2026 | SRM ResumeAI"
+        description="Browse active campus recruitment drives, cutoff scores, eligibility matrices, and skill criteria at SRM Institute of Science and Technology."
+        canonical="/jobs"
+        keywords="SRM placement drives, campus recruitment 2026, software engineer campus jobs, SRM Kattankulathur placements, campus interview drives"
+        structuredData={jobPostingSchema}
+      />
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
