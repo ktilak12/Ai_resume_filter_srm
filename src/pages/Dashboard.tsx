@@ -17,6 +17,7 @@ import { UserRole, CandidateProfile, JobRequirement, Interview } from '../types'
 import { useAuth } from '../context/AuthContext';
 import { INITIAL_JOBS, INITIAL_CANDIDATES, INITIAL_INTERVIEWS } from '../data/srmDataset';
 import { JobCreationModal } from '../views/JobCreationModal';
+import { SEO } from '../components/common/SEO';
 
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
@@ -101,6 +102,12 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <SEO
+        title="Institutional Placement Dashboard | SRM ResumeAI"
+        description="Comprehensive placement metrics, applicant volume, active recruitment drives, and shortlisting analytics for SRM Institute of Science and Technology."
+        canonical="/dashboard"
+        noIndex={true}
+      />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Welcome, {displayName}</h1>

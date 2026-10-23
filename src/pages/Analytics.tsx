@@ -3,6 +3,7 @@ import { AnalyticsView } from '../views/AnalyticsView';
 import { CandidateProfile, JobRequirement, ScreeningResult } from '../types';
 import { INITIAL_CANDIDATES, INITIAL_JOBS } from '../data/srmDataset';
 import { screenCandidate, rankScreeningResults } from '../services/aiScreeningEngine';
+import { SEO } from '../components/common/SEO';
 
 export const Analytics: React.FC = () => {
   const [candidates, setCandidates] = useState<CandidateProfile[]>(() => {
@@ -41,9 +42,17 @@ export const Analytics: React.FC = () => {
   }, [candidates, jobs]);
 
   return (
-    <AnalyticsView 
-      jobs={jobs} 
-      screeningResults={screeningResults} 
-    />
+    <>
+      <SEO
+        title="Campus Placement Intelligence & Department Analytics | SRM ResumeAI"
+        description="Aggregated placement statistics, department-wise selection rates, and hiring pipeline analytics for SRM Institute of Science and Technology."
+        canonical="/analytics"
+        noIndex={true}
+      />
+      <AnalyticsView 
+        jobs={jobs} 
+        screeningResults={screeningResults} 
+      />
+    </>
   );
 };
