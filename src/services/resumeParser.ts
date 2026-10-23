@@ -539,28 +539,42 @@ async function extractTextFromDoc(file: File): Promise<string> {
 export function extractCandidateEntities(rawText: string, fileName?: string): CandidateProfile {
   const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
   
-  // 1. Candidate Name extraction
+  // 1. Candidate Name extraction (Ignore generic headings, university titles, dates, or emails)
+  const IGNORED_NAME_PATTERNS = [
+    /curriculum\s+vitae/i, /resume/i, /bio-?data/i, /srm\s+institute/i,
+    /department\s+of/i, /university/i, /page\s+\d+/i, /profile/i,
+    /confidential/i, /contact\s+details/i, /personal\s+details/i,
+    /placement/i, /applicant/i, /engineering/i
+  ];
   let name = '';
-  if (lines.length > 0) {
-    const candidateLine = lines[0].replace(/resume|curriculum vitae|cv/gi, '').trim();
-    if (candidateLine.length > 2 && candidateLine.length < 40 && !candidateLine.includes('@')) {
-      name = candidateLine;
+  for (const line of lines.slice(0, 10)) {
+    const cleanLine = line.replace(/[^a-zA-Z\s.'-]/g, '').trim();
+    if (
+      cleanLine.length >= 3 &&
+      cleanLine.length <= 40 &&
+      !cleanLine.includes('@') &&
+      !IGNORED_NAME_PATTERNS.some(p => p.test(cleanLine)) &&
+      /^[A-Za-z]/.test(cleanLine)
+    ) {
+      name = cleanLine;
+      break;
     }
   }
   if (!name) {
     if (fileName) {
-      name = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-    } else {
+      name = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').replace(/[^a-zA-Z\s.'-]/g, '').trim();
+    }
+    if (!name || name.length < 2) {
       name = 'Candidate Profile';
     }
   }
 
-  // 2. Contact details
+  // 2. Contact details: phone numbers must follow 10-digit standard starting with 6, 7, 8, or 9
   const emailMatch = rawText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-  const email = emailMatch ? emailMatch[0] : `${name.toLowerCase().replace(/\s+/g, '.')}@srmist.edu.in`;
+  const email = emailMatch ? emailMatch[0] : `${name.toLowerCase().replace(/[^a-z0-9]/g, '.')}@srmist.edu.in`;
 
-  const phoneMatch = rawText.match(/(?:\+91[\s-]?)?[6789]\d{9}|\b\d{5}[-\s]?\d{5}\b/);
-  const phone = phoneMatch ? phoneMatch[0] : '+91 98401 23456';
+  const phoneMatch = rawText.match(/(?:\+91[\s-]?)?[6789]\d{4}[\s-]?\d{5}\b/);
+  const phone = phoneMatch ? phoneMatch[0].trim() : '+91 98401 23456';
 
   // 3. Register Number (SRM Format: RA231100301xxxx)
   const regMatch = rawText.match(/RA\d{13}/i) || rawText.match(/RA\d{10,14}/i);
@@ -636,12 +650,13 @@ export function extractCandidateEntities(rawText: string, fileName?: string): Ca
     const regex = new RegExp(pattern, 'i');
     if (regex.test(lowerRaw)) {
       // Disambiguate single-token pitfalls like C vs C++ or Java vs JavaScript
-      if (skill.toLowerCase() === 'c' && (lowerRaw.includes('c++') || lowerRaw.includes('c#'))) {
-        // Only add C if standalone C is explicitly present
-        if (!/\bc\b/i.test(lowerRaw)) return;
+      if (skill.toLowerCase() === 'c') {
+        const hasStandaloneC = /(?:^|[\s,;./()\-<])c(?![+#a-zA-Z0-9])(?:$|[\s,;./()\-<])/i.test(lowerRaw);
+        if (!hasStandaloneC) return;
       }
-      if (skill.toLowerCase() === 'java' && !/\bjava\b/i.test(lowerRaw)) {
-        return;
+      if (skill.toLowerCase() === 'java') {
+        const hasStandaloneJava = /(?:^|[\s,;./()\-<])java(?![a-zA-Z0-9])/i.test(lowerRaw);
+        if (!hasStandaloneJava) return;
       }
       skills.push(skill);
     }
@@ -684,19 +699,21 @@ export function extractCandidateEntities(rawText: string, fileName?: string): Ca
   // Detect project titles or headers
   const projectLines = projectContent.split('\n')
     .map(l => l.trim())
-    .filter(l => /^(?:\d+\.|\*|-|•)?\s*[A-Z][A-Za-z0-9\s:_-]{3,40}(?:Engine|System|App|Platform|Portal|Predictor|Dashboard|Model|Manager|Service|API)/i.test(l));
+    .filter(l => l.length > 5 && /^(?:\d+\.|\*|-|•)?\s*[A-Z][A-Za-z0-9\s:_-]{3,50}/.test(l) && !/^(projects|academic projects|technical projects)/i.test(l));
 
   if (projectLines.length > 0) {
     projectLines.slice(0, 3).forEach((line, idx) => {
       const cleanTitle = line.replace(/^[\d.*•\-\s]+/, '').trim();
+      const projIdx = projectContent.indexOf(line);
+      const projectSlice = projIdx >= 0 ? projectContent.slice(projIdx, projIdx + 300) : line;
       const projSkills = KNOWN_SKILLS.filter(s => {
         const reg = new RegExp(`\\b${s.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-        return reg.test(projectContent);
-      }).slice(idx * 2, (idx + 1) * 2 + 1);
+        return reg.test(projectSlice);
+      }).slice(0, 4);
 
       projects.push({
         name: cleanTitle,
-        technologies: projSkills,
+        technologies: projSkills.length > 0 ? projSkills : skills.slice(idx * 2, idx * 2 + 2),
         description: `Implemented ${cleanTitle} focusing on robust architecture and functional implementation.`
       });
     });
@@ -719,6 +736,7 @@ export function extractCandidateEntities(rawText: string, fileName?: string): Ca
   if (/leetcode/i.test(rawText)) certifications.push('LeetCode Problem Solving');
 
   const id = `cand_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const safeHandle = name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30) || 'student';
 
   return {
     id,
@@ -727,8 +745,8 @@ export function extractCandidateEntities(rawText: string, fileName?: string): Ca
     email,
     phone,
     location: 'Chennai, Tamil Nadu',
-    linkedin: `linkedin.com/in/${name.toLowerCase().replace(/\s+/g, '')}`,
-    github: `github.com/${name.toLowerCase().replace(/\s+/g, '')}`,
+    linkedin: `linkedin.com/in/${safeHandle}`,
+    github: `github.com/${safeHandle}`,
     education,
     skills,
     experience,
