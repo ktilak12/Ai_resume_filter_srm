@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { INITIAL_JOBS } from '../data/srmDataset';
+import { SEO } from '../components/common/SEO';
 
 export const LandingPage: React.FC = () => {
   const { isAuthenticated, currentUser } = useAuth();
@@ -40,8 +41,28 @@ export const LandingPage: React.FC = () => {
     }
   ];
 
+  const faqStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    'mainEntity': faqs.map(f => ({
+      '@type': 'Question',
+      'name': f.question,
+      'acceptedAnswer': {
+        '@type': 'Answer',
+        'text': f.answer
+      }
+    }))
+  };
+
   return (
     <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-white selection:text-black flex flex-col justify-between">
+      <SEO
+        title="SRM ResumeAI | AI ATS Resume Screening & Campus Placements | SRMIST"
+        description="Official SRMIST Directorate of Career Centre placement portal. AI-powered ATS resume screening, live resume builder, eligibility verification, and campus recruitment management."
+        keywords="SRM ResumeAI, SRMIST Placements, AI Resume Screening, ATS Checker, Resume Builder, Campus Placement 2026, Directorate of Career Centre, SRM Institute of Science and Technology"
+        canonical="/"
+        structuredData={faqStructuredData}
+      />
       
       {/* Navigation */}
       <header className="sticky top-0 z-40 bg-black/90 backdrop-blur-md border-b border-zinc-850 px-6 lg:px-12 py-4">

@@ -17,6 +17,7 @@ import { loadGoogleScript } from '../services/googleAuth';
 import { useAuth } from '../context/AuthContext';
 import { GOOGLE_CLIENT_ID } from '../config/authConfig';
 import { UserRole } from '../types';
+import { SEO } from '../components/common/SEO';
 
 interface RoleOption {
   role: UserRole;
@@ -185,6 +186,11 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 flex flex-col justify-between p-4 sm:p-6 font-sans relative">
+      <SEO
+        title="Sign In to Placement Portal | SRM ResumeAI"
+        description="Official SRMIST student, faculty, and placement coordinator sign-in portal. Access campus recruitment drives, ATS screening tools, and placement dashboards."
+        canonical="/login"
+      />
       
       {/* Top back navigation */}
       <div className="max-w-xl w-full mx-auto relative z-10 mb-4">

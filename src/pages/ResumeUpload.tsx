@@ -25,6 +25,7 @@ import { CandidateProfile, ScreeningResult, JobRequirement } from '../types';
 import { parseResumeFile, extractCandidateEntities } from '../services/resumeParser';
 import { screenCandidate, evaluateAtsFormatting, AtsFormattingCheck } from '../services/aiScreeningEngine';
 import { Link } from 'react-router-dom';
+import { SEO } from '../components/common/SEO';
 
 const DEFAULT_BENCHMARK_JOB: JobRequirement = {
   id: 'job-general-benchmark',
@@ -205,6 +206,12 @@ export const ResumeUpload: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
+      <SEO
+        title="Upload & Screen Resume | AI ATS Compatibility Checker | SRM ResumeAI"
+        description="Upload your PDF, DOCX, or text resume to calculate authentic ATS scores, keyword saturation, and drive eligibility against top campus recruitment requirements."
+        keywords="ATS Resume Checker, Resume Screening, SRM Placement Drive, ATS Score Calculator, PDF Resume Parser, Resume Matcher"
+        canonical="/upload"
+      />
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

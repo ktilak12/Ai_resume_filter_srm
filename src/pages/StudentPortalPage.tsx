@@ -26,6 +26,7 @@ import { screenCandidate } from '../services/aiScreeningEngine';
 import { CandidateProfile, ScreeningResult, JobRequirement, Interview } from '../types';
 import { downloadIcsFile } from '../services/calendarService';
 import { ResumeBuilder } from '../components/student/ResumeBuilder';
+import { SEO } from '../components/common/SEO';
 
 export const StudentPortalPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -101,6 +102,12 @@ export const StudentPortalPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <SEO
+        title="Student Placement Hub & Application Status | SRM ResumeAI"
+        description="Access SRM student placement portal to check campus drive eligibility, test your resume against ATS criteria, and manage interview schedules."
+        canonical="/student-portal"
+        keywords="SRM student portal, campus recruitment eligibility, student placement status, SRM resume check, interview schedule"
+      />
       {/* Student Welcome Banner */}
       <div className="rounded-2xl bg-gradient-to-r from-zinc-900 via-zinc-950 to-black border border-zinc-800 p-6 lg:p-8 relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">

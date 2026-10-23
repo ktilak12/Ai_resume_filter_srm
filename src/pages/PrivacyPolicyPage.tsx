@@ -18,6 +18,7 @@ import {
   Clock,
   HelpCircle
 } from 'lucide-react';
+import { SEO } from '../components/common/SEO';
 
 export const PrivacyPolicyPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('overview');
@@ -36,6 +37,12 @@ export const PrivacyPolicyPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-white selection:text-black">
+      <SEO
+        title="DPDP Privacy Policy & Student Data Protection | SRM ResumeAI"
+        description="Official institutional privacy policy and candidate data governance framework for SRMIST placement drives under the Digital Personal Data Protection (DPDP) Act."
+        keywords="SRMIST Privacy Policy, DPDP Act 2023, Candidate Data Protection, Student Privacy, Placement Data Governance, Data Principal Rights"
+        canonical="/privacy"
+      />
       {/* Header bar */}
       <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-zinc-850 px-6 lg:px-12 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
