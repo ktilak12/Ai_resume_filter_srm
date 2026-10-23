@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { NotificationCenter } from '../NotificationCenter';
+import { NotificationCenter } from './NotificationCenter';
 import { UserProfileModal } from '../modals/UserProfileModal';
 
 interface NavbarProps {
