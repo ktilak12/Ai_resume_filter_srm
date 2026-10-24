@@ -35,6 +35,16 @@ import { useAuth } from '../../context/AuthContext';
 import { checkPermission } from '../../services/rbac';
 import { downloadIcsFile, generateMeetingLink } from '../../services/calendarService';
 
+function isSafeHttpUrl(url: string | undefined | null): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 interface InterviewManagementViewProps {
   interviews: Interview[];
   jobs: JobRequirement[];
@@ -55,7 +65,7 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
   initialJobId
 }) => {
   const { currentUser } = useAuth();
-  const activeRole = currentUser?.role || 'Placement Officer';
+  const activeRole = currentUser?.role || 'Faculty Coordinator';
 
   const canSchedule = checkPermission(activeRole, 'SCHEDULE_INTERVIEW');
   const canUpdateStatus = checkPermission(activeRole, 'UPDATE_INTERVIEW_STATUS');
@@ -361,11 +371,11 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
                       <MapPin className="w-3 h-3 text-zinc-400 shrink-0" />
                       <span className="truncate max-w-[200px]" title={item.venue}>{item.venue}</span>
                     </div>
-                    {item.meeting_link && (
+                    {isSafeHttpUrl(item.meeting_link) && (
                       <a
                         href={item.meeting_link}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[10px] text-sky-400 hover:text-sky-300 mt-1 font-medium underline underline-offset-2"
                       >
                         <Video className="w-3 h-3 text-sky-400" />
