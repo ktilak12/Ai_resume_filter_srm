@@ -19,7 +19,7 @@ import { INITIAL_JOBS, INITIAL_CANDIDATES, INITIAL_INTERVIEWS } from '../data/sr
 import { JobCreationModal } from '../components/modals/JobCreationModal';
 import { SEO } from '../components/common/SEO';
 
-const Dashboard: React.FC = () => {
+export const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const context = useOutletContext<{ userRole?: UserRole }>() || {};
