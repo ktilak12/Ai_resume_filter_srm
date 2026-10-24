@@ -243,7 +243,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ jobs, screeningRes
                 <div>• Confirmed Placement Offers: <strong className="text-white">4 Offers</strong></div>
               </div>
               <p>
-                <strong>AI System Integrity Declaration:</strong> All screening scores were generated as decision-support metrics utilizing rule-based academic eligibility verification combined with explainable NLP semantic vector matching. Final hiring shortlists were authorized exclusively by appointed SRM faculty coordinators and placement officers.
+                <strong>AI System Integrity Declaration:</strong> All screening scores were generated as decision-support metrics utilizing rule-based academic eligibility verification combined with explainable NLP semantic vector matching. Final hiring shortlists were authorized exclusively by appointed SRM faculty coordinators.
               </p>
             </div>
 
