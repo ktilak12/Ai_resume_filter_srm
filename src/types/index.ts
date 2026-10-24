@@ -1,4 +1,4 @@
-export type UserRole = 'Placement Officer' | 'Faculty Coordinator' | 'Corporate Recruiter' | 'Super Admin' | 'Student Coordinator';
+export type UserRole = 'Faculty Coordinator' | 'Super Admin' | 'Student Coordinator';
 
 export interface AuthUser {
   id: string;
