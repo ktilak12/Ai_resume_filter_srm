@@ -33,7 +33,7 @@ interface SettingsViewProps {
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
   onSaveSettings,
-  userRole = 'Placement Officer'
+  userRole = 'Faculty Coordinator'
 }) => {
   const canModify = checkPermission(userRole, 'MODIFY_AI_SETTINGS');
   const roleInfo = ROLE_DETAILS[userRole];
@@ -103,7 +103,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               Governance View-Only Mode ({userRole})
             </span>
             <p className="text-zinc-400 text-xs mt-0.5 leading-relaxed">
-              Institutional AI scoring formula weights and tier classifications can only be recalibrated by <strong>Placement Officers</strong> or <strong>Super Administrators</strong>.
+              Institutional AI scoring formula weights and tier classifications can only be recalibrated by <strong>Faculty Coordinators</strong> or <strong>Super Administrators</strong>.
             </p>
           </div>
         </div>
