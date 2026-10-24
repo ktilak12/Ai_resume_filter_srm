@@ -24,7 +24,8 @@ import {
   Lock,
   Phone,
   Mail,
-  Loader2
+  Loader2,
+  Zap
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -317,6 +318,35 @@ export const CandidateDetail: React.FC = () => {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {explainable.tailoring_recommendations && explainable.tailoring_recommendations.length > 0 && (
+                  <div className="pt-3 border-t border-zinc-850">
+                    <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center mb-2.5">
+                      <Zap className="mr-1.5 h-3.5 w-3.5 text-amber-400" /> Actionable Resume Tailoring &amp; Coaching
+                    </h3>
+                    <div className="space-y-2">
+                      {explainable.tailoring_recommendations.map((rec, idx) => (
+                        <div key={idx} className="p-3 rounded-lg bg-black border border-zinc-850 space-y-1 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-[10px] uppercase font-bold text-amber-400">
+                              {rec.category.replace('_', ' ')}
+                            </span>
+                            <span className="text-[10px] text-zinc-500 font-mono">
+                              {rec.impact_level} Priority
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-zinc-400 font-mono italic">
+                            "{rec.original_snippet}"
+                          </div>
+                          <p className="text-[11px] text-zinc-300">
+                            <span className="text-white font-semibold">Advice: </span>
+                            {rec.suggestion}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
