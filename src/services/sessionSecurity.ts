@@ -174,9 +174,9 @@ export function isRoleElevationAllowed(currentUser: AuthUser | null, targetRole:
   const isInstitutional = isSRMISTEmail(email);
   const details = parseSRMEmailDetails(email);
 
-  // 1. External Corporate Partners cannot assume institutional admin roles
+  // 1. External non-institutional emails cannot assume administrative roles
   if (!isInstitutional) {
-    return targetRole === 'Corporate Recruiter';
+    return false;
   }
 
   // 2. Verified Students can NEVER assume administrative placement roles
@@ -184,15 +184,17 @@ export function isRoleElevationAllowed(currentUser: AuthUser | null, targetRole:
     return targetRole === 'Student Coordinator';
   }
 
-  // 3. Super Admin role requires explicit administrative email authorization
+  // 3. Super Admin role requires explicit administrative email authorization with word/separator boundaries
   if (targetRole === 'Super Admin') {
-    return email.includes('admin') || 
-           email.includes('director') || 
-           email.includes('dean') || 
-           email.includes('vc@') || 
-           email.includes('placement.head');
+    const [localPart] = email.split('@');
+    if (!localPart) return false;
+    // Strict match on bounded administrative titles: admin, director, dean, vc, placement.head
+    // Matches: "admin", "placement.admin", "director.cdc", "dean-engg", "vc", "placement.head"
+    // Rejects substrings like: "badminton@srmist.edu.in", "sandean@srmist.edu.in"
+    const adminBoundaryRegex = /(?:^|[._-])(admin|director|dean|vc|placement\.head)(?:[._-]|$)/i;
+    return adminBoundaryRegex.test(localPart);
   }
 
-  // 4. Institutional staff can assume Placement Officer, Faculty Coordinator, or Student Coordinator
-  return ['Placement Officer', 'Faculty Coordinator', 'Student Coordinator'].includes(targetRole);
+  // 4. Institutional staff can assume Faculty Coordinator or Student Coordinator
+  return ['Faculty Coordinator', 'Student Coordinator'].includes(targetRole);
 }
