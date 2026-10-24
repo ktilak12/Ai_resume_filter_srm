@@ -137,7 +137,7 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, toggleSidebar }) => {
                   <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-850 text-[11px] text-zinc-400 space-y-1">
                     <span className="text-zinc-300 font-semibold block">Need to switch roles?</span>
                     <p className="text-[10px] text-zinc-500 leading-relaxed">
-                      Please log out and select your target role (e.g. Placement Officer, Corporate Recruiter, Student) on the login page.
+                      Please log out and select your target role (e.g. Faculty Coordinator, Student Coordinator) on the login page.
                     </p>
                   </div>
 
