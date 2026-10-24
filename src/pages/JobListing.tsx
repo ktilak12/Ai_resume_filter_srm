@@ -192,7 +192,7 @@ export const JobListing: React.FC = () => {
             Manage placement criteria, cutoffs, and departmental whitelists.
           </p>
         </div>
-        {(userRole === 'Placement Officer' || userRole === 'Super Admin') && (
+        {(userRole === 'Faculty Coordinator' || userRole === 'Super Admin') && (
           <button 
             onClick={handleOpenCreate}
             className="flex items-center space-x-2 bg-white text-black hover:bg-zinc-200 px-4 py-2 rounded-lg font-semibold transition-all text-xs"
