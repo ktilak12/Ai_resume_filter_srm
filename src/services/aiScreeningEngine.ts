@@ -244,7 +244,8 @@ export function evaluateEligibility(candidate: CandidateProfile, job: JobRequire
   const graduation_year_met = education.graduation_year === academic_eligibility.graduation_year || 
     academic_eligibility.graduation_year === 0;
 
-  const backlogs_met = education.active_backlogs <= academic_eligibility.max_active_backlogs;
+  const activeBacklogs = typeof education.active_backlogs === 'number' ? education.active_backlogs : 0;
+  const backlogs_met = activeBacklogs <= academic_eligibility.max_active_backlogs;
 
   const failure_reasons: string[] = [];
   if (!cgpa_met) {

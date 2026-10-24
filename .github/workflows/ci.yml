@@ -25,3 +25,6 @@ jobs:
 
       - name: TypeScript Type Check & Build
         run: npm run build
+
+      - name: Run Automated Test Suite (Vitest)
+        run: npm test
