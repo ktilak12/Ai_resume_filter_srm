@@ -6,6 +6,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.2-purple.svg)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com/)
+[![Vitest](https://img.shields.io/badge/Tested%20with-Vitest-green.svg)](https://vitest.dev/)
+[![CI](https://github.com/ktilak12/Ai_resume_filter_srm/actions/workflows/ci.yml/badge.svg)](https://github.com/ktilak12/Ai_resume_filter_srm/actions)
 
 ---
 
@@ -46,10 +48,10 @@ flowchart TD
 ### ✨ Features
 - **Placement Command Center Dashboard**: Real-time KPI metrics, dynamic SVG resume processing trends, conversion funnels, and active corporate recruitment drive tables.
 - **Job Requirement Creator**: Specify SRM degree/department eligibility, minimum CGPA, active backlog ceilings, and required (⭐) vs preferred skill taxonomies.
-- **Drag & Drop Resume Upload Pipeline**: Client-side parsing for `.pdf`, `.docx`, and `.txt` files with animated processing pipelines and a 1-click batch simulation loader.
+- **Drag & Drop & Batch ZIP Ingestion**: Client-side parsing for `.pdf`, `.docx`, `.txt`, and `.zip` archives with Zip-Slip path traversal and Zip-Bomb mitigation.
 - **AI Screening Hub & Ranking**: Ranked cards and tabular views with match score rings, department filters, and eligibility tags.
-- **Explainable AI Drawer ("Why Score%?")**: Positive factor breakdown, penalty/gap analysis, and a complete Skill Evidence Matrix.
-- **Shortlist & Interview Management**: Status progression tracking across Technical Round 1, Technical Round 2, HR, and Final Offer releases.
+- **Explainable AI Drawer & Bullet Tailoring**: Positive factor breakdown, penalty/gap analysis, Skill Evidence Matrix, and actionable bullet-level tailoring advice.
+- **Interview Rubric Scorecards & Virtual Meet Links**: Structured 4-dimension evaluation scorecards (DSA, Architecture, Problem Solving, Communication) with hiring verdict tracking and Google Meet generator embedded in `.ics` calendar invites.
 - **Institutional Analytics & Reports**: Department conversion analysis, skill demand vs student competency heatmaps, and printable placement reports.
 - **Customizable AI Weights**: Recruiter-configurable formula weights and threshold sliders.
 
@@ -58,8 +60,9 @@ flowchart TD
 ## 🛠️ Technology Stack
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS, Lucide Icons, Canvas Confetti
-- **Build Tool**: Vite 6
-- **Architecture**: Modular Component-Based Architecture, Client-side NLP & Entity Extraction Engine, Reactive State Management
+- **Build Tool**: Vite 6 (Route code-splitting & manual Rollup vendor chunks)
+- **Automated Testing**: Vitest test runner
+- **Security & Privacy**: Digital Personal Data Protection (DPDP) Act student PII masking, magic-byte anti-spoofing validation, CSP headers
 
 ---
 
@@ -69,17 +72,19 @@ flowchart TD
 - Node.js (v18+ recommended)
 - npm or yarn
 
-### Installation
+### Installation & Commands
 ```bash
-# 1. Clone repository
-git clone <YOUR_REPO_URL>
-cd "Ai resume inhouse srm"
-
-# 2. Install dependencies
+# 1. Install dependencies
 npm install
 
-# 3. Start local development server
+# 2. Start local development server
 npm run dev
+
+# 3. Run automated unit test suite
+npm test
+
+# 4. Create production build
+npm run build
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
