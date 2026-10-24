@@ -32,8 +32,8 @@ export const LandingPage: React.FC = () => {
       answer: 'Our engine computes transparent weighted scores across core technical skills, internship experience, and academic standing without black-box approximations.'
     },
     {
-      question: 'Can recruiters adjust scoring weights?',
-      answer: 'Yes. Placement officers and faculty coordinators can customize formula weights (Skills, Experience, CGPA, Projects) to align with specific drive criteria.'
+      question: 'Can coordinators adjust scoring weights?',
+      answer: 'Yes. Faculty coordinators can customize formula weights (Skills, Experience, CGPA, Projects) to align with specific drive criteria.'
     },
     {
       question: 'How is candidate demographic fairness ensured?',
