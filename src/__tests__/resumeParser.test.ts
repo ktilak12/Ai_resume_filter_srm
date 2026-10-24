@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateResumeFile, extractResumesFromZip } from '../services/resumeParser';
+import { validateResumeFile, extractResumesFromZip, sanitizeTextContent } from '../services/resumeParser';
 import JSZip from 'jszip';
 
 describe('Resume Parser Security & Extraction', () => {
@@ -41,5 +41,18 @@ describe('Resume Parser Security & Extraction', () => {
     expect(extracted.some(f => f.name === 'candidate2.txt')).toBe(true);
     expect(extracted.some(f => f.name === 'candidate3.docx')).toBe(true);
     expect(extracted.some(f => f.name.endsWith('.png'))).toBe(false);
+  });
+
+  it('strips malicious script and style tags while preventing ReDoS', () => {
+    const maliciousHtml = 'Hello <script>alert("pwned")</script> World <style>body{color:red;}</style> test';
+    expect(sanitizeTextContent(maliciousHtml)).toBe('Hello  World  test');
+
+    // ReDoS resistance test with nested unclosed brackets
+    const unclosedHostile = '<script<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<';
+    const start = Date.now();
+    const result = sanitizeTextContent(unclosedHostile);
+    const duration = Date.now() - start;
+    expect(duration).toBeLessThan(100); // Must execute linearly in <100ms
+    expect(result).toBe('');
   });
 });
