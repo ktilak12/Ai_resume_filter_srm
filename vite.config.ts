@@ -318,6 +318,18 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: true,
       strictPort: false
+    },
+    build: {
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-charts': ['chart.js', 'react-chartjs-2'],
+            'vendor-icons': ['lucide-react']
+          }
+        }
+      }
     }
   };
 });
