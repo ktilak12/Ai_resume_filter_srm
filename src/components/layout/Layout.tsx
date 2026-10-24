@@ -9,7 +9,7 @@ import { UserProfileModal } from '../modals/UserProfileModal';
 const Layout: React.FC = () => {
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>(currentUser?.role || 'Placement Officer');
+  const [userRole, setUserRole] = useState<UserRole>(currentUser?.role || 'Faculty Coordinator');
 
   useEffect(() => {
     if (currentUser?.role) {
