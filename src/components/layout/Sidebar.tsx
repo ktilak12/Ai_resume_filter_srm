@@ -31,67 +31,67 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
       name: 'Dashboard', 
       icon: LayoutDashboard, 
       path: '/dashboard', 
-      roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
+      roles: ['Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
     },
     { 
       name: 'Candidate Portal', 
       icon: GraduationCap, 
       path: '/student-portal', 
-      roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
+      roles: ['Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
     },
     { 
       name: 'AI Resume Builder', 
       icon: Sparkles, 
       path: '/resume-builder', 
-      roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
+      roles: ['Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
     },
     { 
       name: 'Resume Upload & ATS', 
       icon: UploadCloud, 
       path: '/upload', 
-      roles: ['Placement Officer', 'Faculty Coordinator', 'Corporate Recruiter', 'Super Admin', 'Student Coordinator'] 
+      roles: ['Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
     },
     { 
       name: 'AI Screening Roster', 
       icon: FileText, 
       path: '/screening', 
-      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter', 'Student Coordinator'] 
+      roles: ['Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
     },
     { 
       name: 'Student Directory', 
       icon: Users, 
       path: '/candidates', 
-      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter', 'Student Coordinator'] 
+      roles: ['Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
     },
     { 
       name: 'Shortlisted Candidates', 
       icon: UserCheck, 
       path: '/shortlisted', 
-      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter'] 
+      roles: ['Faculty Coordinator', 'Super Admin'] 
     },
     { 
       name: 'Interview Operations', 
       icon: Calendar, 
       path: '/interviews', 
-      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter'] 
+      roles: ['Faculty Coordinator', 'Super Admin'] 
     },
     { 
       name: 'Placement Drives', 
       icon: Briefcase, 
       path: '/jobs', 
-      roles: ['Placement Officer', 'Corporate Recruiter', 'Super Admin', 'Faculty Coordinator', 'Student Coordinator'] 
+      roles: ['Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
     },
     { 
       name: 'Analytics & Reports', 
       icon: BarChart3, 
       path: '/analytics', 
-      roles: ['Placement Officer', 'Super Admin', 'Faculty Coordinator', 'Corporate Recruiter'] 
+      roles: ['Faculty Coordinator', 'Super Admin'] 
     },
     { 
       name: 'Platform Settings', 
       icon: Settings, 
       path: '/settings', 
-      roles: ['Super Admin', 'Placement Officer'] 
+      roles: ['Super Admin', 'Faculty Coordinator'] 
     },
   ];
 
