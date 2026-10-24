@@ -31,7 +31,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, AppPermission[]> = {
     'VIEW_ANALYTICS',
     'EXPORT_DATA'
   ],
-  'Placement Officer': [
+  'Faculty Coordinator': [
     'CREATE_JOB',
     'EDIT_JOB',
     'UPLOAD_RESUMES',
@@ -42,24 +42,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, AppPermission[]> = {
     'SEND_BATCH_EMAILS',
     'SCHEDULE_INTERVIEW',
     'UPDATE_INTERVIEW_STATUS',
-    'VIEW_ANALYTICS',
-    'EXPORT_DATA'
-  ],
-  'Corporate Recruiter': [
-    'CREATE_JOB',
-    'VIEW_ATS_SCORES',
-    'SHORTLIST_CANDIDATES',
-    'REJECT_CANDIDATES',
-    'SEND_BATCH_EMAILS',
-    'SCHEDULE_INTERVIEW',
-    'UPDATE_INTERVIEW_STATUS',
-    'VIEW_ANALYTICS',
-    'EXPORT_DATA'
-  ],
-  'Faculty Coordinator': [
-    'UPLOAD_RESUMES',
-    'VIEW_ATS_SCORES',
-    'SHORTLIST_CANDIDATES',
     'VIEW_ANALYTICS',
     'EXPORT_DATA'
   ],
@@ -93,9 +75,9 @@ export const ROLE_DETAILS: Record<UserRole, {
     ],
     restrictedSummary: []
   },
-  'Placement Officer': {
-    title: 'SRM Placement Directorate',
-    description: 'Authorized to conduct institutional placement drives, screen candidates, issue shortlist letters, and adjust AI models.',
+  'Faculty Coordinator': {
+    title: 'Department Placement Faculty In-Charge',
+    description: 'Authorized to conduct placement drives, screen candidates, coordinate interview panels, calibrate AI models, and access student rosters.',
     badgeColor: 'bg-zinc-900 text-white border-zinc-700',
     restrictedNotice: 'Comprehensive placement operations authorization.',
     allowedSummary: [
@@ -104,44 +86,12 @@ export const ROLE_DETAILS: Record<UserRole, {
       'Shortlist & Reject Candidates',
       'Send Real-time Email Notifications',
       'Schedule Multi-round Interviews',
-      'Adjust AI Weights & Cutoffs'
-    ],
-    restrictedSummary: [
-      'Cannot delete system logs'
-    ]
-  },
-  'Corporate Recruiter': {
-    title: 'Corporate Partner Recruiter',
-    description: 'Authorized to evaluate candidate profiles, shortlist for company drives, and coordinate technical/HR interviews.',
-    badgeColor: 'bg-zinc-900 text-zinc-300 border-zinc-800',
-    restrictedNotice: 'Restricted: Cannot calibrate institutional AI scoring weights or alter university eligibility cutoffs.',
-    allowedSummary: [
-      'View AI Matched Candidate Profiles',
-      'Create Company Placement Requirements',
-      'Shortlist Applicants & Issue Invitations',
-      'Schedule Company Interview Panels',
-      'Record Interview Feedback & Decisions'
-    ],
-    restrictedSummary: [
-      'Cannot modify SRM AI Weights & Thresholds',
-      'Cannot alter university academic eligibility rules'
-    ]
-  },
-  'Faculty Coordinator': {
-    title: 'Department Placement Faculty In-Charge',
-    description: 'Authorized to upload student batches, review department scores, and track placement statistics.',
-    badgeColor: 'bg-zinc-900 text-zinc-300 border-zinc-800',
-    restrictedNotice: 'Restricted: Cannot dispatch rejection emails, create company drives, or modify global AI weights.',
-    allowedSummary: [
-      'Upload Department Resumes for ATS Scoring',
-      'Monitor Department Student Rankings',
-      'Review Department Placement Analytics',
+      'Adjust AI Weights & Cutoffs',
+      'Monitor Department Student Rankings & Analytics',
       'Export Filtered Candidate CSVs'
     ],
     restrictedSummary: [
-      'Cannot publish new company placement drives',
-      'Cannot dispatch final rejection emails',
-      'Cannot modify global AI scoring weights'
+      'Cannot delete system logs'
     ]
   },
   'Student Coordinator': {
