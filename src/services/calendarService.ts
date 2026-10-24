@@ -38,7 +38,8 @@ export function generateIcsContent(interview: Interview): string {
 
   const uid = `srm-interview-${interview.id}@srmist.edu.in`;
   const summary = `SRM Placement Interview: ${interview.company} (${interview.round})`;
-  const description = `Placement Interview with ${interview.company} for the role of ${interview.job_title}.\\nCandidate: ${interview.candidate_name} (${interview.candidate_reg_no})\\nInterviewer: ${interview.interviewer}\\nVenue / Link: ${interview.venue}\\nOrganized by Directorate of Career Centre, SRMIST.`;
+  const venueOrLink = interview.meeting_link || interview.venue;
+  const description = `Placement Interview with ${interview.company} for the role of ${interview.job_title}.\\nCandidate: ${interview.candidate_name} (${interview.candidate_reg_no})\\nInterviewer: ${interview.interviewer}\\nVenue / Link: ${venueOrLink}${interview.meeting_link ? `\\nVirtual Meeting: ${interview.meeting_link}` : ''}\\nOrganized by Directorate of Career Centre, SRMIST.`;
 
   return [
     'BEGIN:VCALENDAR',
@@ -84,3 +85,13 @@ export function downloadIcsFile(interview: Interview): void {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Generates an institutional virtual meeting room link for the interview
+ */
+export function generateMeetingLink(company: string, candidateRegNo: string): string {
+  const safeCompany = company.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const safeReg = candidateRegNo.toLowerCase().replace(/[^a-z0-9]/g, '') || Math.random().toString(36).slice(2, 7);
+  return `https://meet.google.com/srm-${safeCompany}-${safeReg}`;
+}
+

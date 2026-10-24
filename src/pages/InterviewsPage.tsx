@@ -54,6 +54,24 @@ export const InterviewsPage: React.FC = () => {
     });
   };
 
+  const handleSaveEvaluation = (id: string, evaluation: any, status?: Interview['status']) => {
+    setInterviews(prev => {
+      const updated = prev.map(i => {
+        if (i.id === id) {
+          return {
+            ...i,
+            evaluation,
+            score: evaluation.overall_score,
+            status: status || i.status
+          };
+        }
+        return i;
+      });
+      localStorage.setItem('srm_interviews_list', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
     <>
       <SEO
@@ -67,6 +85,7 @@ export const InterviewsPage: React.FC = () => {
         jobs={jobs}
         onUpdateInterviewStatus={handleUpdateStatus}
         onAddInterview={handleAddInterview}
+        onSaveEvaluation={handleSaveEvaluation}
         initialCandidate={navState?.candidate}
         initialJobId={navState?.jobId}
       />

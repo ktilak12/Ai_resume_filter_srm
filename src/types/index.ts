@@ -173,6 +173,30 @@ export interface ScreeningResult {
 
 export type InterviewRound = 'Technical Round 1' | 'Technical Round 2' | 'HR Round' | 'Managerial Round' | 'Final Placement Offer';
 
+export interface RubricRatings {
+  dsa_coding: number; // 1-5
+  system_architecture: number; // 1-5
+  problem_solving: number; // 1-5
+  communication_culture: number; // 1-5
+}
+
+export type HiringRecommendation = 'Strong Hire' | 'Hire' | 'Borderline' | 'No Hire';
+
+export interface InterviewEvaluation {
+  id?: string;
+  interviewer_name: string;
+  evaluated_by?: string;
+  ratings: RubricRatings;
+  rubric?: RubricRatings;
+  average_score: number; // 1-5
+  overall_score: number; // 0-100
+  recommendation: HiringRecommendation;
+  technical_strengths?: string[];
+  areas_for_growth?: string[];
+  notes: string;
+  evaluated_at: string;
+}
+
 export interface Interview {
   id: string;
   candidate_id: string;
@@ -188,9 +212,11 @@ export interface Interview {
   time: string;
   interviewer: string;
   venue: string; // e.g. "Placement Cell Block - Room 304" or "Google Meet Link"
+  meeting_link?: string;
   status: 'Scheduled' | 'Completed' | 'Cleared' | 'Rejected' | 'Rescheduled';
   score?: number;
   feedback?: string;
+  evaluation?: InterviewEvaluation;
   created_at: string;
 }
 
