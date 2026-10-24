@@ -53,12 +53,17 @@ export async function validateResumeFile(file: File): Promise<void> {
 }
 
 /**
- * Sanitizes extracted text strings against XSS / HTML tags and script injection
+ * Sanitizes extracted text strings against XSS / HTML tags, script injection, and ReDoS
  */
-function sanitizeTextContent(text: string): string {
+export function sanitizeTextContent(text: string, maxLength: number = 100000): string {
   if (!text) return '';
-  return text
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+  // Clamp upfront before running regular expressions to eliminate CPU exhaustion attacks
+  const bounded = String(text).slice(0, maxLength);
+  return bounded
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<script\b[\s\S]*$/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<style\b[\s\S]*$/gi, '')
     .replace(/<[^>]+>/g, '')
     .replace(/javascript:/gi, '')
     .trim();
