@@ -8,6 +8,7 @@ import {
   clearSecureSession, 
   isRoleElevationAllowed 
 } from '../services/sessionSecurity';
+import { authenticateWithPassword, registerAccount } from '../services/accountAuth';
 
 export interface AuthError {
   type: 'UNAUTHORIZED_DOMAIN' | 'INVALID_TOKEN' | 'CONFIG_ERROR' | 'UNAUTHORIZED_ROLE' | 'UNKNOWN';
@@ -22,6 +23,8 @@ interface AuthContextType {
   authError: AuthError | null;
   clientId: string;
   loginWithGoogleCredential: (credentialJwt: string, chosenRole?: UserRole) => Promise<boolean>;
+  loginWithPassword: (email: string, password: string, chosenRole?: UserRole) => Promise<{ success: boolean; error?: string }>;
+  registerWithPassword: (name: string, email: string, password: string, chosenRole: UserRole) => Promise<{ success: boolean; error?: string }>;
   loginDirect: (user: Partial<AuthUser>) => void;
   updateProfile: (profile: Partial<AuthUser>) => void;
   logout: () => void;
@@ -32,9 +35,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const VALID_ROLES: UserRole[] = [
-  'Placement Officer',
   'Faculty Coordinator',
-  'Corporate Recruiter',
   'Super Admin',
   'Student Coordinator'
 ];
@@ -96,20 +97,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Detect role and department based on verified domain and email structure
       const srmDetails = parseSRMEmailDetails(email);
-      let detectedRole: UserRole = 'Corporate Recruiter';
+      let detectedRole: UserRole = 'Faculty Coordinator';
 
       if (isSRM) {
         if (srmDetails.isStudent) {
           detectedRole = 'Student Coordinator';
         } else if (email.includes('director') || email.includes('admin')) {
           detectedRole = 'Super Admin';
-        } else if (email.includes('faculty') || email.includes('prof') || email.includes('hod')) {
-          detectedRole = 'Faculty Coordinator';
         } else {
-          detectedRole = 'Placement Officer';
+          detectedRole = 'Faculty Coordinator';
         }
       } else {
-        detectedRole = 'Corporate Recruiter';
+        detectedRole = 'Faculty Coordinator';
       }
 
       // Validate chosen role against institutional RBAC policy; fallback to detectedRole if unauthorized
@@ -164,11 +163,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginDirect = async (userData: Partial<AuthUser>) => {
-    const email = userData.email || 'placement.director@srmist.edu.in';
+    const email = userData.email || 'faculty.placement@srmist.edu.in';
     const isSRM = isSRMISTEmail(email);
 
     // Defense-in-depth: Validate requested role against institutional RBAC rules
-    let requestedRole = userData.role || 'Placement Officer';
+    let requestedRole = userData.role || 'Faculty Coordinator';
     const tempUser: AuthUser = {
       id: 'tmp-auth',
       name: userData.name || '',
@@ -180,17 +179,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     if (!isRoleElevationAllowed(tempUser, requestedRole)) {
       console.warn(`[RBAC Security] Direct login requested unauthorized role '${requestedRole}' for '${email}'. Reverting to safe role.`);
-      requestedRole = isSRM ? (parseSRMEmailDetails(email).isStudent ? 'Student Coordinator' : 'Placement Officer') : 'Corporate Recruiter';
+      requestedRole = isSRM ? (parseSRMEmailDetails(email).isStudent ? 'Student Coordinator' : 'Faculty Coordinator') : 'Faculty Coordinator';
     }
     
     const newUser: AuthUser = {
       id: `usr-${Date.now()}`,
-      name: userData.name || 'SRM Placement Officer',
+      name: userData.name || 'SRM Faculty Coordinator',
       email: email,
       role: requestedRole,
-      department: userData.department || 'Directorate of Career Centre',
+      department: userData.department || 'Computer Science & Engineering',
       campus: userData.campus || 'Kattankulathur (Main Campus)',
-      regNumber: userData.regNumber || 'SRM-EMP-8941',
+      regNumber: userData.regNumber || 'SRM-FAC-8941',
       phone: userData.phone || '+91 98401 22334',
       isInstitutionalVerified: isSRM,
       isProfileComplete: true,
@@ -236,6 +235,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const loginWithPassword = async (
+    email: string, 
+    pass: string, 
+    chosenRole?: UserRole
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    setAuthError(null);
+    try {
+      const result = await authenticateWithPassword({ email, password: pass, role: chosenRole });
+      if (!result.success || !result.user) {
+        const errorMsg = result.error || 'Authentication failed. Please verify your credentials.';
+        setAuthError({ type: 'UNKNOWN', message: errorMsg, attemptedEmail: email });
+        setIsLoading(false);
+        return { success: false, error: errorMsg };
+      }
+
+      setCurrentUser(result.user);
+      await saveSecureSession(result.user);
+      setIsLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      const errorMsg = err?.message || 'Login failed due to unexpected error.';
+      setAuthError({ type: 'UNKNOWN', message: errorMsg });
+      setIsLoading(false);
+      return { success: false, error: errorMsg };
+    }
+  };
+
+  const registerWithPassword = async (
+    name: string,
+    email: string,
+    pass: string,
+    chosenRole: UserRole
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    setAuthError(null);
+    try {
+      const result = await registerAccount({ name, email, password: pass, role: chosenRole });
+      if (!result.success || !result.user) {
+        const errorMsg = result.error || 'Registration failed.';
+        setAuthError({ type: 'UNKNOWN', message: errorMsg, attemptedEmail: email });
+        setIsLoading(false);
+        return { success: false, error: errorMsg };
+      }
+
+      setCurrentUser(result.user);
+      await saveSecureSession(result.user);
+      setIsLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      const errorMsg = err?.message || 'Registration failed due to unexpected error.';
+      setAuthError({ type: 'UNKNOWN', message: errorMsg });
+      setIsLoading(false);
+      return { success: false, error: errorMsg };
+    }
+  };
+
   const clearError = () => {
     setAuthError(null);
   };
@@ -249,6 +305,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authError,
         clientId,
         loginWithGoogleCredential,
+        loginWithPassword,
+        registerWithPassword,
         loginDirect,
         updateProfile,
         logout,
