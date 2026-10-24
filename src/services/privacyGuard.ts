@@ -46,17 +46,12 @@ export function maskRegNumber(regNo?: string): string {
 
 /**
  * Determines whether the active user role is authorized to view unmasked student PII.
- * Institutional Placement Officers and Super Admins have full access.
- * External Corporate Recruiters can only access unmasked PII if candidate is Shortlisted.
+ * Faculty Coordinators and Super Admins have full access.
  */
-export function canAccessUnmaskedPII(role: UserRole | undefined, isShortlisted: boolean = false): boolean {
+export function canAccessUnmaskedPII(role: UserRole | undefined, _isShortlisted: boolean = false): boolean {
   if (!role) return false;
-  if (role === 'Super Admin' || role === 'Placement Officer' || role === 'Faculty Coordinator') {
+  if (role === 'Super Admin' || role === 'Faculty Coordinator') {
     return true;
-  }
-  if (role === 'Corporate Recruiter') {
-    // Only permit viewing unmasked contact info once candidate is shortlisted
-    return isShortlisted;
   }
   if (role === 'Student Coordinator') {
     return false;
@@ -66,12 +61,15 @@ export function canAccessUnmaskedPII(role: UserRole | undefined, isShortlisted: 
 
 /**
  * Sanitizes any cell content to prevent CSV/Spreadsheet Formula Injection (CWE-1236)
+ * Defends against DDE execution, external hyperlink invocation, and formula triggers (=, +, -, @, |, %, tabs).
  */
 export function sanitizeCsvField(val: any): string {
   if (val === null || val === undefined) return '""';
-  let str = String(val);
-  // If field starts with formula trigger characters (=, +, -, @, tab, cr), escape with single quote
-  if (/^[=+\-@\t\r]/.test(str.trim())) {
+  // Strip null bytes to avoid parser corruption
+  let str = String(val).replace(/\0/g, '');
+  const trimmed = str.trimStart();
+  // If field starts with formula trigger characters (=, +, -, @, |, %, tab, cr), prefix with single quote
+  if (/^[=+\-@\t\r|%]/.test(trimmed)) {
     str = "'" + str;
   }
   return `"${str.replace(/"/g, '""')}"`;
