@@ -208,7 +208,7 @@ export const PrivacyPolicyPage: React.FC = () => {
                 </div>
                 <ul className="text-xs text-zinc-400 space-y-1.5 list-disc list-inside">
                   <li><strong className="text-zinc-200">Google SSO Identity:</strong> Google ID token, verified corporate/institutional email (@srmist.edu.in), profile photo.</li>
-                  <li><strong className="text-zinc-200">Role & Privileges:</strong> Assigned role (Placement Officer, Faculty Coordinator, Corporate Recruiter, Super Admin).</li>
+                  <li><strong className="text-zinc-200">Role & Privileges:</strong> Assigned role (Faculty Coordinator, Super Admin, Student Coordinator).</li>
                   <li><strong className="text-zinc-200">Audit & Session Telemetry:</strong> Login timestamps, shortlisting operations, customized weighting preferences, and exported CSV roster history for security compliance.</li>
                 </ul>
               </div>
@@ -245,7 +245,7 @@ export const PrivacyPolicyPage: React.FC = () => {
               <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 space-y-1">
                 <div className="text-xs font-bold text-white">2. Legitimate Uses & Institutional Function (Section 7)</div>
                 <p className="text-xs text-zinc-400">
-                  Processing academic validation records (CGPA cutoffs, active backlogs, departmental eligibility) is required for institutional administration and verification of genuine credentials to corporate recruiters.
+                  Processing academic validation records (CGPA cutoffs, active backlogs, departmental eligibility) is required for institutional administration and verification of genuine credentials to prospective campus employers.
                 </p>
               </div>
             </div>
@@ -309,8 +309,8 @@ export const PrivacyPolicyPage: React.FC = () => {
             </p>
             <div className="space-y-2 text-xs text-zinc-400">
               <div className="p-3 rounded-lg bg-zinc-900/60 border border-zinc-850 flex items-start gap-3">
-                <span className="font-bold text-white min-w-[130px]">Approved Recruiters:</span>
-                <span>Only candidate profiles shortlisted or eligible for the specific company drive are accessible to authorized corporate recruiters.</span>
+                <span className="font-bold text-white min-w-[130px]">Approved Employers:</span>
+                <span>Only candidate profiles shortlisted or eligible for the specific company drive are accessible to authorized hiring partners and companies.</span>
               </div>
               <div className="p-3 rounded-lg bg-zinc-900/60 border border-zinc-850 flex items-start gap-3">
                 <span className="font-bold text-white min-w-[130px]">Cloud Providers:</span>
@@ -342,7 +342,7 @@ export const PrivacyPolicyPage: React.FC = () => {
               </div>
               <div className="p-3.5 rounded-xl bg-zinc-900/70 border border-zinc-800 space-y-1.5">
                 <div className="font-bold text-white">Role-Based Access Control</div>
-                <p className="text-zinc-400 text-[11px]">Strict RBAC isolating Placement Officers, Faculty, and Recruiters with institutional token verification.</p>
+                <p className="text-zinc-400 text-[11px]">Strict RBAC isolating Faculty Coordinators and Students with institutional token verification.</p>
               </div>
               <div className="p-3.5 rounded-xl bg-zinc-900/70 border border-zinc-800 space-y-1.5">
                 <div className="font-bold text-white">Breach Notification Duty</div>
