@@ -7,7 +7,8 @@ import {
   SkillEvidence, 
   MatchTier,
   AISettings,
-  ScreeningResult
+  ScreeningResult,
+  BulletTailoringFeedback
 } from '../types';
 
 // Default AI settings
@@ -726,13 +727,16 @@ export function calculateMatchScore(
     requirement_score: requirementScore
   };
 
+  const tailoring_recommendations = generateTailoringRecommendations(candidate, job);
+
   const explainable: ExplainableAI = {
     verdict,
     summary,
     positive_factors,
     penalty_factors,
     missing_skills,
-    skill_evidence
+    skill_evidence,
+    tailoring_recommendations
   };
 
   return { score, explainable };
@@ -789,4 +793,111 @@ export function rankScreeningResults(results: ScreeningResult[]): ScreeningResul
     ...res,
     rank: index + 1
   }));
+}
+
+/**
+ * Generates actionable bullet-level tailoring feedback to elevate student resumes:
+ * - Detects passive / weak verbs and suggests high-impact alternatives
+ * - Flags unquantified achievements and provides metrics formulas
+ * - Audits ATS bullet length density
+ * - Recommends keyword alignment for target job descriptions
+ */
+export function generateTailoringRecommendations(
+  candidate: CandidateProfile,
+  job?: JobRequirement
+): BulletTailoringFeedback[] {
+  const recommendations: BulletTailoringFeedback[] = [];
+
+  const weakVerbsRegex = /^(worked on|helped with|assisted in|participated in|was responsible for|handled|involved in|supported)\b/i;
+  const strongActionVerbs = ['Architected', 'Spearheaded', 'Engineered', 'Optimized', 'Automated', 'Implemented', 'Designed'];
+
+  const allBullets: { text: string; source: string }[] = [];
+  (candidate.experience || []).forEach(exp => {
+    (exp.responsibilities || []).forEach(r => allBullets.push({ text: r, source: `${exp.company} - ${exp.position}` }));
+    if (exp.description) allBullets.push({ text: exp.description, source: `${exp.company}` });
+  });
+  (candidate.projects || []).forEach(proj => {
+    if (proj.description) allBullets.push({ text: proj.description, source: `Project: ${proj.name}` });
+  });
+
+  allBullets.forEach(b => {
+    const trimmed = b.text.trim();
+    if (!trimmed) return;
+
+    // Check for weak passive openers
+    if (weakVerbsRegex.test(trimmed)) {
+      const randomVerb = strongActionVerbs[Math.floor(Math.random() * strongActionVerbs.length)];
+      recommendations.push({
+        category: 'action_verbs',
+        original_snippet: trimmed.length > 80 ? trimmed.substring(0, 80) + '...' : trimmed,
+        suggestion: `Replace passive opener with high-impact action verb like "${randomVerb}" to project leadership and technical ownership.`,
+        impact_level: 'High'
+      });
+    }
+
+    // Check for lack of quantifiable metrics
+    const hasNumbersOrMetrics = /[\d%]|(?:latency|throughput|qps|rps|scale|reduction|optimized|speedup|ms|sec)\b/i.test(trimmed);
+    if (!hasNumbersOrMetrics && trimmed.split(/\s+/).length >= 7) {
+      if (recommendations.filter(r => r.category === 'quantifiable_metrics').length < 3) {
+        recommendations.push({
+          category: 'quantifiable_metrics',
+          original_snippet: trimmed.length > 80 ? trimmed.substring(0, 80) + '...' : trimmed,
+          suggestion: `Add empirical metrics (e.g. "% latency reduction", "processed X records", or "scaled to N active users") to demonstrate tangible business impact.`,
+          impact_level: 'High'
+        });
+      }
+    }
+
+    // Bullet conciseness / length check
+    const wordCount = trimmed.split(/\s+/).length;
+    if (wordCount > 40) {
+      recommendations.push({
+        category: 'ats_conciseness',
+        original_snippet: trimmed.substring(0, 75) + '...',
+        suggestion: `Bullet is ${wordCount} words long. ATS scanners and recruiters prefer concise bullets (15–30 words) focusing on Action + Technical Tool + Result.`,
+        impact_level: 'Medium'
+      });
+    }
+  });
+
+  // Check keyword alignment with target job
+  if (job?.required_skills && job.required_skills.length > 0) {
+    const resumeText = [
+      candidate.skills.join(' '),
+      allBullets.map(b => b.text).join(' '),
+      candidate.education?.department || ''
+    ].join(' ').toLowerCase();
+
+    const missingInBullets = job.required_skills.filter(s => {
+      const lower = s.toLowerCase();
+      return !resumeText.includes(lower);
+    });
+
+    if (missingInBullets.length > 0) {
+      recommendations.push({
+        category: 'keyword_alignment',
+        original_snippet: `Role requirement: ${missingInBullets.slice(0, 3).join(', ')}`,
+        suggestion: `Target role strongly prioritizes ${missingInBullets.slice(0, 3).join(', ')}. Incorporate these technical keywords in your project bullet points to maximize ATS relevance.`,
+        impact_level: 'High'
+      });
+    }
+  }
+
+  // Provide at least two actionable default recommendations if bullets were empty/sparse
+  if (recommendations.length === 0) {
+    recommendations.push({
+      category: 'quantifiable_metrics',
+      original_snippet: 'Project bullet points',
+      suggestion: 'Incorporate quantifiable metrics into each project bullet: e.g. "Reduced query response time by 35% using Redis caching".',
+      impact_level: 'High'
+    });
+    recommendations.push({
+      category: 'action_verbs',
+      original_snippet: 'Experience descriptions',
+      suggestion: 'Begin every responsibility bullet with strong active past-tense verbs (Engineered, Architected, Designed).',
+      impact_level: 'Medium'
+    });
+  }
+
+  return recommendations.slice(0, 5);
 }

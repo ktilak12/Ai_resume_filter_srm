@@ -397,6 +397,138 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 4. AI Gateway Status
+  if (req.url === '/api/ai/status' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      success: true,
+      gemini_available: Boolean(process.env.GEMINI_API_KEY),
+      model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+      mode: process.env.GEMINI_API_KEY ? 'gemini_cloud_ai' : 'srm_heuristic_engine'
+    }));
+    return;
+  }
+
+  // 5. AI Resume Bullet Tailoring Endpoint
+  if (req.url === '/api/ai/tailor-feedback' && req.method === 'POST') {
+    if (isRateLimited(clientIp)) {
+      res.writeHead(429, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: 'Rate limit exceeded. Please wait a minute.' }));
+      return;
+    }
+
+    let bodyStr = '';
+    let isPayloadTooLarge = false;
+    req.on('data', chunk => {
+      if (isPayloadTooLarge) return;
+      bodyStr += chunk;
+      if (bodyStr.length > 256 * 1024) { // 256KB max
+        isPayloadTooLarge = true;
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: 'Resume payload too large' }));
+        req.destroy();
+      }
+    });
+
+    req.on('end', async () => {
+      if (isPayloadTooLarge) return;
+      try {
+        const body = JSON.parse(bodyStr || '{}');
+        const resumeText = body.resumeText || '';
+        const jobTitle = body.jobTitle || 'Software Engineer';
+        const requiredSkills = Array.isArray(body.requiredSkills) ? body.requiredSkills : [];
+
+        const geminiKey = process.env.GEMINI_API_KEY;
+        if (geminiKey) {
+          try {
+            const prompt = `You are a Principal Placement Officer and ATS Auditor at SRM Institute of Science and Technology.
+Analyze the following candidate resume snippet for the role "${jobTitle}" with required skills: ${requiredSkills.join(', ')}.
+
+Return ONLY valid JSON matching this schema:
+{
+  "recommendations": [
+    {
+      "category": "quantifiable_metrics" | "action_verbs" | "keyword_alignment" | "ats_conciseness",
+      "original_snippet": "short phrase from resume",
+      "suggestion": "specific actionable recommendation or formula to rewrite it",
+      "impact_level": "High" | "Medium"
+    }
+  ]
+}
+
+Resume Text:
+${resumeText.slice(0, 4000)}`;
+
+            const geminiRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: { responseMimeType: 'application/json' }
+                })
+              }
+            );
+
+            if (geminiRes.ok) {
+              const geminiData = await geminiRes.json();
+              const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (responseText) {
+                const parsed = JSON.parse(responseText);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                  success: true,
+                  source: 'gemini-1.5-flash',
+                  recommendations: parsed.recommendations || []
+                }));
+                return;
+              }
+            }
+          } catch (geminiErr) {
+            console.error('[Gemini API Gateway] Falling back to heuristic engine:', geminiErr.message);
+          }
+        }
+
+        // Deterministic Fallback Heuristic
+        const recommendations = [
+          {
+            category: 'quantifiable_metrics',
+            original_snippet: 'Project achievements and contributions',
+            suggestion: 'Add empirical metrics: quantify user scale, performance latency drop (e.g. 40%), or query throughput.',
+            impact_level: 'High'
+          },
+          {
+            category: 'action_verbs',
+            original_snippet: 'Responsibility bullets',
+            suggestion: 'Start each project and experience bullet with strong action verbs (Engineered, Architected, Spearheaded).',
+            impact_level: 'High'
+          }
+        ];
+
+        if (requiredSkills.length > 0) {
+          recommendations.push({
+            category: 'keyword_alignment',
+            original_snippet: `Required Skills: ${requiredSkills.slice(0, 3).join(', ')}`,
+            suggestion: `Ensure ${requiredSkills.slice(0, 3).join(', ')} appear in project descriptions with technical context.`,
+            impact_level: 'High'
+          });
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          source: 'srm_heuristic_engine',
+          recommendations
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message || 'Internal AI tailoring error' }));
+      }
+    });
+    return;
+  }
+
   // Handle unknown /api routes
   const parsedUrl = new URL(req.url || '/', 'http://localhost');
   const pathname = decodeURIComponent(parsedUrl.pathname);

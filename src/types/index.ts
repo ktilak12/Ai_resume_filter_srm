@@ -148,6 +148,13 @@ export interface SkillEvidence {
   is_required: boolean;
 }
 
+export interface BulletTailoringFeedback {
+  category: 'quantifiable_metrics' | 'action_verbs' | 'keyword_alignment' | 'ats_conciseness';
+  original_snippet: string;
+  suggestion: string;
+  impact_level: 'High' | 'Medium' | 'Low';
+}
+
 export interface ExplainableAI {
   verdict: MatchTier;
   summary: string;
@@ -155,6 +162,7 @@ export interface ExplainableAI {
   penalty_factors: string[];
   missing_skills: string[];
   skill_evidence: SkillEvidence[];
+  tailoring_recommendations?: BulletTailoringFeedback[];
 }
 
 export interface ScreeningResult {

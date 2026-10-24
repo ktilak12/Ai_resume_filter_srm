@@ -17,7 +17,10 @@ import {
   TrendingUp,
   Award,
   Layers,
-  AlertCircle
+  AlertCircle,
+  Zap,
+  Target,
+  Lightbulb
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { INITIAL_JOBS, INITIAL_CANDIDATES, INITIAL_INTERVIEWS } from '../data/srmDataset';
@@ -447,6 +450,48 @@ export const StudentPortalPage: React.FC = () => {
                       </div>
                     )}
 
+                    {evalResult.explainable.tailoring_recommendations && evalResult.explainable.tailoring_recommendations.length > 0 && (
+                      <div className="pt-3 border-t border-zinc-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                            <Zap className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Actionable Resume Bullet Tailoring Recommendations</span>
+                          </span>
+                          <span className="text-[10px] text-zinc-400">SRM ATS Heuristic Engine</span>
+                        </div>
+                        <div className="space-y-2 pt-1">
+                          {evalResult.explainable.tailoring_recommendations.map((rec, idx) => (
+                            <div key={idx} className="p-2.5 rounded-xl bg-black/60 border border-zinc-800 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                                  rec.category === 'quantifiable_metrics'
+                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                    : rec.category === 'action_verbs'
+                                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                                    : rec.category === 'keyword_alignment'
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                }`}>
+                                  {rec.category.replace('_', ' ')}
+                                </span>
+                                <span className={`text-[9px] font-bold ${
+                                  rec.impact_level === 'High' ? 'text-rose-400' : 'text-zinc-400'
+                                }`}>
+                                  {rec.impact_level} Priority
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-zinc-400 font-mono bg-zinc-950 p-1.5 rounded border border-zinc-900 truncate">
+                                "{rec.original_snippet}"
+                              </div>
+                              <p className="text-[11px] text-zinc-200 leading-relaxed">
+                                <strong className="text-white">Fix: </strong>{rec.suggestion}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="pt-3 border-t border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
                         <span className="text-xs font-semibold text-white block">Ready to boost this ATS score?</span>
@@ -456,7 +501,7 @@ export const StudentPortalPage: React.FC = () => {
                         onClick={() => {
                           setActiveTab('builder');
                         }}
-                        className="px-3.5 py-1.5 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-semibold flex items-center gap-1.5 transition-all self-start sm:self-auto"
+                        className="px-3.5 py-1.5 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-semibold flex items-center gap-1.5 transition-all self-start sm:self-auto shadow-md"
                       >
                         <Sparkles className="w-3.5 h-3.5 text-black" />
                         <span>Build Tailored Resume</span>
