@@ -1,6 +1,42 @@
 import { Interview } from '../types';
 
 /**
+ * RFC 5545 Text Value Escaper
+ * Escapes backslashes, semicolons, commas, and represents newlines as literal '\n'.
+ * Strips non-printable ASCII control characters.
+ */
+export function sanitizeIcsText(value: string | undefined | null): string {
+  if (!value) return '';
+  return String(value)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // strip control chars except \t, \n, \r
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r\n|\r|\n/g, '\\n');
+}
+
+/**
+ * RFC 5545 Single-line Header/Attribute Sanitizer
+ * Strips newlines, carriage returns, and control characters to prevent header and CRLF injection.
+ */
+export function sanitizeIcsHeader(value: string | undefined | null): string {
+  if (!value) return '';
+  return String(value)
+    .replace(/[\r\n\x00-\x1F\x7F]/g, '') // strictly remove all linebreaks and control characters
+    .trim();
+}
+
+/**
+ * Validates and sanitizes email address for calendar mailto URIs
+ */
+export function sanitizeIcsEmail(value: string | undefined | null, fallback = 'student@srmist.edu.in'): string {
+  if (!value) return fallback;
+  const cleaned = String(value).replace(/[\r\n\x00-\x1F\x7F\s<>]/g, '').trim();
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(cleaned) ? cleaned : fallback;
+}
+
+/**
  * Generates an iCalendar (.ics) string for an interview event.
  */
 export function generateIcsContent(interview: Interview): string {
@@ -36,10 +72,21 @@ export function generateIcsContent(interview: Interview): string {
   const startStr = formatIcsDate(startDate);
   const endStr = formatIcsDate(endDate);
 
-  const uid = `srm-interview-${interview.id}@srmist.edu.in`;
-  const summary = `SRM Placement Interview: ${interview.company} (${interview.round})`;
-  const venueOrLink = interview.meeting_link || interview.venue;
-  const description = `Placement Interview with ${interview.company} for the role of ${interview.job_title}.\\nCandidate: ${interview.candidate_name} (${interview.candidate_reg_no})\\nInterviewer: ${interview.interviewer}\\nVenue / Link: ${venueOrLink}${interview.meeting_link ? `\\nVirtual Meeting: ${interview.meeting_link}` : ''}\\nOrganized by Directorate of Career Centre, SRMIST.`;
+  const safeUid = sanitizeIcsHeader(`srm-interview-${interview.id}@srmist.edu.in`);
+  const safeCompany = sanitizeIcsText(interview.company);
+  const safeRound = sanitizeIcsText(interview.round);
+  const safeJob = sanitizeIcsText(interview.job_title);
+  const safeCandidateName = sanitizeIcsText(interview.candidate_name);
+  const safeCandidateReg = sanitizeIcsText(interview.candidate_reg_no);
+  const safeInterviewer = sanitizeIcsText(interview.interviewer);
+  const safeVenue = sanitizeIcsText(interview.venue);
+  const safeMeetingLink = sanitizeIcsHeader(interview.meeting_link);
+  const safeAttendeeEmail = sanitizeIcsEmail(interview.candidate_email);
+  const safeAttendeeCN = sanitizeIcsHeader(interview.candidate_name).replace(/[";]/g, '');
+
+  const summary = `SRM Placement Interview: ${safeCompany} (${safeRound})`;
+  const venueOrLink = safeMeetingLink || safeVenue;
+  const description = `Placement Interview with ${safeCompany} for the role of ${safeJob}.\\nCandidate: ${safeCandidateName} (${safeCandidateReg})\\nInterviewer: ${safeInterviewer}\\nVenue / Link: ${venueOrLink}${safeMeetingLink ? `\\nVirtual Meeting: ${safeMeetingLink}` : ''}\\nOrganized by Directorate of Career Centre, SRMIST.`;
 
   return [
     'BEGIN:VCALENDAR',
@@ -48,15 +95,15 @@ export function generateIcsContent(interview: Interview): string {
     'CALSCALE:GREGORIAN',
     'METHOD:REQUEST',
     'BEGIN:VEVENT',
-    `UID:${uid}`,
+    `UID:${safeUid}`,
     `DTSTAMP:${nowStr}`,
     `DTSTART:${startStr}`,
     `DTEND:${endStr}`,
     `SUMMARY:${summary}`,
     `DESCRIPTION:${description}`,
-    `LOCATION:${interview.venue}`,
+    `LOCATION:${safeVenue}`,
     `ORGANIZER;CN="SRM Career Centre":mailto:careers@srmist.edu.in`,
-    `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;CN=${interview.candidate_name}:mailto:${interview.candidate_email || 'student@srmist.edu.in'}`,
+    `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;CN=${safeAttendeeCN || 'Candidate'}:mailto:${safeAttendeeEmail}`,
     'STATUS:CONFIRMED',
     'SEQUENCE:0',
     'BEGIN:VALARM',
@@ -78,8 +125,9 @@ export function downloadIcsFile(interview: Interview): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  const safeCompany = interview.company.replace(/[^a-zA-Z0-9]/g, '_');
-  link.setAttribute('download', `SRM_Interview_${safeCompany}_${interview.date}.ics`);
+  const safeCompany = (interview.company || 'Company').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
+  const safeDate = (interview.date || 'date').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20);
+  link.setAttribute('download', `SRM_Interview_${safeCompany}_${safeDate}.ics`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
