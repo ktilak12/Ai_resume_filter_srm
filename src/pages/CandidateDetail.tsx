@@ -35,7 +35,7 @@ import { SEO } from '../components/common/SEO';
 
 export const CandidateDetail: React.FC = () => {
   const { currentUser } = useAuth();
-  const activeRole = currentUser?.role || 'Placement Officer';
+  const activeRole = currentUser?.role || 'Faculty Coordinator';
   const location = useLocation();
   const navigate = useNavigate();
   const navJobId = (location.state as { jobId?: string } | null)?.jobId;
