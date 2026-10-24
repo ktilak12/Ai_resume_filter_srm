@@ -1,4 +1,5 @@
 import { CandidateProfile, EducationRecord, ExperienceRecord, ProjectRecord } from '../types';
+import JSZip from 'jszip';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB maximum
 const ALLOWED_EXTENSIONS = new Set(['pdf', 'docx', 'doc', 'txt', 'rtf', 'md']);
@@ -755,3 +756,59 @@ export function extractCandidateEntities(rawText: string, fileName?: string): Ca
     raw_resume_text: rawText
   };
 }
+
+/**
+ * Safely unpacks and extracts supported resume files (.pdf, .docx, .txt) from a ZIP archive.
+ * Protects against Zip-Slip path traversal and Zip-Bomb memory exhaustion.
+ */
+export async function extractResumesFromZip(zipFile: File): Promise<File[]> {
+  const zip = new JSZip();
+  const loadedZip = await zip.loadAsync(zipFile);
+  const extractedFiles: File[] = [];
+  const ALLOWED_EXTS = ['.pdf', '.docx', '.txt'];
+  const MAX_FILES = 200;
+  const MAX_TOTAL_BYTES = 100 * 1024 * 1024; // 100MB limit
+  let totalBytes = 0;
+
+  for (const [relativePath, zipEntry] of Object.entries(loadedZip.files)) {
+    // Skip directories, dotfiles, and macOS metadata folders
+    if (zipEntry.dir || relativePath.startsWith('__MACOSX') || relativePath.includes('/.') || relativePath.startsWith('.')) {
+      continue;
+    }
+
+    // Path traversal check (Zip-Slip vulnerability prevention)
+    if (relativePath.includes('..') || relativePath.startsWith('/') || relativePath.startsWith('\\')) {
+      continue;
+    }
+
+    const lowerPath = relativePath.toLowerCase();
+    const hasAllowedExt = ALLOWED_EXTS.some(ext => lowerPath.endsWith(ext));
+    if (!hasAllowedExt) continue;
+
+    if (extractedFiles.length >= MAX_FILES) {
+      console.warn(`[extractResumesFromZip] Max file limit of ${MAX_FILES} files reached.`);
+      break;
+    }
+
+    const blob = await zipEntry.async('blob');
+    totalBytes += blob.size;
+    if (totalBytes > MAX_TOTAL_BYTES) {
+      console.warn(`[extractResumesFromZip] Uncompressed archive size exceeded 100MB.`);
+      break;
+    }
+
+    const cleanName = relativePath.split(/[/\\]/).pop() || 'student_resume.pdf';
+    let mimeType = 'text/plain';
+    if (cleanName.toLowerCase().endsWith('.pdf')) {
+      mimeType = 'application/pdf';
+    } else if (cleanName.toLowerCase().endsWith('.docx')) {
+      mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+
+    const file = new File([blob], cleanName, { type: mimeType });
+    extractedFiles.push(file);
+  }
+
+  return extractedFiles;
+}
+

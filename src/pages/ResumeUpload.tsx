@@ -18,11 +18,13 @@ import {
   ArrowRight, 
   Download,
   Search,
-  ExternalLink
+  ExternalLink,
+  FolderArchive,
+  Layers
 } from 'lucide-react';
 import { INITIAL_JOBS, INITIAL_CANDIDATES } from '../data/srmDataset';
 import { CandidateProfile, ScreeningResult, JobRequirement } from '../types';
-import { parseResumeFile, extractCandidateEntities } from '../services/resumeParser';
+import { parseResumeFile, extractCandidateEntities, extractResumesFromZip } from '../services/resumeParser';
 import { screenCandidate, evaluateAtsFormatting, AtsFormattingCheck } from '../services/aiScreeningEngine';
 import { Link } from 'react-router-dom';
 import { SEO } from '../components/common/SEO';
@@ -74,6 +76,11 @@ export const ResumeUpload: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [dragActive, setDragActive] = useState<boolean>(false);
+  const [batchProgress, setBatchProgress] = useState<{
+    total: number;
+    current: number;
+    currentName: string;
+  } | null>(null);
 
   // Result state after ATS evaluation
   const [atsResult, setAtsResult] = useState<{
@@ -95,23 +102,103 @@ export const ResumeUpload: React.FC = () => {
     else if (e.type === "dragleave") setDragActive(false);
   };
 
-  const ALLOWED_FILE_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain'];
-  const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'doc', 'txt'];
-  const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_FILE_TYPES = [
+    'application/pdf', 
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+    'application/msword', 
+    'text/plain',
+    'application/zip',
+    'application/x-zip-compressed'
+  ];
+  const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'doc', 'txt', 'zip'];
+  const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+  const MAX_ZIP_SIZE_BYTES = 50 * 1024 * 1024; // 50MB for batch archives
 
   const validateFile = (file: File): string | null => {
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      return `File type .${ext} is not allowed. Use PDF, DOCX, DOC, or TXT.`;
+      return `File type .${ext} is not allowed. Use PDF, DOCX, TXT, or ZIP.`;
     }
-    if (!ALLOWED_FILE_TYPES.includes(file.type) && file.type !== '') {
-      // Some browsers report empty MIME for .txt; allow if extension is valid
-      return `MIME type '${file.type}' is not permitted.`;
-    }
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      return `File exceeds 5MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB).`;
+    const maxLimit = ext === 'zip' ? MAX_ZIP_SIZE_BYTES : MAX_FILE_SIZE_BYTES;
+    if (file.size > maxLimit) {
+      return `File exceeds ${(maxLimit / (1024 * 1024)).toFixed(0)}MB limit (${(file.size / (1024 * 1024)).toFixed(1)} MB).`;
     }
     return null;
+  };
+
+  const processBatchResumes = async (batchFiles: File[]) => {
+    setIsProcessing(true);
+    setBatchProgress({ total: batchFiles.length, current: 0, currentName: 'Preparing archive...' });
+    const processedCandidates: CandidateProfile[] = [];
+
+    for (let i = 0; i < batchFiles.length; i++) {
+      const file = batchFiles[i];
+      setBatchProgress({ total: batchFiles.length, current: i + 1, currentName: file.name });
+      setProgress(Math.round(((i + 1) / batchFiles.length) * 100));
+
+      try {
+        const cand = await parseResumeFile(file);
+        const screening = screenCandidate(cand, selectedJob);
+        cand.ats_score = screening.score.overall_match;
+        cand.match_tier = screening.explainable.verdict;
+        cand.status = screening.explainable.verdict === 'Strong Match' ? 'Shortlisted' : 'AI Screened';
+        processedCandidates.push(cand);
+
+        // Load the first candidate into the main evaluation preview
+        if (i === 0) {
+          const formatting = evaluateAtsFormatting(cand.raw_resume_text || '', cand);
+          setAtsResult({ candidate: cand, screening, formatting });
+        }
+      } catch (err) {
+        console.error(`[processBatchResumes] Failed parsing file ${file.name}:`, err);
+      }
+    }
+
+    // Merge into local recruitment talent pool
+    try {
+      const existing = localStorage.getItem('srm_candidates_list');
+      const list: CandidateProfile[] = existing ? JSON.parse(existing) : INITIAL_CANDIDATES;
+      const merged = [
+        ...processedCandidates, 
+        ...list.filter(c => !processedCandidates.some(p => p.id === c.id || (p.email && p.email === c.email)))
+      ];
+      localStorage.setItem('srm_candidates_list', JSON.stringify(merged));
+      setSavedSuccessMsg(`Batch Ingestion Complete: Successfully parsed ${processedCandidates.length} resumes and updated campus recruitment pool!`);
+    } catch (e) {
+      console.error(e);
+    }
+
+    setBatchProgress(null);
+    setIsProcessing(false);
+  };
+
+  const handleIncomingFile = async (file: File) => {
+    const isZip = file.name.toLowerCase().endsWith('.zip');
+    if (isZip) {
+      const err = validateFile(file);
+      if (err) { alert(`Upload rejected: ${err}`); return; }
+
+      setIsProcessing(true);
+      setProgress(10);
+      try {
+        const extracted = await extractResumesFromZip(file);
+        if (extracted.length === 0) {
+          alert('No supported PDF, DOCX, or TXT resumes found inside the ZIP archive.');
+          setIsProcessing(false);
+          return;
+        }
+        setFiles(extracted);
+        await processBatchResumes(extracted);
+      } catch (err: any) {
+        alert(`Failed to extract ZIP archive: ${err?.message || err}`);
+        setIsProcessing(false);
+      }
+      return;
+    }
+
+    const err = validateFile(file);
+    if (err) { alert(`Upload rejected: ${err}`); return; }
+    setFiles([file]);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -119,19 +206,14 @@ export const ResumeUpload: React.FC = () => {
     e.stopPropagation();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      const err = validateFile(file);
-      if (err) { alert(`Upload rejected: ${err}`); return; }
-      setFiles([file]);
+      handleIncomingFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const err = validateFile(file);
-      if (err) { alert(`Upload rejected: ${err}`); e.target.value = ''; return; }
-      setFiles([file]);
+      handleIncomingFile(e.target.files[0]);
+      e.target.value = '';
     }
   };
 
@@ -314,15 +396,15 @@ export const ResumeUpload: React.FC = () => {
               <input 
                 ref={inputRef}
                 type="file" 
-                accept=".pdf,.docx,.doc,.txt"
+                accept=".pdf,.docx,.doc,.txt,.zip"
                 onChange={handleFileChange}
                 className="hidden"
               />
               <div className="w-12 h-12 bg-zinc-900 rounded-xl flex items-center justify-center mx-auto mb-3 border border-zinc-800">
-                <UploadCloud className="h-6 w-6 text-white" />
+                <FolderArchive className="h-6 w-6 text-white" />
               </div>
-              <h3 className="text-sm font-semibold text-white mb-1">Drag and drop resume file here</h3>
-              <p className="text-zinc-500 text-xs mb-4">Supports text-based PDF, DOCX, and TXT files</p>
+              <h3 className="text-sm font-semibold text-white mb-1">Drag and drop resume or batch ZIP archive</h3>
+              <p className="text-zinc-500 text-xs mb-4">Supports PDF, DOCX, TXT, and batch .ZIP archives (up to 50MB)</p>
               
               <div className="flex flex-wrap justify-center gap-3">
                 <button 
@@ -330,18 +412,45 @@ export const ResumeUpload: React.FC = () => {
                   className="bg-white text-black hover:bg-zinc-200 px-5 py-2 rounded-lg font-semibold text-xs transition-colors flex items-center gap-2"
                 >
                   <UploadCloud className="w-4 h-4" />
-                  <span>Select Resume File</span>
+                  <span>Select File or ZIP</span>
                 </button>
               </div>
             </div>
 
-            {files.length > 0 && (
+            {/* Batch Archive Processing Bar */}
+            {batchProgress && (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-white animate-spin" />
+                    <span className="font-semibold text-white">Batch Unpacking Archive...</span>
+                    <span className="text-zinc-400 font-mono">({batchProgress.current} / {batchProgress.total})</span>
+                  </div>
+                  <span className="text-zinc-400 truncate max-w-xs font-mono text-[11px]">{batchProgress.currentName}</span>
+                </div>
+                <div className="w-full bg-zinc-950 rounded-full h-1.5 overflow-hidden border border-zinc-800">
+                  <div 
+                    className="bg-white h-full transition-all duration-200"
+                    style={{ width: `${Math.round((batchProgress.current / batchProgress.total) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {files.length > 0 && !batchProgress && (
               <div className="bg-black p-3.5 rounded-xl border border-zinc-850 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <FileText className="h-4 w-4 text-zinc-400" />
                   <div>
-                    <span className="text-xs font-medium text-white block">{files[0].name}</span>
-                    <span className="text-[10px] text-zinc-500 font-mono">{(files[0].size / 1024).toFixed(1)} KB</span>
+                    <span className="text-xs font-medium text-white block">
+                      {files.length === 1 ? files[0].name : `${files.length} resumes extracted from archive`}
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">
+                      {files.length === 1 
+                        ? `${(files[0].size / 1024).toFixed(1)} KB` 
+                        : `${files.map(f => f.name).slice(0, 3).join(', ')}${files.length > 3 ? '...' : ''}`
+                      }
+                    </span>
                   </div>
                 </div>
                 <button 
