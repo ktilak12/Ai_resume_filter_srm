@@ -30,7 +30,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<UserRole>('Placement Officer');
+  const [role, setRole] = useState<UserRole>('Faculty Coordinator');
   const [regNumber, setRegNumber] = useState('');
   const [campus, setCampus] = useState('Kattankulathur (Main Campus)');
   const [department, setDepartment] = useState('Computer Science & Engineering');
@@ -43,7 +43,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     if (currentUser) {
       setName(currentUser.name || '');
       setEmail(currentUser.email || '');
-      setRole(currentUser.role || 'Placement Officer');
+      setRole(currentUser.role || 'Faculty Coordinator');
       setRegNumber(currentUser.regNumber || '');
       setCampus(currentUser.campus || 'Kattankulathur (Main Campus)');
       setDepartment(currentUser.department || 'Computer Science & Engineering');
@@ -261,7 +261,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <option value="2026 Batch">2026 Batch</option>
                 <option value="2027 Batch">2027 Batch</option>
                 <option value="2028 Batch">2028 Batch</option>
-                <option value="Faculty / Placement Officer">Faculty / Placement Officer</option>
+                <option value="Faculty Coordinator">Faculty Coordinator</option>
               </select>
             </div>
 
@@ -273,7 +273,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 type="text"
                 value={designation}
                 onChange={(e) => setDesignation(e.target.value)}
-                placeholder="e.g. Lead Placement Officer or Student"
+                placeholder="e.g. Faculty Placement Coordinator or Student"
                 className="w-full bg-black border border-zinc-800 rounded-xl px-3 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-white"
               />
             </div>
