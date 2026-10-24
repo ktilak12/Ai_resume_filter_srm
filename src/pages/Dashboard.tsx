@@ -23,7 +23,7 @@ const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const context = useOutletContext<{ userRole?: UserRole }>() || {};
-  const activeRole = currentUser?.role || context.userRole || 'Placement Officer';
+  const activeRole = currentUser?.role || context.userRole || 'Faculty Coordinator';
   const displayName = currentUser?.name || activeRole;
 
   const [candidates, setCandidates] = useState<CandidateProfile[]>(() => {
