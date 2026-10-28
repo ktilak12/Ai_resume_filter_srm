@@ -24,7 +24,7 @@ import { sendShortlistNotification } from '../services/emailService';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
-import { canAccessUnmaskedPII, maskRegNumber } from '../services/privacyGuard';
+import { canAccessUnmaskedPII, maskRegNumber, sanitizeCsvField } from '../services/privacyGuard';
 import { AllCandidatesView } from '../components/candidates/AllCandidatesView';
 import { SEO } from '../components/common/SEO';
 
@@ -189,26 +189,22 @@ export const CandidateRanking: React.FC = () => {
   }, [screenedResults, searchTerm, statusFilter, deptFilter, minCgpaFilter, backlogsFilter, experienceFilter]);
 
   const handleExportCsv = () => {
-    const sanitizeCsvCell = (val: any): string => {
-      if (val === null || val === undefined) return '""';
-      let str = String(val);
-      if (/^[=+\-@\t\r]/.test(str.trim())) {
-        str = "'" + str;
-      }
-      return `"${str.replace(/"/g, '""')}"`;
-    };
+    if (!checkPermission(currentUser?.role, 'EXPORT_DATA')) {
+      alert('Export restricted: You do not have permission to export candidate rosters.');
+      return;
+    }
 
     const headers = ['Rank', 'Name', 'Reg Number', 'Department', 'CGPA', 'Backlogs', 'AI Score (%)', 'Tier', 'Status'];
     const rows = filteredResults.map(r => [
       r.rank,
-      sanitizeCsvCell(r.candidate.name),
-      sanitizeCsvCell(r.candidate.reg_number),
-      sanitizeCsvCell(r.candidate.education.department),
+      sanitizeCsvField(r.candidate.name),
+      sanitizeCsvField(canViewPII ? r.candidate.reg_number : maskRegNumber(r.candidate.reg_number)),
+      sanitizeCsvField(r.candidate.education.department),
       r.candidate.education.cgpa,
       r.candidate.education.active_backlogs,
       r.score.overall_match,
-      sanitizeCsvCell(r.explainable.verdict),
-      sanitizeCsvCell(r.status)
+      sanitizeCsvField(r.explainable.verdict),
+      sanitizeCsvField(r.status)
     ]);
     const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

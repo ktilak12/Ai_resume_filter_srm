@@ -36,6 +36,17 @@ export function setResendFromEmail(email: string): void {
   }
 }
 
+function getAuthHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = sessionStorage.getItem('srm_secure_session_v1') || localStorage.getItem('srm_secure_session_v1');
+    if (raw) {
+      return { 'Authorization': `Bearer ${raw}` };
+    }
+  } catch {}
+  return {};
+}
+
 /**
  * Core function to send an email via the secure server-side backend proxy.
  * Note: The Resend API Key is kept strictly on the server (.env) and never exposed in the browser!
@@ -50,6 +61,7 @@ export async function sendEmail(payload: EmailPayload): Promise<SendEmailRespons
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeader()
       },
       body: JSON.stringify({
         from: fromEmail,
@@ -92,6 +104,7 @@ export async function testResendConnection(): Promise<SendEmailResponse> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeader()
       },
     });
 

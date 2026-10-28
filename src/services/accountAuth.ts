@@ -1,5 +1,6 @@
 import { AuthUser, UserRole } from '../types';
 import { isSRMISTEmail, parseSRMEmailDetails } from './googleAuth';
+import { isRoleElevationAllowed } from './sessionSecurity';
 
 export interface StoredAccount {
   id: string;
@@ -154,6 +155,24 @@ export async function registerAccount(params: {
 
   const isSRM = isSRMISTEmail(email);
   const srmDetails = parseSRMEmailDetails(email);
+
+  // Validate requested role against institutional RBAC rules
+  const tempUser: AuthUser = {
+    id: 'tmp-check',
+    name: name,
+    email: email,
+    role: 'Student Coordinator',
+    isInstitutionalVerified: isSRM,
+    isProfileComplete: true,
+    lastLoginAt: new Date().toISOString()
+  };
+  if (!isRoleElevationAllowed(tempUser, role)) {
+    return {
+      success: false,
+      error: `Unauthorized role assignment: Email ${email} is not authorized to register as '${role}'.`
+    };
+  }
+
   const passwordHash = await hashPassword(password);
 
   const newAccount: StoredAccount = {
@@ -224,7 +243,24 @@ export async function authenticateWithPassword(params: {
   }
 
   const isSRM = isSRMISTEmail(account.email);
-  const effectiveRole: UserRole = params.role || account.role;
+  let effectiveRole: UserRole = account.role;
+  if (params.role) {
+    const candidateUser: AuthUser = {
+      id: account.id,
+      name: account.name,
+      email: account.email,
+      role: account.role,
+      isInstitutionalVerified: isSRM,
+      isProfileComplete: true,
+      lastLoginAt: new Date().toISOString()
+    };
+    if (isRoleElevationAllowed(candidateUser, params.role)) {
+      effectiveRole = params.role;
+    } else {
+      console.warn(`[accountAuth] Role override '${params.role}' unauthorized for ${account.email}. Reverting to registered role '${account.role}'.`);
+      effectiveRole = account.role;
+    }
+  }
 
   const authUser: AuthUser = {
     id: account.id,

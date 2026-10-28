@@ -120,6 +120,10 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
 
   const handleCreateInterview = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canSchedule) {
+      alert('Unauthorized: You do not have permission to schedule interviews.');
+      return;
+    }
     if (!candName.trim()) return;
 
     const job = jobs.find(j => j.id === jobId) || jobs[0];
@@ -182,6 +186,10 @@ export const InterviewManagementView: React.FC<InterviewManagementViewProps> = (
 
   const handleSaveScorecard = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canUpdateStatus) {
+      alert('Unauthorized: You do not have permission to update interview status or scorecards.');
+      return;
+    }
     if (!evaluatingInterview) return;
 
     const totalPts = rubric.dsa_coding + rubric.system_architecture + rubric.problem_solving + rubric.communication_culture;

@@ -2,12 +2,14 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { GraduationCap } from 'lucide-react';
+import { UserRole } from '../../types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  allowedRoles?: UserRole[];
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { isAuthenticated, isLoading, currentUser } = useAuth();
   const location = useLocation();
 
@@ -31,6 +33,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // Security Gate: If not authenticated with verified @srmist.edu.in account, redirect directly to /login
   if (!isAuthenticated || !currentUser) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Role Gate: Prevent unauthorized role navigation
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(currentUser.role)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

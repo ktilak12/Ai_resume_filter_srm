@@ -17,6 +17,7 @@ import { JobRequirement, UserRole } from '../types';
 import { INITIAL_JOBS } from '../data/srmDataset';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { JobCreationModal } from '../components/modals/JobCreationModal';
+import { checkPermission } from '../services/rbac';
 import { SEO } from '../components/common/SEO';
 
 export const JobListing: React.FC = () => {
@@ -59,6 +60,12 @@ export const JobListing: React.FC = () => {
   };
 
   const handleSaveJob = (newOrUpdatedJob: JobRequirement) => {
+    const isEditing = jobs.some(j => j.id === newOrUpdatedJob.id);
+    const requiredPermission = isEditing ? 'EDIT_JOB' : 'CREATE_JOB';
+    if (!checkPermission(userRole, requiredPermission)) {
+      alert(`Unauthorized: You do not have permission to ${isEditing ? 'edit' : 'create'} placement drives.`);
+      return;
+    }
     setJobs(prev => {
       const existsIndex = prev.findIndex(j => j.id === newOrUpdatedJob.id);
       let updated: JobRequirement[];
@@ -76,6 +83,10 @@ export const JobListing: React.FC = () => {
   };
 
   const handleDeleteJob = (jobId: string) => {
+    if (!checkPermission(userRole, 'DELETE_JOB')) {
+      alert('Unauthorized: Only Super Administrators can delete placement drives.');
+      return;
+    }
     setJobs(prev => {
       const updated = prev.filter(j => j.id !== jobId);
       localStorage.setItem('srm_jobs_list', JSON.stringify(updated));

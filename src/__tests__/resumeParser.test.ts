@@ -1,11 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { validateResumeFile, extractResumesFromZip, sanitizeTextContent } from '../services/resumeParser';
+import { validateResumeFile, extractResumesFromZip, sanitizeTextContent, parseResumeFile } from '../services/resumeParser';
 import JSZip from 'jszip';
 
 describe('Resume Parser Security & Extraction', () => {
   it('rejects empty 0-byte files', async () => {
     const emptyFile = new File([], 'resume.pdf', { type: 'application/pdf' });
     await expect(validateResumeFile(emptyFile)).rejects.toThrow('Uploaded file is empty');
+  });
+
+  it('rejects files exceeding the 10MB maximum institutional limit', async () => {
+    const oversizedBlob = new Blob([new Uint8Array(11 * 1024 * 1024)]);
+    const oversizedFile = new File([oversizedBlob], 'huge_resume.pdf', { type: 'application/pdf' });
+    await expect(validateResumeFile(oversizedFile)).rejects.toThrow('exceeds maximum institutional limit of 10MB');
   });
 
   it('rejects unsupported executable extensions', async () => {
@@ -22,6 +28,30 @@ describe('Resume Parser Security & Extraction', () => {
     const validPdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]); // %PDF-1.4
     const validPdf = new File([validPdfBytes], 'valid_resume.pdf', { type: 'application/pdf' });
     await expect(validateResumeFile(validPdf)).resolves.toBeUndefined();
+  });
+
+  it('validates OpenXML / DOCX ZIP header', async () => {
+    const validDocxBytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04]); // PK
+    const validDocx = new File([validDocxBytes], 'valid_doc.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    await expect(validateResumeFile(validDocx)).resolves.toBeUndefined();
+
+    const fakeDocx = new File(['PLAIN_TEXT_NOT_DOCX'], 'fake_doc.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    await expect(validateResumeFile(fakeDocx)).rejects.toThrow('lacks valid OpenXML/ZIP header');
+  });
+
+  it('neutralizes Zip-Slip directory traversal attempts in ZIP archives', async () => {
+    const zip = new JSZip();
+    // Attempt zip slip path traversal
+    zip.file('..\\windows\\system32\\trojan.pdf', new Uint8Array([0x25, 0x50, 0x44, 0x46]));
+    zip.file('safe_resume.pdf', new Uint8Array([0x25, 0x50, 0x44, 0x46]));
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const zipFile = new File([zipBlob], 'slip_archive.zip', { type: 'application/zip' });
+
+    const extracted = await extractResumesFromZip(zipFile);
+    // Path traversal files must be dropped
+    expect(extracted.length).toBe(1);
+    expect(extracted[0].name).toBe('safe_resume.pdf');
   });
 
   it('extracts allowed resumes from ZIP archives while filtering non-resume files', async () => {

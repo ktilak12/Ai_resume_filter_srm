@@ -102,10 +102,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isSRM) {
         if (srmDetails.isStudent) {
           detectedRole = 'Student Coordinator';
-        } else if (email.includes('director') || email.includes('admin')) {
-          detectedRole = 'Super Admin';
         } else {
-          detectedRole = 'Faculty Coordinator';
+          // Strictly validate Super Admin permissions against bounded administrative patterns
+          const probeAdminUser: AuthUser = {
+            id: payload.sub,
+            name: payload.name || email.split('@')[0],
+            email: email,
+            role: 'Faculty Coordinator',
+            isInstitutionalVerified: true,
+            isProfileComplete: true,
+            lastLoginAt: new Date().toISOString()
+          };
+          if (isRoleElevationAllowed(probeAdminUser, 'Super Admin')) {
+            detectedRole = 'Super Admin';
+          } else {
+            detectedRole = 'Faculty Coordinator';
+          }
         }
       } else {
         detectedRole = 'Faculty Coordinator';

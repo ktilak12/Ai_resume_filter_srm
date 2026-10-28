@@ -67,6 +67,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canModify) {
+      alert('Unauthorized: Only Faculty Coordinators or Super Administrators can modify AI settings.');
+      return;
+    }
     if (totalWeight !== 100) {
       alert(`Total weights must equal 100% (currently ${totalWeight}%). Please adjust sliders.`);
       return;

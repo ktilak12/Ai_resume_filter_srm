@@ -60,11 +60,29 @@ function App() {
               <Route path="/upload" element={<ResumeUpload />} />
               <Route path="/screening" element={<CandidateRanking />} />
               <Route path="/candidates" element={<CandidateRanking />} />
-              <Route path="/shortlisted" element={<ShortlistedPage />} />
-              <Route path="/interviews" element={<InterviewsPage />} />
               <Route path="/candidates/:id" element={<CandidateDetail />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/settings" element={<SettingsPage />} />
+
+              {/* Administrative Protected Routes: Restricted to Faculty Coordinator and Super Admin */}
+              <Route path="/shortlisted" element={
+                <ProtectedRoute allowedRoles={['Faculty Coordinator', 'Super Admin']}>
+                  <ShortlistedPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/interviews" element={
+                <ProtectedRoute allowedRoles={['Faculty Coordinator', 'Super Admin']}>
+                  <InterviewsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/analytics" element={
+                <ProtectedRoute allowedRoles={['Faculty Coordinator', 'Super Admin']}>
+                  <Analytics />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute allowedRoles={['Faculty Coordinator', 'Super Admin']}>
+                  <SettingsPage />
+                </ProtectedRoute>
+              } />
             </Route>
 
             {/* Catch-all fallback: Return to Landing Page */}
