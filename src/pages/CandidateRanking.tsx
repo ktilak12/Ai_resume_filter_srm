@@ -24,7 +24,9 @@ import { sendShortlistNotification } from '../services/emailService';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
-import { canAccessUnmaskedPII, maskRegNumber, sanitizeCsvField } from '../services/privacyGuard';
+import { canAccessUnmaskedPII, maskRegNumber } from '../services/privacyGuard';
+import { sanitizeSearchQuery, sanitizeCsvField } from '../services/sanitizer';
+import { getSecureItemSync } from '../services/encryptedStorage';
 import { AllCandidatesView } from '../components/candidates/AllCandidatesView';
 import { SEO } from '../components/common/SEO';
 
@@ -59,16 +61,9 @@ export const CandidateRanking: React.FC = () => {
   const [isSendingBatch, setIsSendingBatch] = useState(false);
   const [batchNotice, setBatchNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Load active jobs and candidates from persistent storage or clean state
+  // Load active jobs and candidates from encrypted storage or clean state
   const jobs: JobRequirement[] = useMemo(() => {
-    const saved = localStorage.getItem('srm_jobs_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
-    return INITIAL_JOBS;
+    return getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
   }, []);
 
   const [selectedJobId, setSelectedJobId] = useState<string>(() => navState?.selectedJobId || jobs[0]?.id || 'job-google-sde');
@@ -78,19 +73,12 @@ export const CandidateRanking: React.FC = () => {
       setSelectedJobId(navState.selectedJobId);
     }
     if (navState?.searchTerm) {
-      setSearchTerm(navState.searchTerm);
+      setSearchTerm(sanitizeSearchQuery(navState.searchTerm));
     }
   }, [location.state]);
 
   const candidates: CandidateProfile[] = useMemo(() => {
-    const saved = localStorage.getItem('srm_candidates_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
-    return INITIAL_CANDIDATES;
+    return getSecureItemSync<CandidateProfile[]>('srm_candidates_list', INITIAL_CANDIDATES);
   }, []);
 
   const activeJob = useMemo(() => {
@@ -145,18 +133,20 @@ export const CandidateRanking: React.FC = () => {
     experienceFilter !== 'all'
   ].filter(Boolean).length;
 
-  // Apply Search, Tier, and Advanced Filters
+  // Apply Search, Tier, and Advanced Filters with injection defense
   const filteredResults = useMemo(() => {
+    const cleanSearch = sanitizeSearchQuery(searchTerm).toLowerCase();
+
     return screenedResults.filter(res => {
       const cand = res.candidate;
       
       // Search term
       const matchesSearch = 
-        !searchTerm.trim() ||
-        cand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cand.reg_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cand.education.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cand.skills.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
+        !cleanSearch ||
+        cand.name.toLowerCase().includes(cleanSearch) ||
+        cand.reg_number.toLowerCase().includes(cleanSearch) ||
+        cand.education.department.toLowerCase().includes(cleanSearch) ||
+        cand.skills.some(s => s.toLowerCase().includes(cleanSearch));
 
       if (!matchesSearch) return false;
 

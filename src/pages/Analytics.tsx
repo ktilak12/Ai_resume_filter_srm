@@ -3,35 +3,23 @@ import { AnalyticsView } from '../components/analytics/AnalyticsView';
 import { CandidateProfile, JobRequirement, ScreeningResult } from '../types';
 import { INITIAL_CANDIDATES, INITIAL_JOBS } from '../data/srmDataset';
 import { screenCandidate, rankScreeningResults } from '../services/aiScreeningEngine';
+import { getSecureItemSync } from '../services/encryptedStorage';
 import { SEO } from '../components/common/SEO';
 
 export const Analytics: React.FC = () => {
   const [candidates, setCandidates] = useState<CandidateProfile[]>(() => {
-    try {
-      const saved = localStorage.getItem('srm_candidates_list');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return INITIAL_CANDIDATES;
+    return getSecureItemSync<CandidateProfile[]>('srm_candidates_list', INITIAL_CANDIDATES);
   });
 
   const [jobs, setJobs] = useState<JobRequirement[]>(() => {
-    try {
-      const saved = localStorage.getItem('srm_jobs_list');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return INITIAL_JOBS;
+    return getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
   });
 
   useEffect(() => {
-    try {
-      const savedCands = localStorage.getItem('srm_candidates_list');
-      if (savedCands) setCandidates(JSON.parse(savedCands));
-
-      const savedJobs = localStorage.getItem('srm_jobs_list');
-      if (savedJobs) setJobs(JSON.parse(savedJobs));
-    } catch (e) {
-      console.error(e);
-    }
+    const c = getSecureItemSync<CandidateProfile[]>('srm_candidates_list', INITIAL_CANDIDATES);
+    const j = getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
+    setCandidates(c);
+    setJobs(j);
   }, []);
 
   const screeningResults: ScreeningResult[] = useMemo(() => {

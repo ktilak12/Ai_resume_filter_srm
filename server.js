@@ -671,7 +671,17 @@ ${sanitizedResumeText}
     if (fs.existsSync(finalFilePath)) {
       const ext = path.extname(finalFilePath);
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-      res.writeHead(200, { 'Content-Type': contentType });
+      
+      // Production Caching Headers: Immutable hashed assets vs revalidated HTML
+      const isAsset = pathname.startsWith('/assets/');
+      const headers = { 'Content-Type': contentType };
+      if (isAsset) {
+        headers['Cache-Control'] = 'public, max-age=31536000, immutable';
+      } else {
+        headers['Cache-Control'] = 'no-cache, must-revalidate';
+      }
+
+      res.writeHead(200, headers);
       fs.createReadStream(finalFilePath).pipe(res);
     } else {
       res.writeHead(404, { 'Content-Type': 'text/plain' });

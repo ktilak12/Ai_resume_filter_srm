@@ -430,6 +430,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   localStorage.removeItem('srm_jobs_list');
                   localStorage.removeItem('srm_candidates_list');
                   localStorage.removeItem('srm_interviews_list');
+                  sessionStorage.clear();
                   window.location.reload();
                 }
               }}

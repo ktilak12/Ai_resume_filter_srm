@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { ResumeBuilder } from '../components/student/ResumeBuilder';
 import { INITIAL_JOBS } from '../data/srmDataset';
 import { JobRequirement } from '../types';
+import { getSecureItemSync } from '../services/encryptedStorage';
 import { SEO } from '../components/common/SEO';
 
 export const ResumeBuilderPage: React.FC = () => {
@@ -10,13 +11,7 @@ export const ResumeBuilderPage: React.FC = () => {
   const initialJobId = searchParams.get('jobId') || undefined;
 
   const [jobs] = useState<JobRequirement[]>(() => {
-    try {
-      const saved = localStorage.getItem('srm_jobs_list');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
-    return INITIAL_JOBS;
+    return getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
   });
 
   const structuredData = {

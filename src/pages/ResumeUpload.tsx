@@ -26,6 +26,7 @@ import { INITIAL_JOBS, INITIAL_CANDIDATES } from '../data/srmDataset';
 import { CandidateProfile, ScreeningResult, JobRequirement } from '../types';
 import { parseResumeFile, extractCandidateEntities, extractResumesFromZip } from '../services/resumeParser';
 import { screenCandidate, evaluateAtsFormatting, AtsFormattingCheck } from '../services/aiScreeningEngine';
+import { getSecureItemSync, setSecureItem } from '../services/encryptedStorage';
 import { Link } from 'react-router-dom';
 import { SEO } from '../components/common/SEO';
 
@@ -58,16 +59,7 @@ const DEFAULT_BENCHMARK_JOB: JobRequirement = {
 export const ResumeUpload: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
   const [jobs] = useState<JobRequirement[]>(() => {
-    const saved = localStorage.getItem('srm_jobs_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return INITIAL_JOBS;
+    return getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
   });
 
   const [selectedJobId, setSelectedJobId] = useState<string>(() => jobs[0]?.id || 'job-google-sde');
@@ -156,13 +148,12 @@ export const ResumeUpload: React.FC = () => {
 
     // Merge into local recruitment talent pool
     try {
-      const existing = localStorage.getItem('srm_candidates_list');
-      const list: CandidateProfile[] = existing ? JSON.parse(existing) : INITIAL_CANDIDATES;
+      const list = getSecureItemSync<CandidateProfile[]>('srm_candidates_list', INITIAL_CANDIDATES);
       const merged = [
         ...processedCandidates, 
         ...list.filter(c => !processedCandidates.some(p => p.id === c.id || (p.email && p.email === c.email)))
       ];
-      localStorage.setItem('srm_candidates_list', JSON.stringify(merged));
+      setSecureItem('srm_candidates_list', merged);
       setSavedSuccessMsg(`Batch Ingestion Complete: Successfully parsed ${processedCandidates.length} resumes and updated campus recruitment pool!`);
     } catch (e) {
       console.error(e);
@@ -261,21 +252,14 @@ export const ResumeUpload: React.FC = () => {
       });
 
       // Save candidate to candidates roster
-      const currentList: CandidateProfile[] = (() => {
-        try {
-          const saved = localStorage.getItem('srm_candidates_list');
-          return saved ? JSON.parse(saved) : INITIAL_CANDIDATES;
-        } catch (e) {
-          return INITIAL_CANDIDATES;
-        }
-      })();
+      const currentList: CandidateProfile[] = getSecureItemSync<CandidateProfile[]>('srm_candidates_list', INITIAL_CANDIDATES);
 
       const updatedRoster = [
         candidateProfile,
         ...currentList.filter(c => c.reg_number !== candidateProfile.reg_number)
       ];
 
-      localStorage.setItem('srm_candidates_list', JSON.stringify(updatedRoster));
+      setSecureItem('srm_candidates_list', updatedRoster);
       window.dispatchEvent(new CustomEvent('srm_candidate_added', { detail: candidateProfile }));
 
       setSavedSuccessMsg(`Candidate profile for "${candidateProfile.name}" saved to recruitment pool!`);

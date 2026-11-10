@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { InterviewManagementView } from '../components/interviews/InterviewManagementView';
 import { Interview, JobRequirement, CandidateProfile } from '../types';
 import { INITIAL_INTERVIEWS, INITIAL_JOBS } from '../data/srmDataset';
+import { getSecureItemSync, setSecureItem } from '../services/encryptedStorage';
 import { SEO } from '../components/common/SEO';
 
 export const InterviewsPage: React.FC = () => {
@@ -10,38 +11,22 @@ export const InterviewsPage: React.FC = () => {
   const navState = (location.state as { candidate?: CandidateProfile; jobId?: string } | null) || null;
 
   const [interviews, setInterviews] = useState<Interview[]>(() => {
-    try {
-      const saved = localStorage.getItem('srm_interviews_list');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error('[InterviewsPage] Failed to parse interviews from localStorage:', e);
-    }
-    return INITIAL_INTERVIEWS;
+    return getSecureItemSync<Interview[]>('srm_interviews_list', INITIAL_INTERVIEWS);
   });
 
   const [jobs, setJobs] = useState<JobRequirement[]>(() => {
-    try {
-      const saved = localStorage.getItem('srm_jobs_list');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error('[InterviewsPage] Failed to parse jobs from localStorage:', e);
-    }
-    return INITIAL_JOBS;
+    return getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
   });
 
   useEffect(() => {
-    try {
-      const savedJobs = localStorage.getItem('srm_jobs_list');
-      if (savedJobs) setJobs(JSON.parse(savedJobs));
-    } catch (e) {
-      console.error(e);
-    }
+    const freshJobs = getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
+    setJobs(freshJobs);
   }, []);
 
   const handleUpdateStatus = (id: string, status: Interview['status']) => {
     setInterviews(prev => {
       const updated = prev.map(i => i.id === id ? { ...i, status } : i);
-      localStorage.setItem('srm_interviews_list', JSON.stringify(updated));
+      setSecureItem('srm_interviews_list', updated);
       return updated;
     });
   };
@@ -49,7 +34,7 @@ export const InterviewsPage: React.FC = () => {
   const handleAddInterview = (interview: Interview) => {
     setInterviews(prev => {
       const updated = [interview, ...prev];
-      localStorage.setItem('srm_interviews_list', JSON.stringify(updated));
+      setSecureItem('srm_interviews_list', updated);
       return updated;
     });
   };
@@ -67,7 +52,7 @@ export const InterviewsPage: React.FC = () => {
         }
         return i;
       });
-      localStorage.setItem('srm_interviews_list', JSON.stringify(updated));
+      setSecureItem('srm_interviews_list', updated);
       return updated;
     });
   };

@@ -18,24 +18,17 @@ import { INITIAL_JOBS } from '../data/srmDataset';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { JobCreationModal } from '../components/modals/JobCreationModal';
 import { checkPermission } from '../services/rbac';
+import { sanitizeSearchQuery } from '../services/sanitizer';
+import { getSecureItemSync, setSecureItem } from '../services/encryptedStorage';
 import { SEO } from '../components/common/SEO';
 
 export const JobListing: React.FC = () => {
   const { userRole } = useOutletContext<{ userRole: UserRole }>();
   const navigate = useNavigate();
 
-  // Load jobs from persistent state or clean fallback
+  // Load jobs from encrypted state or clean fallback
   const [jobs, setJobs] = useState<JobRequirement[]>(() => {
-    const saved = localStorage.getItem('srm_jobs_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return INITIAL_JOBS;
+    return getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
   });
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,7 +68,7 @@ export const JobListing: React.FC = () => {
       } else {
         updated = [newOrUpdatedJob, ...prev];
       }
-      localStorage.setItem('srm_jobs_list', JSON.stringify(updated));
+      setSecureItem('srm_jobs_list', updated);
       return updated;
     });
     setIsModalOpen(false);
@@ -89,7 +82,7 @@ export const JobListing: React.FC = () => {
     }
     setJobs(prev => {
       const updated = prev.filter(j => j.id !== jobId);
-      localStorage.setItem('srm_jobs_list', JSON.stringify(updated));
+      setSecureItem('srm_jobs_list', updated);
       return updated;
     });
     setIsModalOpen(false);
@@ -112,11 +105,13 @@ export const JobListing: React.FC = () => {
   ].filter(Boolean).length;
 
   const filteredJobs = useMemo(() => {
+    const cleanSearch = sanitizeSearchQuery(searchTerm).toLowerCase();
+
     return jobs.filter(job => {
-      const matchesSearch = !searchTerm.trim() ||
-        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.required_skills.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesSearch = !cleanSearch ||
+        job.title.toLowerCase().includes(cleanSearch) ||
+        job.company.toLowerCase().includes(cleanSearch) ||
+        job.required_skills.some(s => s.toLowerCase().includes(cleanSearch));
 
       if (!matchesSearch) return false;
 

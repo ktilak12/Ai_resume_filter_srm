@@ -1,4 +1,5 @@
 import { JobRequirement, CandidateProfile, Interview } from '../types';
+import { setSecureItem, getSecureItemSync } from '../services/encryptedStorage';
 
 export const INITIAL_JOBS: JobRequirement[] = [
   {
@@ -242,16 +243,18 @@ export const SRM_SKILL_DEMAND_STATS: any[] = [
 export const SAMPLE_JOBS_PRESET = INITIAL_JOBS;
 export const SAMPLE_CANDIDATES_PRESET = INITIAL_CANDIDATES;
 
-export const DEMO_DATA_VERSION = 'v2_minimal_data';
+export const DEMO_DATA_VERSION = 'v3_encrypted_database';
 
 export const ensureCleanDemoData = (force: boolean = false): boolean => {
   try {
-    const currentVer = localStorage.getItem('srm_data_version');
+    const currentVer = typeof window !== 'undefined' ? localStorage.getItem('srm_data_version') : null;
     if (force || currentVer !== DEMO_DATA_VERSION) {
-      localStorage.setItem('srm_data_version', DEMO_DATA_VERSION);
-      localStorage.setItem('srm_jobs_list', JSON.stringify(INITIAL_JOBS));
-      localStorage.setItem('srm_candidates_list', JSON.stringify(INITIAL_CANDIDATES));
-      localStorage.setItem('srm_interviews_list', JSON.stringify(INITIAL_INTERVIEWS));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('srm_data_version', DEMO_DATA_VERSION);
+      }
+      setSecureItem('srm_jobs_list', INITIAL_JOBS);
+      setSecureItem('srm_candidates_list', INITIAL_CANDIDATES);
+      setSecureItem('srm_interviews_list', INITIAL_INTERVIEWS);
       return true;
     }
   } catch (e) {

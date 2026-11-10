@@ -28,6 +28,7 @@ import { parseResumeFile } from '../services/resumeParser';
 import { screenCandidate } from '../services/aiScreeningEngine';
 import { CandidateProfile, ScreeningResult, JobRequirement, Interview } from '../types';
 import { downloadIcsFile } from '../services/calendarService';
+import { getSecureItemSync } from '../services/encryptedStorage';
 import { ResumeBuilder } from '../components/student/ResumeBuilder';
 import { SEO } from '../components/common/SEO';
 
@@ -35,25 +36,13 @@ export const StudentPortalPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'eligibility' | 'builder' | 'checker' | 'interviews'>('builder');
 
-  // Candidate data & drives from state/storage
+  // Candidate data & drives from encrypted storage
   const [jobs] = useState<JobRequirement[]>(() => {
-    try {
-      const saved = localStorage.getItem('srm_jobs_list');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
-    return INITIAL_JOBS;
+    return getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
   });
 
   const [interviews] = useState<Interview[]>(() => {
-    try {
-      const saved = localStorage.getItem('srm_interviews_list');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
-    return INITIAL_INTERVIEWS;
+    return getSecureItemSync<Interview[]>('srm_interviews_list', INITIAL_INTERVIEWS);
   });
 
   // Student specific details or sensible defaults

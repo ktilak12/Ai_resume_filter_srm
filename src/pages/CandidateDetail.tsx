@@ -31,6 +31,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { checkPermission } from '../services/rbac';
 import { canAccessUnmaskedPII, maskEmail, maskPhone, maskRegNumber } from '../services/privacyGuard';
+import { getSecureItemSync, setSecureItem } from '../services/encryptedStorage';
 import { SEO } from '../components/common/SEO';
 
 export const CandidateDetail: React.FC = () => {
@@ -46,10 +47,9 @@ export const CandidateDetail: React.FC = () => {
 
   const { id } = useParams<{ id: string }>();
 
-  // Retrieve candidate and jobs from persistent storage
+  // Retrieve candidate and jobs from encrypted storage
   const candidate: CandidateProfile = useMemo(() => {
-    const saved = localStorage.getItem('srm_candidates_list');
-    const list: CandidateProfile[] = saved ? JSON.parse(saved) : INITIAL_CANDIDATES;
+    const list = getSecureItemSync<CandidateProfile[]>('srm_candidates_list', INITIAL_CANDIDATES);
     return list.find(c => c.id === id) || {
       id: id || 'cand-new',
       reg_number: 'RA2311003010142',
@@ -76,8 +76,7 @@ export const CandidateDetail: React.FC = () => {
   const canViewPII = canAccessUnmaskedPII(currentUser?.role, candidate.status === 'Shortlisted');
 
   const jobsList: JobRequirement[] = useMemo(() => {
-    const savedJobs = localStorage.getItem('srm_jobs_list');
-    return savedJobs ? JSON.parse(savedJobs) : INITIAL_JOBS;
+    return getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
   }, []);
 
   const [selectedJobId, setSelectedJobId] = useState<string>(() => {
@@ -108,10 +107,9 @@ export const CandidateDetail: React.FC = () => {
 
   const updateCandidateStatus = (status: CandidateProfile['status']) => {
     try {
-      const saved = localStorage.getItem('srm_candidates_list');
-      const list: CandidateProfile[] = saved ? JSON.parse(saved) : INITIAL_CANDIDATES;
+      const list = getSecureItemSync<CandidateProfile[]>('srm_candidates_list', INITIAL_CANDIDATES);
       const updated = list.map(c => c.id === candidate.id ? { ...c, status } : c);
-      localStorage.setItem('srm_candidates_list', JSON.stringify(updated));
+      setSecureItem('srm_candidates_list', updated);
     } catch (e) {
       console.error(e);
     }

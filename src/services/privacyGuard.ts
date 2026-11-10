@@ -59,18 +59,5 @@ export function canAccessUnmaskedPII(role: UserRole | undefined, _isShortlisted:
   return false;
 }
 
-/**
- * Sanitizes any cell content to prevent CSV/Spreadsheet Formula Injection (CWE-1236)
- * Defends against DDE execution, external hyperlink invocation, and formula triggers (=, +, -, @, |, %, tabs).
- */
-export function sanitizeCsvField(val: any): string {
-  if (val === null || val === undefined) return '""';
-  // Strip null bytes to avoid parser corruption
-  let str = String(val).replace(/\0/g, '');
-  const trimmed = str.trimStart();
-  // If field starts with formula trigger characters (=, +, -, @, |, %, tab, cr), prefix with single quote
-  if (/^[=+\-@\t\r|%]/.test(trimmed)) {
-    str = "'" + str;
-  }
-  return `"${str.replace(/"/g, '""')}"`;
-}
+// Re-export canonical sanitizeCsvField from sanitizer service for backward compatibility
+export { sanitizeCsvField } from './sanitizer';

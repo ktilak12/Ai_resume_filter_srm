@@ -16,6 +16,7 @@ import { useOutletContext, useNavigate } from 'react-router-dom';
 import { UserRole, CandidateProfile, JobRequirement, Interview } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { INITIAL_JOBS, INITIAL_CANDIDATES, INITIAL_INTERVIEWS } from '../data/srmDataset';
+import { getSecureItemSync, setSecureItem } from '../services/encryptedStorage';
 import { JobCreationModal } from '../components/modals/JobCreationModal';
 import { SEO } from '../components/common/SEO';
 
@@ -27,27 +28,15 @@ export const Dashboard: React.FC = () => {
   const displayName = currentUser?.name || activeRole;
 
   const [candidates, setCandidates] = useState<CandidateProfile[]>(() => {
-    try {
-      const saved = localStorage.getItem('srm_candidates_list');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return INITIAL_CANDIDATES;
+    return getSecureItemSync<CandidateProfile[]>('srm_candidates_list', INITIAL_CANDIDATES);
   });
 
   const [jobs, setJobs] = useState<JobRequirement[]>(() => {
-    try {
-      const saved = localStorage.getItem('srm_jobs_list');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return INITIAL_JOBS;
+    return getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
   });
 
   const [interviews, setInterviews] = useState<Interview[]>(() => {
-    try {
-      const saved = localStorage.getItem('srm_interviews_list');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return INITIAL_INTERVIEWS;
+    return getSecureItemSync<Interview[]>('srm_interviews_list', INITIAL_INTERVIEWS);
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,7 +52,7 @@ export const Dashboard: React.FC = () => {
       } else {
         updated = [newOrUpdatedJob, ...prev];
       }
-      localStorage.setItem('srm_jobs_list', JSON.stringify(updated));
+      setSecureItem('srm_jobs_list', updated);
       return updated;
     });
     setJobToManage(null);
@@ -72,7 +61,7 @@ export const Dashboard: React.FC = () => {
   const handleDeleteJob = (jobId: string) => {
     setJobs(prev => {
       const updated = prev.filter(j => j.id !== jobId);
-      localStorage.setItem('srm_jobs_list', JSON.stringify(updated));
+      setSecureItem('srm_jobs_list', updated);
       return updated;
     });
     setJobToManage(null);

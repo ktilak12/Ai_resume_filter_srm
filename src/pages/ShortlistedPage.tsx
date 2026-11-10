@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { SEO } from '../components/common/SEO';
 
 import { INITIAL_JOBS, INITIAL_CANDIDATES } from '../data/srmDataset';
+import { getSecureItemSync } from '../services/encryptedStorage';
 
 const DEFAULT_FALLBACK_JOB: JobRequirement = INITIAL_JOBS[0] || {
   id: 'job-general',
@@ -40,12 +41,10 @@ export const ShortlistedPage: React.FC = () => {
 
   useEffect(() => {
     try {
-      const savedJobs = localStorage.getItem('srm_jobs_list');
-      const loadedJobs: JobRequirement[] = savedJobs ? JSON.parse(savedJobs) : INITIAL_JOBS;
+      const loadedJobs = getSecureItemSync<JobRequirement[]>('srm_jobs_list', INITIAL_JOBS);
       setJobs(loadedJobs);
 
-      const savedCands = localStorage.getItem('srm_candidates_list');
-      const loadedCands: CandidateProfile[] = savedCands ? JSON.parse(savedCands) : INITIAL_CANDIDATES;
+      const loadedCands = getSecureItemSync<CandidateProfile[]>('srm_candidates_list', INITIAL_CANDIDATES);
 
       if (loadedCands.length > 0) {
         const referenceJob = loadedJobs[0] || DEFAULT_FALLBACK_JOB;
