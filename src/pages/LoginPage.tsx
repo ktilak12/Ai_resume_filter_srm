@@ -81,7 +81,28 @@ export const LoginPage: React.FC = () => {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   // Active Role Selection
-  const [selectedRole, setSelectedRole] = useState<UserRole>('Faculty Coordinator');
+  const [isStudentFirst, setIsStudentFirst] = useState<boolean>(() => {
+    try {
+      return (
+        localStorage.getItem('srm_first_login_role') === 'Student Coordinator' ||
+        sessionStorage.getItem('srm_first_login_role') === 'Student Coordinator'
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  const [selectedRole, setSelectedRole] = useState<UserRole>(() => {
+    try {
+      if (
+        localStorage.getItem('srm_first_login_role') === 'Student Coordinator' ||
+        sessionStorage.getItem('srm_first_login_role') === 'Student Coordinator'
+      ) {
+        return 'Student Coordinator';
+      }
+    } catch {}
+    return 'Faculty Coordinator';
+  });
   const selectedRoleRef = useRef<UserRole>(selectedRole);
 
   const activeRoleConfig = ROLES.find(r => r.role === selectedRole) || ROLES[0];
@@ -338,46 +359,68 @@ export const LoginPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Role Segmented Pill */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[11px] text-zinc-400 px-0.5">
-            <span>{authMode === 'login' ? 'Account Role' : 'Registering as'}</span>
-            <button
-              type="button"
-              onClick={handleFillDemoCredentials}
-              className="text-[10px] text-amber-400 hover:text-amber-300 transition-colors underline"
-            >
-              Fill demo {activeRoleConfig.label}
-            </button>
+        {/* Role Segmented Pill or Locked Student Role */}
+        {isStudentFirst ? (
+          <div className="space-y-1.5">
+            <div className="p-3 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-zinc-850 text-blue-400">
+                  <GraduationCap className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-white block">Student Placement Portal</span>
+                  <span className="text-[10px] text-zinc-400 font-mono">Role locked to Student Coordinator</span>
+                </div>
+              </div>
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-blue-950/60 text-blue-400 border border-blue-900/60">
+                Student
+              </span>
+            </div>
+            <p className="text-[10.5px] text-zinc-500 text-center">
+              Student portal, ATS resume screening, and drive applications
+            </p>
           </div>
+        ) : (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-[11px] text-zinc-400 px-0.5">
+              <span>{authMode === 'login' ? 'Account Role' : 'Registering as'}</span>
+              <button
+                type="button"
+                onClick={handleFillDemoCredentials}
+                className="text-[10px] text-amber-400 hover:text-amber-300 transition-colors underline"
+              >
+                Fill demo {activeRoleConfig.label}
+              </button>
+            </div>
 
-          <div className="p-1 rounded-xl bg-zinc-900 border border-zinc-800 grid grid-cols-3 gap-1">
-            {ROLES.map((tab) => {
-              const Icon = tab.icon;
-              const isSelected = selectedRole === tab.role;
-              return (
-                <button
-                  key={tab.role}
-                  type="button"
-                  onClick={() => {
-                    setSelectedRole(tab.role);
-                  }}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
-                    isSelected 
-                      ? 'bg-zinc-800 text-white border border-zinc-700 shadow-sm' 
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
+            <div className="p-1 rounded-xl bg-zinc-900 border border-zinc-800 grid grid-cols-3 gap-1">
+              {ROLES.map((tab) => {
+                const Icon = tab.icon;
+                const isSelected = selectedRole === tab.role;
+                return (
+                  <button
+                    key={tab.role}
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole(tab.role);
+                    }}
+                    className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                      isSelected 
+                        ? 'bg-zinc-800 text-white border border-zinc-700 shadow-sm' 
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10.5px] text-zinc-500 text-center">
+              {activeRoleConfig.hint}
+            </p>
           </div>
-          <p className="text-[10.5px] text-zinc-500 text-center">
-            {activeRoleConfig.hint}
-          </p>
-        </div>
+        )}
 
         {/* Error Alert Banner */}
         {activeError && (

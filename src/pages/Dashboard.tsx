@@ -77,6 +77,8 @@ export const Dashboard: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const isStudent = activeRole === 'Student Coordinator';
+
   const totalApplicants = candidates.length;
   const processedResumes = candidates.filter(c => c.ats_score !== undefined || c.raw_resume_text).length;
   const shortlistedCount = candidates.filter(c => (c.ats_score && c.ats_score >= 70) || c.status === 'Shortlisted').length;
@@ -102,22 +104,41 @@ export const Dashboard: React.FC = () => {
           <h1 className="text-2xl font-bold text-white tracking-tight">Welcome, {displayName}</h1>
           <p className="text-zinc-400 text-xs mt-1">Placement &amp; AI Screening Dashboard ({activeRole}).</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <button 
-            onClick={() => navigate('/upload')}
-            className="flex items-center space-x-2 bg-white text-black hover:bg-zinc-200 text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors"
-          >
-            <Sparkles className="h-4 w-4" />
-            <span>Upload Resume</span>
-          </button>
-          <button 
-            onClick={handleOpenCreate}
-            className="flex items-center space-x-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-zinc-800 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Post Drive</span>
-          </button>
-        </div>
+        {isStudent ? (
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => navigate('/resume-builder')}
+              className="flex items-center space-x-2 bg-white text-black hover:bg-zinc-200 text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>AI Resume Builder</span>
+            </button>
+            <button 
+              onClick={() => navigate('/student-portal')}
+              className="flex items-center space-x-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-zinc-800 transition-colors"
+            >
+              <Briefcase className="h-4 w-4" />
+              <span>My Applications</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => navigate('/upload')}
+              className="flex items-center space-x-2 bg-white text-black hover:bg-zinc-200 text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Upload Resume</span>
+            </button>
+            <button 
+              onClick={handleOpenCreate}
+              className="flex items-center space-x-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-zinc-800 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Post Drive</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -194,22 +215,34 @@ export const Dashboard: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenManage(drive)}
-                            className="text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all"
-                            title={`Manage ${drive.company} Drive`}
-                          >
-                            <Settings className="w-3.5 h-3.5 text-zinc-400" />
-                            <span>Manage</span>
-                          </button>
-                          <button 
-                            onClick={() => navigate('/screening', { state: { selectedJobId: drive.id } })}
-                            className="text-black bg-white hover:bg-zinc-200 px-3 py-1.5 rounded-lg font-semibold transition-colors"
-                          >
-                            Screen
-                          </button>
-                        </div>
+                        {isStudent ? (
+                          <div className="flex items-center justify-end">
+                            <button 
+                              onClick={() => navigate('/student-portal', { state: { selectedJobId: drive.id } })}
+                              className="text-black bg-white hover:bg-zinc-200 px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-1"
+                            >
+                              <span>Check Eligibility</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleOpenManage(drive)}
+                              className="text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all"
+                              title={`Manage ${drive.company} Drive`}
+                            >
+                              <Settings className="w-3.5 h-3.5 text-zinc-400" />
+                              <span>Manage</span>
+                            </button>
+                            <button 
+                              onClick={() => navigate('/screening', { state: { selectedJobId: drive.id } })}
+                              className="text-black bg-white hover:bg-zinc-200 px-3 py-1.5 rounded-lg font-semibold transition-colors"
+                            >
+                              Screen
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -219,61 +252,119 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Activity / Candidate Stream */}
-        <div className="bg-zinc-950 rounded-xl border border-zinc-850 overflow-hidden flex flex-col">
-          <div className="p-5 border-b border-zinc-850 flex justify-between items-center">
-            <h2 className="text-sm font-bold text-white flex items-center">
-              <Clock className="mr-2 h-4 w-4 text-white" />
-              Recent Applicants
-            </h2>
-            <button onClick={() => navigate('/candidates')} className="text-xs font-mono text-zinc-400 hover:text-white transition-colors">View Pool</button>
-          </div>
-          <div className="p-5 flex-1">
-            {candidates.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                <FileText className="w-10 h-10 text-zinc-600 mb-2" />
-                <p className="text-sm font-medium text-white">No applicants uploaded yet</p>
-                <p className="text-xs text-zinc-400 mt-1 mb-4">Upload candidate resumes to check ATS match and build your talent pool.</p>
+        {/* Right Panel: Student Quick Actions OR Faculty Recent Applicants Stream */}
+        {isStudent ? (
+          <div className="bg-zinc-950 rounded-xl border border-zinc-850 overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-zinc-850 flex justify-between items-center">
+              <h2 className="text-sm font-bold text-white flex items-center">
+                <Sparkles className="mr-2 h-4 w-4 text-white" />
+                Student Portal Hub
+              </h2>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 text-blue-400 border border-zinc-800">
+                Active Student
+              </span>
+            </div>
+            <div className="p-5 flex-1 space-y-4">
+              <div className="p-4 rounded-xl bg-black border border-zinc-800 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-zinc-900 text-white">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-white">AI Resume Builder</h3>
+                    <p className="text-[11px] text-zinc-400">Craft and score your resume against real recruiter keywords.</p>
+                  </div>
+                </div>
                 <button
-                  onClick={() => navigate('/upload')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-black hover:bg-zinc-200 text-xs font-semibold rounded-lg transition-colors"
+                  onClick={() => navigate('/resume-builder')}
+                  className="w-full mt-2 py-2 px-3 rounded-lg bg-white text-black hover:bg-zinc-200 text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Upload &amp; Screen Resume</span>
+                  <span>Launch Resume Builder</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {candidates.slice(0, 5).map((cand) => (
-                  <div key={cand.id} className="flex items-center justify-between p-3 rounded-lg bg-black border border-zinc-850 hover:border-zinc-700 transition-colors">
-                    <div>
-                      <div className="text-xs font-semibold text-white">{cand.name}</div>
-                      <div className="text-[11px] text-zinc-500">{cand.education.department} • CGPA {cand.education.cgpa}</div>
-                    </div>
-                    {cand.ats_score !== undefined ? (
-                      <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-zinc-900 border border-zinc-800 text-white">
-                        {cand.ats_score}% ATS
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-zinc-500 font-mono">Unscreened</span>
-                    )}
+
+              <div className="p-4 rounded-xl bg-black border border-zinc-800 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-zinc-900 text-white">
+                    <Briefcase className="w-4 h-4" />
                   </div>
-                ))}
+                  <div>
+                    <h3 className="text-xs font-bold text-white">Placement Applications</h3>
+                    <p className="text-[11px] text-zinc-400">Check drive eligibility, test rounds, and your interview schedule.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/student-portal')}
+                  className="w-full mt-2 py-2 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                >
+                  <span>Open Student Portal</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-850 text-[11px] text-zinc-400 leading-relaxed">
+                <span className="text-white font-semibold block mb-0.5">Privacy Notice</span>
+                Candidate dossiers and peer ATS scores are confidential under DPDP Act 2023. Only department faculty coordinators can access class rankings.
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-zinc-950 rounded-xl border border-zinc-850 overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-zinc-850 flex justify-between items-center">
+              <h2 className="text-sm font-bold text-white flex items-center">
+                <Clock className="mr-2 h-4 w-4 text-white" />
+                Recent Applicants
+              </h2>
+              <button onClick={() => navigate('/candidates')} className="text-xs font-mono text-zinc-400 hover:text-white transition-colors">View Pool</button>
+            </div>
+            <div className="p-5 flex-1">
+              {candidates.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                  <FileText className="w-10 h-10 text-zinc-600 mb-2" />
+                  <p className="text-sm font-medium text-white">No applicants uploaded yet</p>
+                  <p className="text-xs text-zinc-400 mt-1 mb-4">Upload candidate resumes to check ATS match and build your talent pool.</p>
+                  <button
+                    onClick={() => navigate('/upload')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-black hover:bg-zinc-200 text-xs font-semibold rounded-lg transition-colors"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Upload &amp; Screen Resume</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {candidates.slice(0, 5).map((cand) => (
+                    <div key={cand.id} className="flex items-center justify-between p-3 rounded-lg bg-black border border-zinc-850 hover:border-zinc-700 transition-colors">
+                      <div>
+                        <div className="text-xs font-semibold text-white">{cand.name}</div>
+                        <div className="text-[11px] text-zinc-500">{cand.education.department} • CGPA {cand.education.cgpa}</div>
+                      </div>
+                      {cand.ats_score !== undefined ? (
+                        <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-zinc-900 border border-zinc-800 text-white">
+                          {cand.ats_score}% ATS
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-zinc-500 font-mono">Unscreened</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {candidates.length > 0 && (
+              <div className="p-3 border-t border-zinc-850 bg-black">
+                <button 
+                  onClick={() => navigate('/candidates')}
+                  className="w-full text-center text-xs font-medium text-zinc-400 hover:text-white transition-colors flex items-center justify-center gap-1"
+                >
+                  <span>View All Candidates</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             )}
           </div>
-          {candidates.length > 0 && (
-            <div className="p-3 border-t border-zinc-850 bg-black">
-              <button 
-                onClick={() => navigate('/candidates')}
-                className="w-full text-center text-xs font-medium text-zinc-400 hover:text-white transition-colors flex items-center justify-center gap-1"
-              >
-                <span>View All Candidates</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Modal for Creating & Managing Placement Drives */}

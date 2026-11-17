@@ -76,6 +76,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  const recordStudentFirstLogin = (user: AuthUser) => {
+    if (user.role === 'Student Coordinator' || parseSRMEmailDetails(user.email || '').isStudent) {
+      try {
+        localStorage.setItem('srm_first_login_role', 'Student Coordinator');
+        sessionStorage.setItem('srm_first_login_role', 'Student Coordinator');
+      } catch {}
+    }
+  };
+
   const loginWithGoogleCredential = async (credentialJwt: string, chosenRole?: UserRole): Promise<boolean> => {
     setIsLoading(true);
     setAuthError(null);
@@ -162,6 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
 
       setCurrentUser(newUser);
+      recordStudentFirstLogin(newUser);
       await saveSecureSession(newUser);
       setIsLoading(false);
       return true;
@@ -211,6 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setCurrentUser(newUser);
+    recordStudentFirstLogin(newUser);
     await saveSecureSession(newUser);
   };
 
@@ -245,7 +256,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.warn('[RBAC Security] Role modification blocked: Active role cannot be altered during a session.');
     setAuthError({
       type: 'UNAUTHORIZED_ROLE',
-      message: 'Access role is locked to this session. To change your role, please log out and choose a role at login.'
+      message: currentUser?.role === 'Student Coordinator'
+        ? 'Role switching is strictly disabled for student accounts.'
+        : 'Access role is locked to this session. To change your role, please log out and choose a role at login.'
     });
   };
 
@@ -266,6 +279,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setCurrentUser(result.user);
+      recordStudentFirstLogin(result.user);
       await saveSecureSession(result.user);
       setIsLoading(false);
       return { success: true };
@@ -295,6 +309,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setCurrentUser(result.user);
+      recordStudentFirstLogin(result.user);
       await saveSecureSession(result.user);
       setIsLoading(false);
       return { success: true };

@@ -269,5 +269,25 @@ describe('Phase 2 & Phase 4: RBAC, Privilege Escalation & PII Protection Suite',
       expect(checkPermission('Faculty Coordinator', 'SEND_BATCH_EMAILS')).toBe(true);
       expect(checkPermission('Student Coordinator', 'SEND_BATCH_EMAILS')).toBe(false);
     });
+
+    it('blocks role elevation for any user whose active role is Student Coordinator', () => {
+      const studentSessionUser: AuthUser = {
+        id: 'u-std-1',
+        name: 'Staff Appointed Student Rep',
+        email: 'staff.rep@srmist.edu.in',
+        role: 'Student Coordinator',
+        isInstitutionalVerified: true,
+        isProfileComplete: true,
+        lastLoginAt: new Date().toISOString()
+      };
+      expect(isRoleElevationAllowed(studentSessionUser, 'Faculty Coordinator')).toBe(false);
+      expect(isRoleElevationAllowed(studentSessionUser, 'Super Admin')).toBe(false);
+      expect(isRoleElevationAllowed(studentSessionUser, 'Student Coordinator')).toBe(true);
+    });
+
+    it('restricts job creation and editing permissions from Student Coordinator', () => {
+      expect(checkPermission('Student Coordinator', 'CREATE_JOB')).toBe(false);
+      expect(checkPermission('Student Coordinator', 'EDIT_JOB')).toBe(false);
+    });
   });
 });

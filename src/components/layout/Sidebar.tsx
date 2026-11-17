@@ -49,19 +49,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, userRole }) => {
       name: 'Resume Upload & ATS', 
       icon: UploadCloud, 
       path: '/upload', 
-      roles: ['Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
+      roles: ['Faculty Coordinator', 'Super Admin'] 
     },
     { 
       name: 'AI Screening Roster', 
       icon: FileText, 
       path: '/screening', 
-      roles: ['Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
+      roles: ['Faculty Coordinator', 'Super Admin'] 
     },
     { 
       name: 'Student Directory', 
       icon: Users, 
       path: '/candidates', 
-      roles: ['Faculty Coordinator', 'Super Admin', 'Student Coordinator'] 
+      roles: ['Faculty Coordinator', 'Super Admin'] 
     },
     { 
       name: 'Shortlisted Candidates', 

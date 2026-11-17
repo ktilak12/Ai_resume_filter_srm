@@ -184,6 +184,11 @@ export function isRoleElevationAllowed(currentUser: AuthUser | null, targetRole:
     return targetRole === 'Student Coordinator';
   }
 
+  // 3. User with active Student Coordinator role cannot elevate to Faculty Coordinator or Super Admin
+  if (currentUser.role === 'Student Coordinator' && targetRole !== 'Student Coordinator') {
+    return false;
+  }
+
   // 3. Super Admin role requires explicit administrative email authorization with word/separator boundaries
   if (targetRole === 'Super Admin') {
     const [localPart] = email.split('@');

@@ -444,26 +444,39 @@ export const JobListing: React.FC = () => {
                   <span>Vacancies: <strong className="text-white">{job.open_vacancies}</strong></span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {/* Manage Drive Button */}
-                  <button
-                    onClick={() => handleOpenManage(job)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-300 text-xs font-medium transition-all"
-                    title={`Manage & Edit ${job.company} Drive`}
-                  >
-                    <Settings className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>Manage</span>
-                  </button>
+                {userRole === 'Student Coordinator' ? (
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => navigate('/student-portal', { state: { selectedJobId: job.id } })}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 text-xs font-semibold transition-all"
+                      title={`Check Eligibility for ${job.company}`}
+                    >
+                      <span>Check Eligibility</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    {/* Manage Drive Button (Faculty & Super Admin only) */}
+                    <button
+                      onClick={() => handleOpenManage(job)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-300 text-xs font-medium transition-all"
+                      title={`Manage & Edit ${job.company} Drive`}
+                    >
+                      <Settings className="w-3.5 h-3.5 text-zinc-400" />
+                      <span>Manage</span>
+                    </button>
 
-                  {/* Screen Candidates Button */}
-                  <button 
-                    onClick={() => navigate('/screening', { state: { selectedJobId: job.id } })}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 text-xs font-semibold transition-all"
-                  >
-                    <span>Screen</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                    {/* Screen Candidates Button (Faculty & Super Admin only) */}
+                    <button 
+                      onClick={() => navigate('/screening', { state: { selectedJobId: job.id } })}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 text-xs font-semibold transition-all"
+                    >
+                      <span>Screen</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}

@@ -65,6 +65,8 @@ export async function deleteUserAccountAndData(emailOrId: string): Promise<{ suc
         localStorage.removeItem('srm_builder_imported_file');
         localStorage.removeItem('srm_notifications');
         localStorage.removeItem('srm_dispatched_notifications');
+        localStorage.removeItem('srm_first_login_role');
+        sessionStorage.removeItem('srm_first_login_role');
       } catch {}
     }
 

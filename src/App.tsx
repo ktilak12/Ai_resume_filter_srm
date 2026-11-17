@@ -60,12 +60,28 @@ function App() {
               <Route path="/student-portal" element={<StudentPortalPage />} />
               <Route path="/resume-builder" element={<ResumeBuilderPage />} />
               <Route path="/jobs" element={<JobListing />} />
-              <Route path="/upload" element={<ResumeUpload />} />
-              <Route path="/screening" element={<CandidateRanking />} />
-              <Route path="/candidates" element={<CandidateRanking />} />
-              <Route path="/candidates/:id" element={<CandidateDetail />} />
 
               {/* Administrative Protected Routes: Restricted to Faculty Coordinator and Super Admin */}
+              <Route path="/upload" element={
+                <ProtectedRoute allowedRoles={['Faculty Coordinator', 'Super Admin']}>
+                  <ResumeUpload />
+                </ProtectedRoute>
+              } />
+              <Route path="/screening" element={
+                <ProtectedRoute allowedRoles={['Faculty Coordinator', 'Super Admin']}>
+                  <CandidateRanking />
+                </ProtectedRoute>
+              } />
+              <Route path="/candidates" element={
+                <ProtectedRoute allowedRoles={['Faculty Coordinator', 'Super Admin']}>
+                  <CandidateRanking />
+                </ProtectedRoute>
+              } />
+              <Route path="/candidates/:id" element={
+                <ProtectedRoute allowedRoles={['Faculty Coordinator', 'Super Admin']}>
+                  <CandidateDetail />
+                </ProtectedRoute>
+              } />
               <Route path="/shortlisted" element={
                 <ProtectedRoute allowedRoles={['Faculty Coordinator', 'Super Admin']}>
                   <ShortlistedPage />

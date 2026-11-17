@@ -112,13 +112,14 @@
 - Maximum session lifetime is enforced via **8-hour Time-To-Live (TTL)**.
 - If storage inspection or tampering alters any session field, signature verification fails and the session is immediately purged, redirecting to login.
 
-### Role-Based Access Control (RBAC)
-- **Files:** `src/services/rbac.ts`, `src/components/auth/ProtectedRoute.tsx`
+### Role-Based Access Control (RBAC) & Student Isolation
+- **Files:** `src/services/rbac.ts`, `src/components/auth/ProtectedRoute.tsx`, `src/components/layout/Sidebar.tsx`
 - Three strictly defined institutional roles:
   1. **Super Admin:** Full platform configuration, job creation/deletion, AI weight calibrations, full unmasked PII view.
   2. **Faculty Coordinator:** Placement drive management, candidate evaluation, interview scheduling, unmasked PII view.
-  3. **Student Coordinator:** Student portal access, ATS resume screening, drive eligibility checks; PII is strictly masked.
-- Vertical privilege escalation prevention: Rejects substring spoofing (e.g. `badminton@srmist.edu.in` cannot assume administrative roles).
+  3. **Student Coordinator:** Student portal access, personal AI resume builder, drive eligibility checks. Strictly restricted from viewing peer candidate directories, screening rosters, applicant scores, or batch upload engines.
+- **Student Role Switcher Lockout:** Once a user logs in as a student, role switching UI elements (dropdowns, role switch tabs on login, and elevation requests) are completely hidden and disabled at both UI and cryptographic session levels.
+- **Vertical Privilege Escalation Prevention:** Rejects substring spoofing (e.g. `badminton@srmist.edu.in` cannot assume administrative roles) and enforces server/client role immutability.
 
 ### Brute-Force & Account Lockout Defense
 - **File:** `src/services/loginProtection.ts`
@@ -255,9 +256,9 @@ $$\text{Final ATS Score} = (S \times W_s) + (E \times W_e) + (A \times W_a) + (P
 | `productionServer.test.ts` | 9 | Live Node server requests, static file serving, security headers, and path traversal rejection. |
 | `productionHardeningAndOptimization.test.ts` | 13 | LRU memory caching with TTL eviction, SQL/XSS/CSV injection sanitization, and AES-GCM database roundtrip. |
 | `databaseSecurityAndUserErasure.test.ts` | 5 | Brute-force lockout timers, complete user erasure ("Right to be Forgotten"), and credential de-obfuscation. |
-| `rbacAndPrivilegeEscalation.test.ts` | 16 | Vertical privilege escalation prevention, role overrides, anti-tampering, and 8-hour session TTL. |
+| `rbacAndPrivilegeEscalation.test.ts` | 18 | Vertical privilege escalation prevention, role overrides, student role lockdown, anti-tampering, and 8-hour session TTL. |
 | `resumeParser.test.ts` | 9 | File size boundaries (10MB limit), magic byte validation (`%PDF`), and Zip-Slip traversal defense. |
-| **Total Test Count** | **78** | **All 78 tests pass with 0 failures.** |
+| **Total Test Count** | **80** | **All 80 tests pass with 0 failures.** |
 
 ---
 
@@ -278,7 +279,7 @@ npm run dev
 
 ### Running Automated Test Suites
 ```bash
-# Execute all 78 unit, integration, and security tests
+# Execute all 80 unit, integration, and security tests
 npm test
 ```
 
@@ -306,14 +307,14 @@ npm start
  ✓ src/__tests__/calendarAndPrivacy.test.ts (10 tests)
  ✓ src/__tests__/productionServer.test.ts (9 tests)
  ✓ src/__tests__/productionHardeningAndOptimization.test.ts (13 tests)
- ✓ src/__tests__/rbacAndPrivilegeEscalation.test.ts (16 tests)
+ ✓ src/__tests__/rbacAndPrivilegeEscalation.test.ts (18 tests)
  ✓ src/__tests__/databaseSecurityAndUserErasure.test.ts (5 tests)
  ✓ src/__tests__/resumeParser.test.ts (9 tests)
  ✓ src/__tests__/apiSecurityAndRoutes.test.ts (11 tests)
 
  Test Files  8 passed (8)
-      Tests  78 passed (78)
-   Duration  1.52s
+      Tests  80 passed (80)
+   Duration  1.44s
 
  TypeScript Check:  0 Errors (Clean status 0)
  Production Build:  Compiled successfully into dist/

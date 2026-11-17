@@ -8,7 +8,8 @@ import {
   ChevronDown, 
   ShieldCheck, 
   LogIn,
-  Lock
+  Lock,
+  GraduationCap
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -36,7 +37,11 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, toggleSidebar }) => {
 
   const handleNavSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && navSearchQuery.trim()) {
-      navigate('/screening', { state: { searchTerm: navSearchQuery.trim() } });
+      if (activeRoleDisplay === 'Student Coordinator') {
+        navigate('/jobs', { state: { searchTerm: navSearchQuery.trim() } });
+      } else {
+        navigate('/screening', { state: { searchTerm: navSearchQuery.trim() } });
+      }
     }
   };
 
@@ -104,54 +109,65 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, toggleSidebar }) => {
         <div className="flex items-center space-x-3 sm:space-x-4">
           
           {isAuthenticated && (
-            /* Locked Session Role Display */
-            <div className="relative" ref={roleMenuRef}>
-              <button 
-                type="button"
-                onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
-                className="flex items-center space-x-2 text-xs font-mono text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/90 hover:bg-zinc-850 transition-all focus:outline-none"
-                title="Your access role is locked for this login session"
+            activeRoleDisplay === 'Student Coordinator' ? (
+              /* Verified Student Badge - Role Switching Completely Disabled & Hidden */
+              <div 
+                className="flex items-center space-x-1.5 text-xs font-mono text-zinc-300 px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/90 select-none cursor-default"
+                title="Verified Student Account (Role Switching Restricted)"
               >
-                <Lock className="w-3 h-3 text-emerald-400" />
-                <span className="font-semibold">{activeRoleDisplay}</span>
-                <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-                  Locked
-                </span>
-                <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180 text-white' : ''}`} />
-              </button>
-              
-              {isRoleDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-zinc-950 rounded-2xl shadow-2xl border border-zinc-800 p-4 z-50 animate-in fade-in duration-100 space-y-3">
-                  <div className="flex items-start gap-2.5">
-                    <div className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-emerald-400 shrink-0">
-                      <Lock className="w-4 h-4" />
+                <GraduationCap className="w-3.5 h-3.5 text-blue-400" />
+                <span className="font-semibold text-white">Student</span>
+              </div>
+            ) : (
+              /* Locked Session Role Display for Staff / Admin */
+              <div className="relative" ref={roleMenuRef}>
+                <button 
+                  type="button"
+                  onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+                  className="flex items-center space-x-2 text-xs font-mono text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/90 hover:bg-zinc-850 transition-all focus:outline-none"
+                  title="Your access role is locked for this login session"
+                >
+                  <Lock className="w-3 h-3 text-emerald-400" />
+                  <span className="font-semibold">{activeRoleDisplay}</span>
+                  <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
+                    Locked
+                  </span>
+                  <ChevronDown className={`h-3 w-3 text-zinc-500 transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180 text-white' : ''}`} />
+                </button>
+                
+                {isRoleDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-zinc-950 rounded-2xl shadow-2xl border border-zinc-800 p-4 z-50 animate-in fade-in duration-100 space-y-3">
+                    <div className="flex items-start gap-2.5">
+                      <div className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-emerald-400 shrink-0">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-xs font-bold text-white block">Role Locked: {activeRoleDisplay}</span>
+                        <p className="text-[11px] text-zinc-400 leading-relaxed">
+                          Under SRM DPDP & RBAC security governance, active roles are locked to the login session and cannot be changed on the fly.
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-0.5">
-                      <span className="text-xs font-bold text-white block">Role Locked: {activeRoleDisplay}</span>
-                      <p className="text-[11px] text-zinc-400 leading-relaxed">
-                        Under SRM DPDP & RBAC security governance, active roles are locked to the login session and cannot be changed on the fly.
+
+                    <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-850 text-[11px] text-zinc-400 space-y-1">
+                      <span className="text-zinc-300 font-semibold block">Need to switch roles?</span>
+                      <p className="text-[10px] text-zinc-500 leading-relaxed">
+                        Please log out and select your target role (e.g. Faculty Coordinator, Student Coordinator) on the login page.
                       </p>
                     </div>
-                  </div>
 
-                  <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-850 text-[11px] text-zinc-400 space-y-1">
-                    <span className="text-zinc-300 font-semibold block">Need to switch roles?</span>
-                    <p className="text-[10px] text-zinc-500 leading-relaxed">
-                      Please log out and select your target role (e.g. Faculty Coordinator, Student Coordinator) on the login page.
-                    </p>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full py-2 px-3 rounded-xl bg-zinc-900 hover:bg-red-950/40 hover:text-red-300 hover:border-red-900/50 border border-zinc-800 text-xs font-semibold text-zinc-300 flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Log Out to Switch Role</span>
+                    </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="w-full py-2 px-3 rounded-xl bg-zinc-900 hover:bg-red-950/40 hover:text-red-300 hover:border-red-900/50 border border-zinc-800 text-xs font-semibold text-zinc-300 flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Log Out to Switch Role</span>
-                  </button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )
           )}
 
           {/* Notifications Center */}
@@ -223,7 +239,7 @@ const Navbar: React.FC<NavbarProps> = ({ userRole, toggleSidebar }) => {
                     }}
                     className="flex w-full items-center px-4 py-2 text-xs text-zinc-300 hover:bg-zinc-900 hover:text-white transition-colors"
                   >
-                    <User className="mr-3 h-3.5 w-3.5 text-zinc-400" /> Edit Profile &amp; Role Details
+                    <User className="mr-3 h-3.5 w-3.5 text-zinc-400" /> {activeRoleDisplay === 'Student Coordinator' ? 'Edit Profile' : 'Edit Profile & Role Details'}
                   </button>
 
                   <button 

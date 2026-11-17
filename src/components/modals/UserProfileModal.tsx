@@ -177,7 +177,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <span className="text-[10px] text-zinc-500 font-mono">Immutable</span>
             </div>
             <p className="text-[10px] text-zinc-500 mt-1">
-              Your role is cryptographically signed and locked for this login session. To switch roles, log out and select another role on the login screen.
+              {role === 'Student Coordinator' 
+                ? 'Verified SRM student profile. Access permissions are strictly mapped to your student credentials.'
+                : 'Your role is cryptographically signed and locked for this login session. To switch roles, log out and select another role on the login screen.'}
             </p>
           </div>
 
