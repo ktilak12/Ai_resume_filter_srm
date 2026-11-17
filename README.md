@@ -80,10 +80,13 @@ npm install
 # 2. Start local development server
 npm run dev
 
-# 3. Run automated unit test suite
+# 3. Check TypeScript types
+npm run typecheck
+
+# 4. Run automated unit test suite
 npm test
 
-# 4. Create production build
+# 5. Create production build
 npm run build
 ```
 
@@ -92,4 +95,4 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ---
 
 ## 📜 License
-Developed for SRM Institute of Science and Technology Directorate of Career Centre. 
+Developed for SRM Institute of Science and Technology Directorate of Career Centre.

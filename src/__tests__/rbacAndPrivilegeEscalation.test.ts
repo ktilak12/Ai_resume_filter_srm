@@ -27,7 +27,8 @@ const mockSession = new MockStorage();
 
 (globalThis as any).window = {
   crypto: {
-    subtle: (crypto.webcrypto as any)?.subtle
+    subtle: (crypto.webcrypto as any)?.subtle,
+    getRandomValues: (arr: any) => crypto.randomFillSync(arr)
   },
   localStorage: mockLocal,
   sessionStorage: mockSession
