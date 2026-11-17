@@ -1,7 +1,8 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { AppErrorBoundary } from './components/common/AppErrorBoundary';
 import Layout from './components/layout/Layout';
 
 // Lazy-loaded page components for route-level code splitting
@@ -19,6 +20,7 @@ const ShortlistedPage = lazy(() => import('./pages/ShortlistedPage').then(m => (
 const InterviewsPage = lazy(() => import('./pages/InterviewsPage').then(m => ({ default: m.InterviewsPage })));
 const Analytics = lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 const PageLoader: React.FC = () => (
   <div className="min-h-screen bg-black flex flex-col items-center justify-center space-y-4">
@@ -34,9 +36,10 @@ const PageLoader: React.FC = () => (
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Suspense fallback={<PageLoader />}>
+    <AppErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public Route 1: Always opens to the Landing Page */}
             <Route path="/" element={<LandingPage />} />
@@ -85,12 +88,12 @@ function App() {
               } />
             </Route>
 
-            {/* Catch-all fallback: Return to Landing Page */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
-        </Suspense>
-      </Router>
-    </AuthProvider>
+          </Suspense>
+        </Router>
+      </AuthProvider>
+    </AppErrorBoundary>
   );
 }
 

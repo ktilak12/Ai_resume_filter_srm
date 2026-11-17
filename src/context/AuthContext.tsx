@@ -9,6 +9,7 @@ import {
   isRoleElevationAllowed 
 } from '../services/sessionSecurity';
 import { authenticateWithPassword, registerAccount } from '../services/accountAuth';
+import { deleteUserAccountAndData } from '../services/userErasureService';
 
 export interface AuthError {
   type: 'UNAUTHORIZED_DOMAIN' | 'INVALID_TOKEN' | 'CONFIG_ERROR' | 'UNAUTHORIZED_ROLE' | 'UNKNOWN';
@@ -27,6 +28,7 @@ interface AuthContextType {
   registerWithPassword: (name: string, email: string, password: string, chosenRole: UserRole) => Promise<{ success: boolean; error?: string }>;
   loginDirect: (user: Partial<AuthUser>) => void;
   updateProfile: (profile: Partial<AuthUser>) => void;
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   switchRole: (role: UserRole) => void;
   clearError: () => void;
@@ -304,6 +306,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const deleteAccount = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser) return { success: false, error: 'No active user session to delete.' };
+    const email = currentUser.email;
+    const res = await deleteUserAccountAndData(email);
+    if (res.success) {
+      setCurrentUser(null);
+      setAuthError(null);
+    }
+    return res;
+  };
+
   const clearError = () => {
     setAuthError(null);
   };
@@ -321,6 +334,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registerWithPassword,
         loginDirect,
         updateProfile,
+        deleteAccount,
         logout,
         switchRole,
         clearError

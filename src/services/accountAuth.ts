@@ -1,6 +1,8 @@
 import { AuthUser, UserRole } from '../types';
 import { isSRMISTEmail, parseSRMEmailDetails } from './googleAuth';
 import { isRoleElevationAllowed } from './sessionSecurity';
+import { getSecureItem, setSecureItem } from './encryptedStorage';
+import { checkLoginLockout, recordFailedLogin, resetLoginAttempts } from './loginProtection';
 
 export interface StoredAccount {
   id: string;
@@ -73,20 +75,17 @@ const DEFAULT_ACCOUNTS: Array<{ name: string; email: string; pass: string; role:
 ];
 
 /**
- * Loads stored accounts from localStorage, seeding defaults if empty
+ * Loads stored accounts from encrypted storage, seeding defaults if empty
  */
 export async function getStoredAccounts(): Promise<StoredAccount[]> {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
+    const loaded = await getSecureItem<StoredAccount[]>(STORAGE_KEY, []);
+    if (Array.isArray(loaded) && loaded.length > 0) {
+      return loaded;
     }
 
-    // Seed defaults
+    // Seed defaults in encrypted storage
     const seeded: StoredAccount[] = [];
     for (const d of DEFAULT_ACCOUNTS) {
       seeded.push({
@@ -100,7 +99,7 @@ export async function getStoredAccounts(): Promise<StoredAccount[]> {
         createdAt: new Date().toISOString()
       });
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+    await setSecureItem(STORAGE_KEY, seeded);
     return seeded;
   } catch (err) {
     console.error('[accountAuth] Failed to load accounts:', err);
@@ -109,12 +108,12 @@ export async function getStoredAccounts(): Promise<StoredAccount[]> {
 }
 
 /**
- * Saves updated accounts list to localStorage
+ * Saves updated accounts list to encrypted storage
  */
-function saveStoredAccounts(accounts: StoredAccount[]): void {
+async function saveStoredAccounts(accounts: StoredAccount[]): Promise<void> {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
+    await setSecureItem(STORAGE_KEY, accounts);
   } catch (err) {
     console.error('[accountAuth] Failed to save accounts:', err);
   }
@@ -188,7 +187,7 @@ export async function registerAccount(params: {
   };
 
   accounts.push(newAccount);
-  saveStoredAccounts(accounts);
+  await saveStoredAccounts(accounts);
 
   const authUser: AuthUser = {
     id: newAccount.id,
@@ -224,23 +223,49 @@ export async function authenticateWithPassword(params: {
     return { success: false, error: 'Please enter your password.' };
   }
 
+  // Check brute-force lockout status
+  const lockout = checkLoginLockout(email);
+  if (lockout.isLocked) {
+    return {
+      success: false,
+      error: `Account temporarily locked due to excessive failed attempts. Please retry in ${lockout.remainingSeconds} seconds.`
+    };
+  }
+
   const accounts = await getStoredAccounts();
   const account = accounts.find(a => a.email === email);
 
   if (!account) {
+    const failedStatus = recordFailedLogin(email);
+    if (failedStatus.isLocked) {
+      return {
+        success: false,
+        error: `Too many failed attempts. Account locked for ${failedStatus.lockoutSeconds} seconds.`
+      };
+    }
     return { 
       success: false, 
-      error: 'Account not found with this email. Please switch to the Register tab to create an account.' 
+      error: `Account not found with this email. (${failedStatus.remainingAttempts} attempts remaining).` 
     };
   }
 
   const computedHash = await hashPassword(password);
   if (account.passwordHash !== computedHash) {
+    const failedStatus = recordFailedLogin(email);
+    if (failedStatus.isLocked) {
+      return {
+        success: false,
+        error: `Account locked for ${failedStatus.lockoutSeconds} seconds due to 5 consecutive failed attempts.`
+      };
+    }
     return { 
       success: false, 
-      error: 'Incorrect password. Please verify your credentials and try again.' 
+      error: `Incorrect password. Please verify credentials. (${failedStatus.remainingAttempts} attempts remaining)` 
     };
   }
+
+  // Reset login attempts counter upon successful authentication
+  resetLoginAttempts(email);
 
   const isSRM = isSRMISTEmail(account.email);
   let effectiveRole: UserRole = account.role;

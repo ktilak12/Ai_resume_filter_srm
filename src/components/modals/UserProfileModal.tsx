@@ -10,9 +10,12 @@ import {
   Check, 
   X,
   AlertCircle,
-  Lock
+  Lock,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { UserRole } from '../../types';
 
 interface UserProfileModalProps {
@@ -26,7 +29,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onClose,
   isMandatoryOnboarding = false
 }) => {
-  const { currentUser, updateProfile } = useAuth();
+  const { currentUser, updateProfile, deleteAccount } = useAuth();
+  const navigate = useNavigate();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -38,6 +42,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [batchYear, setBatchYear] = useState('2026 Batch');
   const [designation, setDesignation] = useState('Placement Coordinator');
   const [isSaved, setIsSaved] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -278,6 +285,80 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               />
             </div>
           </div>
+
+          {/* User Erasure & Delete Account Section (DPDP Right to be Forgotten) */}
+          {!isMandatoryOnboarding && (
+            <div className="pt-4 border-t border-zinc-900 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                    <Trash2 className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Permanent Account &amp; Data Erasure</span>
+                  </h4>
+                  <p className="text-[11px] text-zinc-500">
+                    Purges your login credentials, candidate profile, resumes, and interview records from the database.
+                  </p>
+                </div>
+                {!showDeleteConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="px-3 py-1.5 rounded-lg border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 text-xs font-medium transition-colors"
+                  >
+                    Delete Account
+                  </button>
+                ) : null}
+              </div>
+
+              {showDeleteConfirm && (
+                <div className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-950 space-y-2.5">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-white shrink-0 mt-0.5" />
+                    <div className="text-xs text-zinc-300">
+                      <p className="font-semibold text-white">Confirm complete account deletion?</p>
+                      <p className="text-zinc-400 text-[11px] mt-0.5">
+                        This action is irreversible. All your profile data, uploaded resumes, and interview logs will be deleted from the database.
+                      </p>
+                    </div>
+                  </div>
+
+                  {deleteError && (
+                    <p className="text-xs text-zinc-400">{deleteError}</p>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-white transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={async () => {
+                        setIsDeleting(true);
+                        setDeleteError(null);
+                        const res = await deleteAccount();
+                        setIsDeleting(false);
+                        if (res.success) {
+                          if (onClose) onClose();
+                          navigate('/login', { replace: true });
+                        } else {
+                          setDeleteError(res.error || 'Failed to delete account.');
+                        }
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 hover:bg-zinc-800 text-white text-xs font-semibold transition-all disabled:opacity-50"
+                    >
+                      {isDeleting ? 'Deleting Data...' : 'Yes, Permanently Delete'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Submit / Save Button */}
           <div className="pt-4 border-t border-zinc-800 flex items-center justify-end gap-3">
