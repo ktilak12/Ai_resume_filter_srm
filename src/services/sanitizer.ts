@@ -90,14 +90,16 @@ export function escapeHtml(text: string | number | undefined | null): string {
 }
 
 /**
- * Neutralizes CSV/Excel formula injection (e.g. '=cmd|...', '+SUM', '-EXEC')
+ * Neutralizes CSV/Excel formula injection (e.g. '=cmd|...', '+SUM', '-EXEC', '|calc', '%payload')
  */
 export function sanitizeCsvField(field: unknown): string {
   if (field === null || field === undefined) return '""';
-  let str = String(field).trim();
+  // Strip null bytes to avoid parser corruption
+  let str = String(field).replace(/\0/g, '');
+  const trimmed = str.trimStart();
 
-  // If starts with dangerous spreadsheet formula triggers, prepend a single quote
-  if (/^[=+@-]/i.test(str)) {
+  // If starts with dangerous spreadsheet formula triggers (=, +, -, @, |, %, tab, cr), prefix with single quote
+  if (/^[=+\-@\t\r|%]/.test(trimmed)) {
     str = `'${str}`;
   }
 

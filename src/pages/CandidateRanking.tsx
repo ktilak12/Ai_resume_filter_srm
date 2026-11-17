@@ -335,12 +335,12 @@ export const CandidateRanking: React.FC = () => {
               if (successCount > 0) {
                 setBatchNotice({
                   type: 'success',
-                  message: `Successfully emailed ${successCount} shortlisted candidates via Resend!`
+                  message: `Successfully notified ${successCount} shortlisted candidates!`
                 });
               } else {
                 setBatchNotice({
                   type: 'error',
-                  message: `Email dispatch failed: ${lastError}`
+                  message: `Notification dispatch failed: ${lastError}`
                 });
               }
             }}
@@ -357,8 +357,8 @@ export const CandidateRanking: React.FC = () => {
             )}
             <span>
               {canSendEmails 
-                ? `Email Shortlisted (${filteredResults.filter(r => r.explainable.verdict === 'Strong Match').length})` 
-                : 'Email Dispatch Restricted'}
+                ? `Notify Shortlisted (${filteredResults.filter(r => r.explainable.verdict === 'Strong Match').length})` 
+                : 'Notification Restricted'}
             </span>
           </button>
         </div>

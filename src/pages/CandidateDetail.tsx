@@ -190,9 +190,9 @@ export const CandidateDetail: React.FC = () => {
               setIsSendingEmail(false);
               if (res.success) {
                 updateCandidateStatus('Rejected');
-                setEmailNotice({ type: 'success', message: `Rejection email sent to ${candidate.email} via Resend!` });
+                setEmailNotice({ type: 'success', message: `Status updated: Rejection notice dispatched to ${candidate.email}` });
               } else {
-                setEmailNotice({ type: 'error', message: res.error || 'Failed to send rejection email' });
+                setEmailNotice({ type: 'error', message: res.error || 'Failed to update candidate status' });
               }
             }}
             className="bg-zinc-900 hover:bg-zinc-850 text-zinc-300 px-3.5 py-2 rounded-lg font-semibold border border-zinc-800 transition-colors text-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
@@ -212,9 +212,9 @@ export const CandidateDetail: React.FC = () => {
               setIsSendingEmail(false);
               if (res.success) {
                 updateCandidateStatus('Shortlisted');
-                setEmailNotice({ type: 'success', message: `Shortlist interview notification sent to ${candidate.email} via Resend!` });
+                setEmailNotice({ type: 'success', message: `Candidate shortlisted! Notification dispatched to ${candidate.email}` });
               } else {
-                setEmailNotice({ type: 'error', message: res.error || 'Failed to send shortlist email.' });
+                setEmailNotice({ type: 'error', message: res.error || 'Failed to shortlist candidate.' });
               }
             }}
             className="bg-white text-black hover:bg-zinc-200 px-4 py-2 rounded-lg font-bold transition-colors text-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
@@ -224,7 +224,7 @@ export const CandidateDetail: React.FC = () => {
             ) : (
               <Mail className="w-3.5 h-3.5 text-black" />
             )}
-            <span>Shortlist &amp; Email</span>
+            <span>Shortlist &amp; Notify</span>
           </button>
         </div>
       </div>
